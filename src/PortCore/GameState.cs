@@ -23,9 +23,7 @@ public sealed class GameState
         ClickPistol = new SkillRuntime(CanonicalSkills.ClickPistol);
 
         var effects = Artifacts.BuildEffects();
-        Abilities = AbilityCatalog.All
-            .Select(a => new AbilityRuntime(a, effects))
-            .ToArray();
+        ActiveAbilities = new ActiveAbilityProgression(effects);
 
         Arena = new TimelineProgression(effects.StartWave);
         StartNewTimeline();
@@ -40,7 +38,8 @@ public sealed class GameState
 
     public HeroRuntime[] Heroes { get; }
     public SkillRuntime ClickPistol { get; }
-    public AbilityRuntime[] Abilities { get; }
+    public ActiveAbilityProgression ActiveAbilities { get; }
+    public AbilityRuntime[] Abilities => ActiveAbilities.Abilities;
     public TimelineProgression Arena { get; private set; }
 
     public ArtifactEffects ArtifactEffects => Artifacts.BuildEffects();
@@ -69,10 +68,9 @@ public sealed class GameState
 
         ClickPistol.TimeWarp();
 
-        foreach (var ability in Abilities)
-            ability.TimeWarp();
-
         var effects = ArtifactEffects;
+        ActiveAbilities.TimeWarp(effects);
+
         Arena.TimeWarpTo(effects.StartWave);
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
@@ -147,10 +145,9 @@ public sealed class GameState
 
         ClickPistol.TimeWarp();
 
-        foreach (var ability in Abilities)
-            ability.TimeWarp();
-
         var effects = ArtifactEffects;
+        ActiveAbilities.TimeWarp(effects);
+
         Arena.TimeWarpTo(effects.StartWave);
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
@@ -160,12 +157,17 @@ public sealed class GameState
         return pendingAdded;
     }
 
-    public void RecalculateAbilities(double nowSeconds)
-    {
-        var effects = ArtifactEffects;
-        foreach (var ability in Abilities)
-            ability.Recalculate(effects, nowSeconds);
-    }
+    public bool TryPurchaseNextAbility() =>
+        ActiveAbilities.TryPurchaseNext(Gold);
+
+    public bool ActivateAbility(AbilityType type, double nowSeconds) =>
+        ActiveAbilities.Activate(type, nowSeconds);
+
+    public void UpdateAbilities(double nowSeconds) =>
+        ActiveAbilities.Update(nowSeconds);
+
+    public void RecalculateAbilities(double nowSeconds) =>
+        ActiveAbilities.Recalculate(ArtifactEffects, nowSeconds);
 
     public TeamUpgradeEffects GetTeamUpgradeEffects()
     {
@@ -176,7 +178,7 @@ public sealed class GameState
     }
 
     public bool IsAbilityActive(AbilityType type) =>
-        Abilities[(int)type].State == AbilityState.Active;
+        ActiveAbilities.IsActive(type);
 
     public double GetTeamDps()
     {
@@ -192,7 +194,7 @@ public sealed class GameState
                 hero.Level,
                 hero.PurchasedUpgrades,
                 new HeroDpsMultipliers(
-                    DimensionShift: 1.0,
+                    DimensionShift: ActiveAbilities.GetDimensionShiftMultiplier(artifacts),
                     UnitedFront: team.UnitedFrontMultiplier,
                     AchievementDps: 1.0,
                     TimeCubeDps: TimeCubes.DpsMultiplier,
