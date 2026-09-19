@@ -72,6 +72,20 @@ public sealed class TimeCubeBank
         PendingTimelineReward = 0;
         return earned;
     }
+
+    /// <summary>
+    /// Mirrors NewGamePlus.DoRespec: pending timeline cubes become lifetime
+    /// earned, every previously earned Time Cube becomes spendable again,
+    /// and the pending reward is cleared.
+    /// </summary>
+    public ulong Respec()
+    {
+        ulong pending = PendingTimelineReward;
+        LifetimeEarned += pending;
+        Spendable = LifetimeEarned;
+        PendingTimelineReward = 0;
+        return pending;
+    }
 }
 
 public sealed class WeaponCubeBankState
