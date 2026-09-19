@@ -42,6 +42,6 @@ public static partial class CanonicalHeroes
             U(34, 900, (UpgradeMod.Training, 5.0), (UpgradeMod.FireRate, 10.0), (UpgradeMod.Splash, 0.5)),
             U(35, 1000, (UpgradeMod.SpecOps, 1.0)),
         };
-        return new HeroBaseSpec(3, WeaponType.RocketLauncher, 245.0, 1.0f, 3, upgrades, "Rocket Launcher");
+        return new HeroBaseSpec(3, WeaponType.RocketLauncher, 245.0, 1.0f, 3, upgrades, "Rocket Launcher", BaseSplash: 0.25);
     }
 }
