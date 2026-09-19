@@ -147,23 +147,18 @@ public sealed class GameState
 
     public double GetHeroExtraClickDamage()
     {
-        var contributions = Heroes.Select(hero =>
-        {
-            double dps = HeroCombatMath.GetDpsForLevel(
-                hero.Spec,
-                hero.Schedule,
-                hero.Level,
-                hero.PurchasedUpgrades,
-                new HeroDpsMultipliers());
+        double totalPercent = 0.0;
 
-            double percent = HeroCombatMath.GetExtraClickDamagePercent(
+        foreach (var hero in Heroes)
+        {
+            totalPercent += HeroCombatMath.GetExtraClickDamagePercent(
                 hero.Schedule,
                 hero.PurchasedUpgrades);
+        }
 
-            return (HeroDps: dps, ExtraClickDamagePercent: percent);
-        });
-
-        return TeamMath.GetExtraClickDamage(contributions);
+        return totalPercent > 0.0
+            ? totalPercent * GetTeamDps()
+            : 0.0;
     }
 
     public double GetClickDamage()
