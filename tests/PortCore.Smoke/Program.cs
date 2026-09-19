@@ -552,4 +552,89 @@ AssertEqual(4, farmArena.Wave, "Direct farm-wave selection");
 if (farmArena.SelectUnlockedWave(7))
     throw new Exception("Cannot select a locked wave");
 
+// BoxEnemy-style block combat
+var targetArtifacts = new ArtifactLoadout();
+targetArtifacts.SetLevel(ArtifactType.DamageTargeted, 1);
+targetArtifacts.SetLevel(ArtifactType.DamageTargetedPulsePistol, 1);
+targetArtifacts.SetLevel(ArtifactType.ClickDamageRed, 1);
+var targetEffects = targetArtifacts.BuildEffects();
+
+var targetedRedBlock = new EnemyBlockState(100, EnemyType.Red);
+targetedRedBlock.AddTargeted(WeaponType.Pistol);
+var targetedHit = targetedRedBlock.ApplyClickDamage(
+    10,
+    targetEffects,
+    heroesGoldFindMultiplier: 1,
+    goldRushActive: false);
+AssertEqual(44, targetedHit.AppliedDamage, "Targeted red click damage");
+AssertEqual(56, targetedHit.RemainingHealth, "Targeted red remaining HP");
+if (targetedHit.Killed) throw new Exception("Targeted fixture should remain alive");
+
+var normalBlock = new EnemyBlockState(100, EnemyType.Red);
+var normalKill = normalBlock.ApplyDamage(
+    1000,
+    new ArtifactLoadout().BuildEffects(),
+    heroesGoldFindMultiplier: 1,
+    goldRushActive: false);
+if (!normalKill.Killed) throw new Exception("Overkill should destroy block");
+AssertEqual(7, normalKill.Reward.Gold, "Normal block kill gold");
+AssertEqual(9, normalKill.OverkillNormalized, "Overkill normalization", 1e-6);
+
+var rainbowBlock = new EnemyBlockState(100, EnemyType.Rainbow);
+var rainbowKill = rainbowBlock.ApplyDamage(
+    1000,
+    new ArtifactLoadout().BuildEffects(),
+    heroesGoldFindMultiplier: 1,
+    goldRushActive: false);
+AssertEqual(670, rainbowKill.Reward.Gold, "Rainbow ten-pickup gold");
+
+var timeCubeBlock = new EnemyBlockState(
+    100,
+    EnemyType.TimeCube,
+    timeCubeCount: 5);
+var cubeKill = timeCubeBlock.ApplyDamage(
+    1000,
+    new ArtifactLoadout().BuildEffects(),
+    heroesGoldFindMultiplier: 1,
+    goldRushActive: false);
+AssertEqual(0, cubeKill.Reward.Gold, "Time Cube block has no gold reward");
+AssertEqual(5, (double)cubeKill.Reward.TimeCubes, "Time Cube block reward count");
+
+// GameState auto-collection and per-timeline reward history
+var combatGame = new GameState();
+var trackedCubeBlock = new EnemyBlockState(
+    100,
+    EnemyType.TimeCube,
+    timeCubeCount: 3);
+combatGame.ApplyDamageToBlock(trackedCubeBlock, 1000);
+AssertEqual(3, (double)combatGame.TimeCubes.PendingTimelineReward, "Combat adds pending Time Cubes");
+if (!combatGame.ArenaRewards.HasTimeCubeReward(combatGame.Arena.Wave))
+    throw new Exception("Destroyed Time Cube block must mark current wave");
+
+combatGame.TimeWarp();
+if (combatGame.ArenaRewards.HasTimeCubeReward(combatGame.Arena.Wave))
+    throw new Exception("Time Warp must clear per-wave cube reward history");
+
+// Offline progression
+var offline = OfflineProgression.Calculate(
+    secondsSinceSave: 200000,
+    teamDps: 100,
+    timelineGoldPerSecond: 10,
+    heroesGoldFindMultiplier: 2,
+    artifactGoldFindMultiplier: 3,
+    currentArenaBaseHp: 50);
+AssertEqual(172800, offline.Seconds, "Offline cap");
+AssertEqual(8640000, offline.OfflineDamage, "Offline half-DPS damage");
+AssertEqual(864000, offline.GoldEarned, "Offline stored-GPS gold");
+AssertEqual(43200, offline.EstimatedBaseBlocksDestroyed, "Offline kill estimate cap");
+
+var offlineFallback = OfflineProgression.Calculate(
+    secondsSinceSave: 172800,
+    teamDps: 100,
+    timelineGoldPerSecond: 0,
+    heroesGoldFindMultiplier: 2,
+    artifactGoldFindMultiplier: 3,
+    currentArenaBaseHp: 50);
+AssertEqual(3456000, offlineFallback.GoldEarned, "Offline damage-to-gold fallback");
+
 Console.WriteLine("PortCore smoke tests passed.");
