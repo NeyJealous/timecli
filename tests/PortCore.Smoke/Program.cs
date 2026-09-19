@@ -725,4 +725,71 @@ var eligibleAt6 = VoxelSpawnMath.GetEligibleModels(
     syntheticModels, wave5Plan, 6);
 AssertEqual(2, eligibleAt6.Count, "Eligible voxel model count");
 
+// Voxel block allocation
+var syntheticLayout = new VoxelModelLayout(
+    "synthetic",
+    Red: new[] { new VoxelPoint(0, 0, 0) },
+    White: new[] { new VoxelPoint(1, 0, 0), new VoxelPoint(2, 0, 0) },
+    Yellow: new[] { new VoxelPoint(3, 0, 0) },
+    Blue: new[] { new VoxelPoint(4, 0, 0), new VoxelPoint(5, 0, 0) });
+
+var allocation = VoxelSpawnPlanner.Build(
+    syntheticLayout,
+    baseHp: 10,
+    requiredCounts: new[] { 2, 1, 1 },
+    rainbowConversions: new[] { 1, 0, 0 });
+
+AssertEqual(4, allocation.SpawnedBlockCount, "Voxel allocation block count");
+if (allocation.Blocks[0].EnemyType != EnemyType.Rainbow)
+    throw new Exception("First red requirement should convert to Rainbow");
+AssertEqual(10, allocation.Blocks[0].MaxHealth, "Rainbow conversion uses base HP");
+if (allocation.Blocks[1].EnemyType != EnemyType.White)
+    throw new Exception("White matching slot type");
+AssertEqual(100, allocation.Blocks[1].MaxHealth, "White tier HP");
+if (allocation.Blocks[2].EnemyType != EnemyType.Yellow)
+    throw new Exception("Yellow matching slot type");
+AssertEqual(1000, allocation.Blocks[2].MaxHealth, "Yellow tier HP");
+if (allocation.Blocks[3].EnemyType != EnemyType.Red)
+    throw new Exception("Red fallback retains required enemy type");
+AssertEqual(2, allocation.Blocks[3].Position.X, "Red fallback takes next white slot");
+
+var specialAllocation = VoxelSpawnPlanner.Build(
+    syntheticLayout,
+    baseHp: 10,
+    requiredCounts: new[] { 1, 1, 1 },
+    rainbowConversions: new[] { 0, 0, 0 },
+    timeCubeReward: 7,
+    weaponCubeReward: 9);
+AssertEqual(3, specialAllocation.SpawnedBlockCount, "Cube replacement allocation count");
+if (specialAllocation.Blocks[0].EnemyType != EnemyType.TimeCube)
+    throw new Exception("Time Cube must occupy white slot first");
+AssertEqual(1000, specialAllocation.Blocks[0].MaxHealth, "Time Cube yellow-tier HP");
+AssertEqual(7, specialAllocation.Blocks[0].TimeCubeCount, "Time Cube reward payload");
+if (specialAllocation.Blocks[1].EnemyType != EnemyType.WeaponCube)
+    throw new Exception("Weapon Cube must occupy yellow slot second");
+AssertEqual(9, specialAllocation.Blocks[1].WeaponCubeCount, "Weapon Cube reward payload");
+
+var forcedRainbow = VoxelSpawnPlanner.Build(
+    syntheticLayout,
+    baseHp: 10,
+    requiredCounts: new[] { 99, 99, 99 },
+    rainbowConversions: new[] { 0, 0, 0 },
+    forceRainbowEnemy: true);
+AssertEqual(4, forcedRainbow.SpawnedBlockCount, "Forced Rainbow excludes blue fallback slots");
+if (forcedRainbow.Blocks.Any(b => b.EnemyType != EnemyType.Rainbow))
+    throw new Exception("Forced Rainbow model must contain only Rainbow blocks");
+
+var firstEnemy = VoxelSpawnPlanner.Build(
+    syntheticLayout,
+    baseHp: 10,
+    requiredCounts: new[] { 1, 0, 0 },
+    rainbowConversions: new[] { 1, 0, 0 },
+    isVeryFirstEnemy: true);
+AssertEqual(1, firstEnemy.SpawnedBlockCount, "Very first enemy is a single block");
+if (firstEnemy.Blocks[0].EnemyType != EnemyType.Rainbow)
+    throw new Exception("Very first enemy honors red-to-rainbow conversion");
+
+var modelStateFromPlan = VoxelSpawnPlanner.CreateEnemyModel(allocation);
+AssertEqual(4, modelStateFromPlan.BlockCount, "Spawn plan creates enemy model state");
+
 Console.WriteLine("PortCore smoke tests passed.");
