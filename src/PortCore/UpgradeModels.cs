@@ -49,4 +49,5 @@ public sealed record HeroBaseSpec(
     double BaseDamage,
     float BaseRateOfFire,
     int BaseCostLevel,
-    IReadOnlyList<UpgradeSpec> BaseUpgrades);
+    IReadOnlyList<UpgradeSpec> BaseUpgrades,
+    string Name = "");
