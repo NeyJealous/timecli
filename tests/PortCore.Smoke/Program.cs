@@ -672,4 +672,57 @@ abilityProgression.TimeWarp(new ArtifactLoadout().BuildEffects());
 AssertEqual(0, abilityProgression.PurchasedCount, "Ability purchases reset on Time Warp");
 AssertEqual(0, abilityProgression.DimensionShifts, "Dimension Shifts reset on Time Warp");
 
+// VoxelLibrary HP decomposition/model selection
+var wave5Plan = VoxelSpawnMath.BuildHpPlan(
+    ArenaMath.GetArenaHP(5),
+    VoxelSpawnMath.GetMinEnemyCountForWave(5),
+    VoxelSpawnMath.GetMaxEnemyCountForWave(5));
+AssertEqual(10, wave5Plan.BaseHp, "Wave 5 voxel base HP");
+AssertEqual(39, wave5Plan.RedRequired, "Wave 5 red blocks");
+AssertEqual(3, wave5Plan.WhiteRequired, "Wave 5 white blocks");
+AssertEqual(0, wave5Plan.YellowRequired, "Wave 5 yellow blocks");
+AssertEqual(42, wave5Plan.TotalRequired, "Wave 5 required total");
+AssertEqual(52, wave5Plan.CandidateMaxEnemyCount, "Wave 5 candidate max");
+
+var wave10Plan = VoxelSpawnMath.BuildHpPlan(
+    ArenaMath.GetArenaHP(10),
+    VoxelSpawnMath.GetMinEnemyCountForWave(10),
+    VoxelSpawnMath.GetMaxEnemyCountForWave(10));
+AssertEqual(56, wave10Plan.RedRequired, "Wave 10 red blocks");
+AssertEqual(54, wave10Plan.WhiteRequired, "Wave 10 white blocks");
+AssertEqual(1, wave10Plan.YellowRequired, "Wave 10 yellow blocks");
+AssertEqual(111, wave10Plan.TotalRequired, "Wave 10 required total");
+
+var transformedCounts = VoxelSpawnMath.TransformEnemyCounts(
+    new[] { 20, 10, 5 },
+    convertYellowToWhite: 3,
+    convertWhiteToRed: 4);
+AssertEqual(24, transformedCounts[0], "Transformed red requirement");
+AssertEqual(9, transformedCounts[1], "Transformed white requirement");
+AssertEqual(2, transformedCounts[2], "Transformed yellow requirement");
+
+var syntheticModels = new[]
+{
+    new VoxelModelDescriptor("too-small", 0, 41),
+    new VoxelModelDescriptor("regular-a", 0, 42),
+    new VoxelModelDescriptor("regular-b", 0, 50),
+    new VoxelModelDescriptor("too-large", 0, 53),
+    new VoxelModelDescriptor("future", 100, 45),
+    new VoxelModelDescriptor("boss-5", 999999, 120, 5)
+};
+
+var bossSelected = VoxelSpawnMath.SelectModel(
+    syntheticModels, wave5Plan, 5, randomIndex: 0);
+if (bossSelected?.Id != "boss-5")
+    throw new Exception("Exact boss voxel must bypass normal filters");
+
+var regularSelected = VoxelSpawnMath.SelectModel(
+    syntheticModels, wave5Plan, 6, randomIndex: 1);
+if (regularSelected?.Id != "regular-b")
+    throw new Exception("Voxel candidate selection should use filtered random index");
+
+var eligibleAt6 = VoxelSpawnMath.GetEligibleModels(
+    syntheticModels, wave5Plan, 6);
+AssertEqual(2, eligibleAt6.Count, "Eligible voxel model count");
+
 Console.WriteLine("PortCore smoke tests passed.");
