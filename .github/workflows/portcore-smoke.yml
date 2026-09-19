@@ -1,4 +1,4 @@
-name: PortCore smoke
+name: PortCore validation
 
 on:
   push:
@@ -6,11 +6,13 @@ on:
     paths:
       - "src/PortCore/**"
       - "tests/PortCore.Smoke/**"
+      - "tests/PortCore.TimelineScenario/**"
       - ".github/workflows/portcore-smoke.yml"
   pull_request:
     paths:
       - "src/PortCore/**"
       - "tests/PortCore.Smoke/**"
+      - "tests/PortCore.TimelineScenario/**"
 
 jobs:
   smoke:
@@ -21,3 +23,12 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run --project tests/PortCore.Smoke/PortCore.Smoke.csproj --configuration Release
+
+  timeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run --project tests/PortCore.TimelineScenario/PortCore.TimelineScenario.csproj --configuration Release
