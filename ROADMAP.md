@@ -15,29 +15,37 @@ Status: **complete**
 
 ## Phase 2 — gameplay source recovery
 
-Status: **in progress — portable gameplay core is now compiling-target structured**
+Status: **late stage — headless economy/progression/combat core is operational**
 
 Completed:
 
 - portable enums/models for upgrades and weapons;
-- hero cost/rank progression;
-- infinite Promotion/Training/Spec Ops schedule;
+- all 5 hero trees and hero purchase modes;
+- infinite Promotion / Training / Spec Ops schedule;
 - hero DPS / rate-of-fire / projectile / click contribution math;
 - team upgrade aggregation;
-- click-skill math;
-- active-ability cost and Dimension Shift math;
-- regression smoke vectors;
-- legacy save compatibility layer.
+- Click Pistol progression;
+- Artifact and Weapon Augment canonical data;
+- exact prerequisite graph, buy/sell/refund and Artifact respec;
+- Time Cube / Weapon Cube banks and reward rules;
+- block-level enemy damage/death/reward model;
+- lower-wave farming navigation;
+- boss timer failure/restart behavior;
+- Active Ability purchase/runtime state including Dimension Shift and Cooldown;
+- offline earnings;
+- aggregate `GameState`;
+- regression smoke suite in GitHub Actions;
+- legacy save compatibility reference.
 
-Remaining:
+Remaining before gate:
 
-- Artifact aggregate effect snapshot;
-- Weapon Augment aggregate effects;
-- enemy/gold reward pipeline;
-- deterministic timeline state;
-- Unity-facing adapters and compile dependency ledger.
+- canonical VoxelModel block-layout extraction;
+- deterministic model-spawn definitions;
+- exact projectile/target selection pieces needed by headless combat;
+- one complete deterministic timeline regression scenario;
+- PortCore API freeze / Unity adapter contract.
 
-**Gate:** gameplay core + deterministic headless timeline can reproduce reference progression without Unity.
+**Gate:** gameplay core + deterministic headless timeline reproduces reference progression without Unity.
 
 ## Phase 3 — asset and scene reconstruction
 
