@@ -211,4 +211,38 @@ if (timeline.CompleteEnemy(10) != ArenaClearResult.AdvancedToNextWave)
     throw new Exception("Boss wave must advance after one complete enemy");
 AssertEqual(6, timeline.Wave, "Timeline wave after boss clear");
 
+// Ability runtime state machine
+var rapidFireAbility = new AbilityRuntime(
+    AbilityCatalog.Get(AbilityType.AutomaticFire),
+    artifacts,
+    100);
+AssertEqual(45, rapidFireAbility.DurationSeconds, "Ability duration with artifacts");
+AssertEqual(48, rapidFireAbility.RechargeSeconds, "Ability recharge with artifacts");
+if (!rapidFireAbility.Activate(100)) throw new Exception("Ready ability should activate");
+if (rapidFireAbility.State != AbilityState.Active) throw new Exception("Ability should be active");
+AssertEqual(45, rapidFireAbility.GetRemainingActiveSeconds(100), "Ability active seconds");
+if (rapidFireAbility.Activate(101)) throw new Exception("Active ability must not activate again");
+if (rapidFireAbility.Update(145) != AbilityState.Recharging)
+    throw new Exception("Ability should enter recharge");
+if (rapidFireAbility.Update(193) != AbilityState.Ready)
+    throw new Exception("Ability should become ready");
+
+var dimensionShiftAbility = new AbilityRuntime(
+    AbilityCatalog.Get(AbilityType.DimensionShift),
+    artifacts,
+    0);
+AssertEqual(0, dimensionShiftAbility.DurationSeconds, "Dimension Shift has zero duration");
+AssertEqual(23040, dimensionShiftAbility.RechargeSeconds, "Dimension Shift recharge");
+
+var abilitySet = AbilityCatalog.All
+    .Select(spec => new AbilityRuntime(spec, artifacts, 0))
+    .ToArray();
+abilitySet[0].SetSecondsUntilRecharged(4000, 0);
+abilitySet[(int)AbilityType.Cooldown].SetSecondsUntilRecharged(4000, 0);
+AbilityRuntimeMath.ApplyCooldownAbility(
+    abilitySet,
+    abilitySet[(int)AbilityType.Cooldown]);
+AssertEqual(400, abilitySet[0].GetSecondsUntilRecharged(0), "Cooldown ability reduces other cooldowns");
+AssertEqual(4000, abilitySet[(int)AbilityType.Cooldown].GetSecondsUntilRecharged(0), "Cooldown does not reduce itself");
+
 Console.WriteLine("PortCore smoke tests passed.");
