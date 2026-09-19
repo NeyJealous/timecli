@@ -31,7 +31,8 @@ public sealed class EnemyBlockState
         double maxHealth,
         EnemyType enemyType,
         int timeCubeCount = 0,
-        int weaponCubeCount = 0)
+        int weaponCubeCount = 0,
+        VoxelPoint? position = null)
     {
         if (maxHealth <= 0.0)
             throw new ArgumentOutOfRangeException(nameof(maxHealth));
@@ -41,6 +42,7 @@ public sealed class EnemyBlockState
         EnemyType = enemyType;
         TimeCubeCount = timeCubeCount;
         WeaponCubeCount = weaponCubeCount;
+        Position = position ?? VoxelPoint.Zero;
     }
 
     public double MaxHealth { get; }
@@ -48,8 +50,10 @@ public sealed class EnemyBlockState
     public EnemyType EnemyType { get; }
     public int TimeCubeCount { get; }
     public int WeaponCubeCount { get; }
+    public VoxelPoint Position { get; }
     public bool IsAlive => Health > 0.0;
     public int TargetMask => _targetMask;
+    public int TargetCount { get; private set; }
 
     public void AddTargeted(WeaponType weapon) =>
         _targetMask |= 1 << (int)weapon;
@@ -59,6 +63,8 @@ public sealed class EnemyBlockState
 
     public bool IsTargetedBy(WeaponType weapon) =>
         (_targetMask & (1 << (int)weapon)) != 0;
+
+    public void IncrementTargetCount() => TargetCount++;
 
     public BlockDamageResult ApplyClickDamage(
         double clickDamage,
