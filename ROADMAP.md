@@ -2,7 +2,7 @@
 
 ## Phase 1 — forensic recovery
 
-Status: **baseline complete**
+Status: **complete**
 
 - identify engine/runtime;
 - recover build scene list;
@@ -11,17 +11,33 @@ Status: **baseline complete**
 - identify platform SDK dependencies;
 - recover save-format cryptography.
 
-**Gate:** APK is proven suitable for deterministic reconstruction.
+**Gate passed:** APK is suitable for deterministic reconstruction.
 
 ## Phase 2 — gameplay source recovery
 
-- reconstruct the project's own gameplay classes into a compilable source tree;
-- separate first-party gameplay code from bundled SDK code;
-- map MonoScript references to recovered classes;
-- reconstruct serializable models/enums/delegates;
-- maintain a compile-error ledger for unresolved old-Unity APIs.
+Status: **in progress — portable gameplay core is now compiling-target structured**
 
-**Gate:** gameplay source tree exists with a documented dependency graph.
+Completed:
+
+- portable enums/models for upgrades and weapons;
+- hero cost/rank progression;
+- infinite Promotion/Training/Spec Ops schedule;
+- hero DPS / rate-of-fire / projectile / click contribution math;
+- team upgrade aggregation;
+- click-skill math;
+- active-ability cost and Dimension Shift math;
+- regression smoke vectors;
+- legacy save compatibility layer.
+
+Remaining:
+
+- Artifact aggregate effect snapshot;
+- Weapon Augment aggregate effects;
+- enemy/gold reward pipeline;
+- deterministic timeline state;
+- Unity-facing adapters and compile dependency ledger.
+
+**Gate:** gameplay core + deterministic headless timeline can reproduce reference progression without Unity.
 
 ## Phase 3 — asset and scene reconstruction
 
