@@ -12,8 +12,6 @@ MemoryCaptures/
 .vs/
 .idea/
 .vscode/
-*.csproj
-*.sln
 *.user
 *.suo
 bin/
