@@ -15,55 +15,55 @@ Status: **complete**
 
 ## Phase 2 — gameplay source recovery
 
-Status: **late stage — headless economy/progression/combat core is operational**
+Status: **gate candidate**
 
 Completed:
 
-- portable enums/models for upgrades and weapons;
-- all 5 hero trees and hero purchase modes;
-- infinite Promotion / Training / Spec Ops schedule;
-- hero DPS / rate-of-fire / projectile / click contribution math;
-- team upgrade aggregation;
-- Click Pistol progression;
-- Artifact and Weapon Augment canonical data;
-- exact prerequisite graph, buy/sell/refund and Artifact respec;
-- Time Cube / Weapon Cube banks and reward rules;
-- block-level enemy damage/death/reward model;
-- lower-wave farming navigation;
-- boss timer failure/restart behavior;
-- Active Ability purchase/runtime state including Dimension Shift and Cooldown;
+- portable economy/progression core;
+- all 5 canonical hero trees and purchase modes;
+- infinite Promotion / Training / Spec Ops;
+- Click Pistol and Active Ability progression;
+- Artifact / Weapon Augment canonical data, dependencies and economy;
+- Time Cube / Weapon Cube rules and respec behavior;
+- Arena farm/navigation/boss state;
+- block-level damage/death/rewards;
+- complete 141-model Qubicle corpus extraction locally;
+- VoxelLibrary HP decomposition/model selection;
+- exact block-allocation/fallback rules;
+- headless Arena engine;
 - offline earnings;
-- aggregate `GameState`;
-- regression smoke suite in GitHub Actions;
-- legacy save compatibility reference.
+- deterministic CI scenario from new game through wave 100 -> Time Cubes ->
+  Time Warp -> Artifact purchase.
 
-Remaining before gate:
+Remaining before freeze:
 
-- canonical VoxelModel block-layout extraction;
-- deterministic model-spawn definitions;
-- exact projectile/target selection pieces needed by headless combat;
-- one complete deterministic timeline regression scenario;
-- PortCore API freeze / Unity adapter contract.
+- remaining Hero auto-fire target-selection mechanics;
+- PortCore/Unity adapter contract;
+- rerun real-layout integration once the private originals repository receives
+  the recovered coordinate data.
 
-**Gate:** gameplay core + deterministic headless timeline reproduces reference progression without Unity.
+**Gate:** freeze the portable API once the remaining Hero attack rules are
+covered by regression tests.
 
 ## Phase 3 — asset and scene reconstruction
 
-- export required Texture2D/Sprite/AudioClip/Mesh/Material/Animation data locally;
+- create the modern Unity project/adapters;
+- import private reconstructed voxel/model data;
 - rebuild Splash, Arena and TimeWarp;
 - rebuild Artifacts, WeaponAugments and TimelineSummary additive scenes;
 - restore MonoBehaviour fields/references;
-- validate anchors, camera and layout.
+- validate anchors, camera and layout;
+- restore original visual/audio assets from the private originals workspace.
 
-**Gate:** Arena opens without missing gameplay references.
+**Gate:** Arena opens and completes the tested headless loop without missing
+runtime references.
 
-## Phase 4 — modern Unity migration
+## Phase 4 — modern Unity migration / playable prototype
 
-- create a clean supported Unity project;
-- port reconstructed gameplay code;
-- import reconstructed scene/content mappings;
-- replace obsolete Unity APIs and incompatible shaders;
-- preserve original gameplay math and timing.
+- connect PortCore to Unity presentation;
+- replace obsolete APIs and incompatible shaders;
+- implement touch input and visual projectiles;
+- preserve tested game math/timing.
 
 **Gate:** desktop/editor build completes the core loop offline.
 
@@ -78,7 +78,7 @@ First prototype:
 - IAP/store -> disabled;
 - cloud -> local save only.
 
-**Gate:** gameplay launch/save/progression do not depend on legacy SDKs.
+**Gate:** launch/save/progression do not depend on legacy SDKs.
 
 ## Phase 6 — save compatibility
 
