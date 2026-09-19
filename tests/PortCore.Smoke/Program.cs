@@ -314,4 +314,62 @@ AssertEqual(
         1),
     "Canonical Click Pistol damage");
 
+// Hero purchase planner/runtime
+var pulseRuntime = new HeroRuntime(CanonicalHeroes.PulsePistol);
+
+var oneLevelPlan = pulseRuntime.PlanPurchase(double.PositiveInfinity, HeroBuyMode.OneLevel);
+AssertEqual(1, oneLevelPlan.LevelCount, "One-level plan count");
+AssertEqual(0, oneLevelPlan.UpgradeCount, "One-level upgrade count");
+AssertEqual(45, oneLevelPlan.TotalCost, "One-level hire cost");
+
+var nextUpgradePlan = pulseRuntime.PlanPurchase(double.PositiveInfinity, HeroBuyMode.NextUpgrade);
+AssertEqual(10, nextUpgradePlan.LevelCount, "Next-upgrade level count");
+AssertEqual(0, nextUpgradePlan.UpgradeCount, "Next-upgrade upgrade count");
+AssertEqual(648, nextUpgradePlan.TotalCost, "Cost to Pulse level 10");
+if (!nextUpgradePlan.UpgradeNext) throw new Exception("A normal upgrade should be next at level 10");
+
+var nextRankPlan = pulseRuntime.PlanPurchase(double.PositiveInfinity, HeroBuyMode.NextRank);
+AssertEqual(100, nextRankPlan.LevelCount, "Next-rank level count");
+AssertEqual(5, nextRankPlan.UpgradeCount, "Next-rank intermediate upgrade count");
+AssertEqual(1593793, nextRankPlan.TotalCost, "Cost to first promotion boundary");
+if (!nextRankPlan.PromotionNext) throw new Exception("Promotion should be next at level 100");
+
+var noGoldPlan = pulseRuntime.PlanPurchase(44, HeroBuyMode.OneLevel);
+if (noGoldPlan.Affordable) throw new Exception("45-cost hire must not be affordable with 44 gold");
+var failedPurchase = pulseRuntime.Purchase(44, HeroBuyMode.OneLevel);
+if (failedPurchase.Purchased) throw new Exception("Unaffordable hero purchase should not mutate state");
+AssertEqual(0, pulseRuntime.Level, "Failed purchase keeps hero level");
+
+var toUpgrade = pulseRuntime.Purchase(648, HeroBuyMode.NextUpgrade);
+if (!toUpgrade.Purchased) throw new Exception("Next-upgrade purchase should succeed");
+AssertEqual(10, pulseRuntime.Level, "Pulse level after next-upgrade purchase");
+AssertEqual(0, pulseRuntime.PurchasedUpgrades, "Boundary upgrade is not auto-purchased");
+
+var upgradeOnly = pulseRuntime.PlanPurchase(720, HeroBuyMode.NextUpgrade);
+AssertEqual(0, upgradeOnly.LevelCount, "Available-upgrade plan has no level purchase");
+AssertEqual(1, upgradeOnly.UpgradeCount, "Available-upgrade plan buys one upgrade");
+AssertEqual(720, upgradeOnly.TotalCost, "First Pulse upgrade cost");
+if (upgradeOnly.UpgradeNext || upgradeOnly.PromotionNext || upgradeOnly.TrainingNext || upgradeOnly.SpecOpsNext)
+    throw new Exception("Immediate-upgrade path clears all next flags");
+
+var purchasedUpgrade = pulseRuntime.Purchase(720, HeroBuyMode.NextUpgrade);
+if (!purchasedUpgrade.Purchased) throw new Exception("First Pulse upgrade should purchase");
+AssertEqual(1, pulseRuntime.PurchasedUpgrades, "Pulse purchased upgrade count");
+
+var maxRuntime = new HeroRuntime(CanonicalHeroes.PulsePistol);
+var maxPlan = maxRuntime.PlanPurchase(double.PositiveInfinity, HeroBuyMode.Max);
+AssertEqual(1000, maxPlan.LevelCount, "Max mode level cap");
+AssertEqual(34, maxPlan.UpgradeCount, "Max mode upgrades before level 1000 boundary");
+var maxResult = HeroPurchaseMath.Apply(
+    maxRuntime.Spec,
+    maxRuntime.Schedule,
+    maxRuntime.Level,
+    maxRuntime.PurchasedUpgrades,
+    double.PositiveInfinity,
+    maxPlan);
+if (!maxResult.Purchased) throw new Exception("Infinite-gold max purchase should succeed");
+AssertEqual(1000, maxResult.NewLevel, "Max purchase level");
+AssertEqual(34, maxResult.NewPurchasedUpgrades, "Max purchase upgrade count");
+AssertEqual(10, maxRuntime.Schedule.GetRank(maxResult.NewPurchasedUpgrades), "Rank before Spec Ops upgrade");
+
 Console.WriteLine("PortCore smoke tests passed.");
