@@ -42,6 +42,6 @@ public static partial class CanonicalHeroes
             U(34, 900, (UpgradeMod.Training, 5.0), (UpgradeMod.FireRate, 10.0), (UpgradeMod.Projectiles, 8.0)),
             U(35, 1000, (UpgradeMod.SpecOps, 1.0)),
         };
-        return new HeroBaseSpec(1, WeaponType.FlakCannon, 22.0, 2.5f, 1, upgrades, "Flak Cannon");
+        return new HeroBaseSpec(1, WeaponType.FlakCannon, 22.0, 2.5f, 1, upgrades, "Flak Cannon", BaseProjectileCount: 4);
     }
 }
