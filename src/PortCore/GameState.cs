@@ -180,29 +180,40 @@ public sealed class GameState
     public bool IsAbilityActive(AbilityType type) =>
         ActiveAbilities.IsActive(type);
 
-    public double GetTeamDps()
+    public HeroDpsMultipliers GetHeroDpsMultipliers(int heroId)
     {
+        var hero = Heroes[heroId];
         var artifacts = ArtifactEffects;
         var team = GetTeamUpgradeEffects();
 
+        return new HeroDpsMultipliers(
+            DimensionShift: ActiveAbilities.GetDimensionShiftMultiplier(artifacts),
+            UnitedFront: team.UnitedFrontMultiplier,
+            AchievementDps: 1.0,
+            TimeCubeDps: TimeCubes.DpsMultiplier,
+            TeamDps: artifacts.TeamDpsMultiplier,
+            WeaponDps: artifacts.GetWeaponDpsMultiplier(hero.Spec.Weapon),
+            TeamWorkActive: IsAbilityActive(AbilityType.TeamWork),
+            TeamWorkDps: artifacts.TeamWorkDpsMultiplier);
+    }
+
+    public double GetHeroDps(int heroId)
+    {
+        var hero = Heroes[heroId];
+        return HeroCombatMath.GetDpsForLevel(
+            hero.Spec,
+            hero.Schedule,
+            hero.Level,
+            hero.PurchasedUpgrades,
+            GetHeroDpsMultipliers(heroId));
+    }
+
+    public double GetTeamDps()
+    {
         double total = 0.0;
-        foreach (var hero in Heroes)
-        {
-            total += HeroCombatMath.GetDpsForLevel(
-                hero.Spec,
-                hero.Schedule,
-                hero.Level,
-                hero.PurchasedUpgrades,
-                new HeroDpsMultipliers(
-                    DimensionShift: ActiveAbilities.GetDimensionShiftMultiplier(artifacts),
-                    UnitedFront: team.UnitedFrontMultiplier,
-                    AchievementDps: 1.0,
-                    TimeCubeDps: TimeCubes.DpsMultiplier,
-                    TeamDps: artifacts.TeamDpsMultiplier,
-                    WeaponDps: artifacts.GetWeaponDpsMultiplier(hero.Spec.Weapon),
-                    TeamWorkActive: IsAbilityActive(AbilityType.TeamWork),
-                    TeamWorkDps: artifacts.TeamWorkDpsMultiplier));
-        }
+
+        for (int i = 0; i < Heroes.Length; i++)
+            total += GetHeroDps(i);
 
         return total;
     }
