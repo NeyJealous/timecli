@@ -4,73 +4,94 @@
 
 The portable core now contains independent compatibility implementations for:
 
-- Arena HP and cube progression;
-- Artifact and Weapon Augment upgrade costs;
+- Arena HP, wave progression and cube spawn rules;
+- lower-wave farming and previous/next wave navigation;
+- boss timer, timeout and same-wave restart behavior;
+- Artifact and Weapon Augment canonical balance tables;
+- exact Artifact / Weapon Augment prerequisite graphs;
+- one-level buy, sell/refund, max-level checks and total-spent accounting;
+- Artifact respec semantics using all lifetime + pending Time Cubes;
 - hero level/upgrade costs;
 - infinite Promotion / Training / Spec Ops schedule;
+- all 5 canonical hero trees (35 base upgrades each);
+- hero purchase modes: x1 / next upgrade / next rank / max;
 - rank and Spec Ops progression;
 - hero DPS calculation pipeline;
 - fire-rate reset/multiplier behavior;
 - projectile-count reset behavior;
 - hero extra-click contribution;
 - team United Front / critical / gold-find aggregation;
-- click-skill cost and damage pipeline;
-- active-ability purchase cost;
-- Dimension Shift multiplier;
-- legacy save codec.
+- Click Pistol progression and purchasing;
+- block-level BoxEnemy-style HP and damage state;
+- targeted-click multipliers and enemy-color click multipliers;
+- normal / rainbow / Time Cube / Weapon Cube death rewards;
+- per-timeline Time/Weapon Cube reward-wave history;
+- Gold / Time Cube / Weapon Cube banks;
+- all 10 Active Ability definitions and runtime states;
+- sequential Active Ability purchasing;
+- Cooldown behavior;
+- Dimension Shift stack/reset behavior;
+- offline earnings with the original 172800-second cap and fallback formula;
+- headless aggregate GameState;
+- legacy save-format codec reference.
 
-## Confirmed upgrade enums
+## Confirmed Arena behavior
 
-`UpgradeMod`:
+Boss failure in Time Clickers 1.4.5 does **not** move the player to the previous wave.
 
-| id | meaning |
-|---:|---|
-| 0 | FireRate |
-| 1 | HeroDps |
-| 2 | Projectiles |
-| 3 | GoldFind |
-| 4 | ClickDamage |
-| 5 | UnitedFront |
-| 6 | Promotion |
-| 7 | Collider |
-| 8 | CriticalChance |
-| 9 | CriticalDamage |
-| 10 | Splash |
-| 11 | Training |
-| 12 | SpecOps |
+The original flow is:
 
-Weapon ids:
+`boss timer expires -> clear boss -> wait 0.5 s -> restart the same boss wave`.
 
-0 Pistol, 1 Flak Cannon, 2 Spread Rifle, 3 Rocket Launcher, 4 Particle Ball.
+Lower regular waves act as explicit farm waves: once the player manually moves below `MaxWave`, the first cleared enemy sets the per-wave counter to one, but subsequent clears do not increase it, so the game does not automatically return to the highest wave.
 
-## Infinite-upgrade behavior recovered
+This is now represented by `TimelineProgression`.
 
-The original base hero tree has 35 upgrades. Post-1000 Spec Ops cycles reuse the base tree but omit every upgrade whose required level ends in `85`; therefore each generated cycle contains 30 upgrades.
+## Progression dependency behavior
 
-Generated required levels are shifted by `specOpsLevel * 1000`. Generated upgrade ids remain globally monotonic.
+An Artifact or Weapon Augment is locked until **all** entries in its `requires` array own at least one level.
 
-This behavior is implemented by `InfiniteUpgradeSchedule`.
+Selling follows the original rule:
+
+- level 0: cannot sell;
+- level >1: may sell one level;
+- level 1: cannot sell if any currently owned dependent node requires it.
+
+Selling refunds exactly the price paid for the previous level.
+
+## Headless combat boundary
+
+`EnemyBlockState` now mirrors the independently testable part of `BoxEnemy`:
+
+- max/current HP;
+- target mask;
+- targeted click amplification;
+- color-specific click amplification;
+- overkill;
+- block death;
+- gold/cube reward output.
+
+`EnemyModelState` aggregates blocks into one spawned voxel model.
+
+The remaining model-construction work is intentionally separate because exact block counts, positions and color/type distribution come from Unity VoxelModel asset data rather than from the gameplay assembly alone.
 
 ## Compile / port ledger
 
 Still outside the portable core:
 
-- Unity-facing MonoBehaviours and event wiring;
-- targeting, projectile spawning, collisions and VFX;
-- Enemy runtime and block destruction;
-- Arena coroutine/state transitions;
+- extraction of canonical VoxelModel block layouts into portable model definitions;
+- exact hero projectile target-selection / collision behavior;
+- Rocket splash and Particle Ball collision geometry;
+- achievement modifiers and statistics side effects;
 - UI;
-- old ObscuredInt/ObscuredULong wrappers (will be replaced by normal numeric state);
-- achievements/statistics side effects;
-- legacy platform SDKs;
-- scene serialization binding.
+- Unity-facing MonoBehaviours and event wiring;
+- scene serialization binding;
+- legacy platform SDKs.
 
-These are being kept separate from PortCore so game math can be regression-tested without Unity.
+## Phase 2 gate remaining
 
-## Next gate
-
-1. Reconstruct Artifact aggregate effects into a portable snapshot.
-2. Reconstruct Weapon Augment aggregate effects.
-3. Reconstruct Gold/Enemy reward math.
-4. Build a deterministic headless timeline simulation.
-5. Only after those tests pass, connect PortCore to the modern Unity project.
+1. Extract canonical VoxelModel layouts used by Arena.
+2. Build deterministic model-spawn definitions from those layouts.
+3. Connect model completion to `TimelineProgression` in one end-to-end headless simulation.
+4. Add reference scenarios from new game through boss / Time Cube / Time Warp.
+5. Freeze PortCore API and start the modern Unity adapter layer.
