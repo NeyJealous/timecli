@@ -372,4 +372,50 @@ AssertEqual(1000, maxResult.NewLevel, "Max purchase level");
 AssertEqual(34, maxResult.NewPurchasedUpgrades, "Max purchase upgrade count");
 AssertEqual(10, maxRuntime.Schedule.GetRank(maxResult.NewPurchasedUpgrades), "Rank before Spec Ops upgrade");
 
+// Skill purchase runtime
+var skillRuntime = new SkillRuntime(CanonicalSkills.ClickPistol);
+var skillToUpgrade = skillRuntime.PlanPurchase(1000, HeroBuyMode.NextUpgrade);
+AssertEqual(10, skillToUpgrade.LevelCount, "Skill next-upgrade level count");
+AssertEqual(135, skillToUpgrade.TotalCost, "Skill cost to level 10");
+if (!skillToUpgrade.UpgradeNext) throw new Exception("Skill upgrade should be next at level 10");
+
+var skillLevels = skillRuntime.Purchase(1000, HeroBuyMode.NextUpgrade);
+if (!skillLevels.Purchased) throw new Exception("Skill bulk level purchase should succeed");
+AssertEqual(10, skillRuntime.Level, "Skill level after bulk purchase");
+AssertEqual(0, skillRuntime.PurchasedUpgrades, "Skill boundary upgrade remains unpurchased");
+
+var skillUpgrade = skillRuntime.PlanPurchase(1000, HeroBuyMode.NextUpgrade);
+if (!skillUpgrade.PurchasesUpgrade) throw new Exception("Skill should purchase available upgrade");
+AssertEqual(87, skillUpgrade.TotalCost, "Skill first upgrade cost");
+skillRuntime.Purchase(1000, HeroBuyMode.NextUpgrade);
+AssertEqual(1, skillRuntime.PurchasedUpgrades, "Skill purchased upgrade count");
+
+// Aggregate headless game state / Time Warp
+var game = new GameState();
+AssertEqual(1000, game.Gold.TotalGold, "New timeline starting gold");
+AssertEqual(1, game.Arena.Wave, "New timeline starting wave");
+AssertEqual(1, game.GetClickDamage(), "Initial click damage");
+
+if (!game.TryPurchaseHero(0, HeroBuyMode.NextUpgrade))
+    throw new Exception("GameState should buy Pulse levels with starting gold");
+AssertEqual(10, game.Heroes[0].Level, "GameState Pulse level");
+AssertEqual(352, game.Gold.TotalGold, "Gold after Pulse level-10 purchase");
+
+game.TimeCubes.AddPendingReward(25);
+game.WeaponCubes.Add(7);
+game.Abilities[(int)AbilityType.AutomaticFire].Activate(0);
+ulong earnedOnWarp = game.TimeWarp();
+
+AssertEqual(25, (double)earnedOnWarp, "Time Warp earned cubes");
+AssertEqual(25, (double)game.TimeCubes.Spendable, "Spendable Time Cubes after warp");
+AssertEqual(25, (double)game.TimeCubes.LifetimeEarned, "Lifetime Time Cubes after warp");
+AssertEqual(3.5, game.TimeCubes.DpsMultiplier, "Time Cube DPS after warp");
+AssertEqual(7, (double)game.WeaponCubes.Spendable, "Weapon Cubes persist through warp");
+AssertEqual(0, game.Heroes[0].Level, "Heroes reset on Time Warp");
+AssertEqual(0, game.ClickPistol.Level, "Skill resets on Time Warp");
+AssertEqual(1000, game.Gold.TotalGold, "Gold resets to artifact starting gold");
+AssertEqual(1, game.Arena.Wave, "Arena resets to artifact start wave");
+if (game.Abilities[(int)AbilityType.AutomaticFire].State != AbilityState.Ready)
+    throw new Exception("Abilities reset on Time Warp");
+
 Console.WriteLine("PortCore smoke tests passed.");
