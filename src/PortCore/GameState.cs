@@ -17,6 +17,7 @@ public sealed class GameState
         Gold = new GoldWallet();
         TimeCubes = new TimeCubeBank();
         WeaponCubes = new WeaponCubeBankState();
+        ArenaRewards = new ArenaRewardHistory();
 
         Heroes = CanonicalHeroes.All.Select(h => new HeroRuntime(h)).ToArray();
         ClickPistol = new SkillRuntime(CanonicalSkills.ClickPistol);
@@ -35,6 +36,7 @@ public sealed class GameState
     public GoldWallet Gold { get; }
     public TimeCubeBank TimeCubes { get; }
     public WeaponCubeBankState WeaponCubes { get; }
+    public ArenaRewardHistory ArenaRewards { get; }
 
     public HeroRuntime[] Heroes { get; }
     public SkillRuntime ClickPistol { get; }
@@ -72,6 +74,7 @@ public sealed class GameState
 
         var effects = ArtifactEffects;
         Arena.TimeWarpTo(effects.StartWave);
+        ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
 
@@ -149,6 +152,7 @@ public sealed class GameState
 
         var effects = ArtifactEffects;
         Arena.TimeWarpTo(effects.StartWave);
+        ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
         RecalculateAbilities(0);
@@ -163,14 +167,21 @@ public sealed class GameState
             ability.Recalculate(effects, nowSeconds);
     }
 
-    public double GetTeamDps()
+    public TeamUpgradeEffects GetTeamUpgradeEffects()
     {
-        var artifacts = ArtifactEffects;
-
         var schedules = Heroes.Select(h =>
             new HeroUpgradeProgress(h.Schedule, h.PurchasedUpgrades));
 
-        var team = TeamMath.RecalculateBaseUpgradeEffects(schedules);
+        return TeamMath.RecalculateBaseUpgradeEffects(schedules);
+    }
+
+    public bool IsAbilityActive(AbilityType type) =>
+        Abilities[(int)type].State == AbilityState.Active;
+
+    public double GetTeamDps()
+    {
+        var artifacts = ArtifactEffects;
+        var team = GetTeamUpgradeEffects();
 
         double total = 0.0;
         foreach (var hero in Heroes)
@@ -187,12 +198,15 @@ public sealed class GameState
                     TimeCubeDps: TimeCubes.DpsMultiplier,
                     TeamDps: artifacts.TeamDpsMultiplier,
                     WeaponDps: artifacts.GetWeaponDpsMultiplier(hero.Spec.Weapon),
-                    TeamWorkActive: false,
+                    TeamWorkActive: IsAbilityActive(AbilityType.TeamWork),
                     TeamWorkDps: artifacts.TeamWorkDpsMultiplier));
         }
 
         return total;
     }
+
+    public double GetHeroesGoldFindMultiplier() =>
+        GetTeamUpgradeEffects().GoldFindMultiplier;
 
     public double GetHeroExtraClickDamage()
     {
@@ -210,11 +224,125 @@ public sealed class GameState
             : 0.0;
     }
 
-    public double GetClickDamage()
+    public float GetCriticalChance()
     {
         var artifacts = ArtifactEffects;
-        return ClickPistol.GetDamage(
+        var team = GetTeamUpgradeEffects();
+
+        return SkillMath.GetCriticalChance(
+            team.CriticalChance,
+            achievementAdditionalChance: 0f,
+            artifactAdditionalChance: artifacts.CriticalStrikeChance,
+            augmentedAimActive: IsAbilityActive(AbilityType.AugmentedAim),
+            augmentedAimMultiplier: artifacts.AdditionalAugmentedAim);
+    }
+
+    public double GetCriticalMultiplier()
+    {
+        var artifacts = ArtifactEffects;
+        var team = GetTeamUpgradeEffects();
+
+        return SkillMath.GetCriticalMultiplier(
+            team.CriticalMultiplier,
+            overchargedActive: IsAbilityActive(AbilityType.Overcharged),
+            additionalOverchargedMultiplier: artifacts.AdditionalOverchargedMultiplier,
+            artifactAdditionalCriticalMultiplier: artifacts.AdditionalCriticalMultiplier);
+    }
+
+    public double GetClickDamage(bool isCritical = false)
+    {
+        var artifacts = ArtifactEffects;
+        double baseDamage = ClickPistol.GetDamage(
             GetHeroExtraClickDamage(),
             artifacts.ClickDamageMultiplier);
+
+        return SkillMath.GetClickDamage(
+            baseDamage,
+            achievementAdditionalClickDamage: 0.0,
+            isCritical,
+            GetCriticalMultiplier(),
+            explosiveShotsActive: IsAbilityActive(AbilityType.ExplosiveShots),
+            explosiveShotsMultiplier: artifacts.ExplosiveShotsMultiplier);
+    }
+
+    public int ResolveTimeCubeSpawn(float random01) =>
+        SpawnRulesMath.ResolveTimeCubeReward(
+            Arena.Wave,
+            ArenaRewards.HasTimeCubeReward(Arena.Wave),
+            ArtifactEffects,
+            random01);
+
+    public int ResolveWeaponCubeSpawn(float random01) =>
+        SpawnRulesMath.ResolveWeaponCubeReward(
+            Arena.Wave,
+            ArenaRewards.HasWeaponCubeReward(Arena.Wave),
+            WeaponAugmentEffects,
+            random01);
+
+    public BlockDamageResult ApplyClickToBlock(
+        EnemyBlockState block,
+        bool isCritical = false)
+    {
+        var result = block.ApplyClickDamage(
+            GetClickDamage(isCritical),
+            ArtifactEffects,
+            GetHeroesGoldFindMultiplier(),
+            IsAbilityActive(AbilityType.GoldRush));
+
+        ApplyBlockReward(block, result);
+        return result;
+    }
+
+    public BlockDamageResult ApplyDamageToBlock(
+        EnemyBlockState block,
+        double damage)
+    {
+        var result = block.ApplyDamage(
+            damage,
+            ArtifactEffects,
+            GetHeroesGoldFindMultiplier(),
+            IsAbilityActive(AbilityType.GoldRush));
+
+        ApplyBlockReward(block, result);
+        return result;
+    }
+
+    public OfflineProgressionResult ApplyOfflineEarnings(double secondsSinceSave)
+    {
+        var result = OfflineProgression.Calculate(
+            secondsSinceSave,
+            GetTeamDps(),
+            Gold.TimelineGoldPerSecond,
+            GetHeroesGoldFindMultiplier(),
+            ArtifactEffects.GoldFindMultiplier,
+            ArenaMath.GetArenaHP(Arena.Wave));
+
+        if (result.GoldEarned > 0.0)
+            Gold.Add(result.GoldEarned);
+
+        return result;
+    }
+
+    private void ApplyBlockReward(
+        EnemyBlockState block,
+        BlockDamageResult result)
+    {
+        if (!result.Killed)
+            return;
+
+        if (result.Reward.Gold > 0.0)
+            Gold.Add(result.Reward.Gold);
+
+        if (result.Reward.TimeCubes > 0)
+        {
+            ArenaRewards.MarkTimeCubeReward(Arena.Wave);
+            TimeCubes.AddPendingReward(result.Reward.TimeCubes);
+        }
+
+        if (result.Reward.WeaponCubes > 0)
+        {
+            ArenaRewards.MarkWeaponCubeReward(Arena.Wave);
+            WeaponCubes.Add(result.Reward.WeaponCubes);
+        }
     }
 }
