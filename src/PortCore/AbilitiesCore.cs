@@ -90,10 +90,11 @@ public sealed class AbilityRuntime
 
     public AbilityState Update(double nowSeconds)
     {
-        if (State == AbilityState.Active && nowSeconds >= DeactivateAt)
-            State = AbilityState.Recharging;
+        var stateAtStart = State;
 
-        if (State == AbilityState.Recharging && nowSeconds >= RechargedAt)
+        if (stateAtStart == AbilityState.Active && nowSeconds >= DeactivateAt)
+            State = AbilityState.Recharging;
+        else if (stateAtStart == AbilityState.Recharging && nowSeconds >= RechargedAt)
             State = AbilityState.Ready;
 
         return State;
