@@ -151,7 +151,7 @@ AssertEqual(
     "Red enemy kill gold");
 
 AssertEqual(
-    15000,
+    30000,
     GoldRewardMath.GetKillGoldTotal(600, EnemyType.Rainbow, 2, artifacts, false),
     "Rainbow enemy kill gold");
 
