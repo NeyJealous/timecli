@@ -42,6 +42,6 @@ public static partial class CanonicalHeroes
             U(34, 900, (UpgradeMod.Training, 5.0), (UpgradeMod.FireRate, 10.0), (UpgradeMod.Collider, 10.0)),
             U(35, 1000, (UpgradeMod.SpecOps, 1.0)),
         };
-        return new HeroBaseSpec(4, WeaponType.ParticleBall, 976.0, 0.75f, 4, upgrades, "Particle Ball");
+        return new HeroBaseSpec(4, WeaponType.ParticleBall, 976.0, 0.75f, 4, upgrades, "Particle Ball", BaseCollider: 5.0);
     }
 }
