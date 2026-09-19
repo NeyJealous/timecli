@@ -42,6 +42,6 @@ public static partial class CanonicalHeroes
             U(34, 900, (UpgradeMod.Training, 5.0), (UpgradeMod.FireRate, 10.0), (UpgradeMod.Projectiles, 6.0)),
             U(35, 1000, (UpgradeMod.SpecOps, 1.0)),
         };
-        return new HeroBaseSpec(2, WeaponType.SpreadRifle, 74.0, 2.0f, 2, upgrades, "Spread Rifle");
+        return new HeroBaseSpec(2, WeaponType.SpreadRifle, 74.0, 2.0f, 2, upgrades, "Spread Rifle", BaseProjectileCount: 3);
     }
 }
