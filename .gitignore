@@ -1,0 +1,55 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+MemoryCaptures/
+
+# IDE / .NET
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.user
+*.suo
+bin/
+obj/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reverse-engineering inputs / recovered proprietary binaries
+*.apk
+*.ipa
+*.obb
+*.dll
+*.so
+*.a
+*.framework
+*.xcframework
+*.assets
+*.resource
+globalgamemanagers
+globalgamemanagers.*
+sharedassets*
+level0
+level1
+
+# Extracted original media
+original-assets/
+extracted-assets/
+reconstructed_unity/
+managed/
+il/full-decompile/
+
+# Local tooling output
+work/
+tmp/
+out/
+dist/
+*.log
