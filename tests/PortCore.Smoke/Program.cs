@@ -7,12 +7,6 @@ static void AssertEqual(double expected, double actual, string name, double rela
         throw new Exception($"{name}: expected {expected:R}, got {actual:R}");
 }
 
-static void AssertEqual(long expected, long actual, string name)
-{
-    if (expected != actual)
-        throw new Exception($"{name}: expected {expected}, got {actual}");
-}
-
 static UpgradeSpec U(int level, params (UpgradeMod Mod, double Value)[] mods)
 {
     var dict = new Dictionary<UpgradeMod, double>();
