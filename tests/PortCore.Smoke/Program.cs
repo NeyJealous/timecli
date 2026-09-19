@@ -418,4 +418,87 @@ AssertEqual(1, game.Arena.Wave, "Arena resets to artifact start wave");
 if (game.Abilities[(int)AbilityType.AutomaticFire].State != AbilityState.Ready)
     throw new Exception("Abilities reset on Time Warp");
 
+// Artifact economy: prerequisites, exact refund and dependency-safe selling
+var artifactBank = new TimeCubeBank();
+artifactBank.AddPendingReward(1000);
+artifactBank.TimeWarp();
+var artifactTree = new ArtifactLoadout();
+
+var lockedArtifactBuy = ArtifactEconomy.BuyOne(
+    artifactTree, artifactBank, ArtifactType.GoldFindRed);
+if (lockedArtifactBuy.Succeeded || lockedArtifactBuy.Reason != "locked")
+    throw new Exception("GoldFindRed must be locked before GoldFind is owned");
+AssertEqual(1000, (double)artifactBank.Spendable, "Locked artifact purchase does not spend cubes");
+
+var goldFindBuy = ArtifactEconomy.BuyOne(
+    artifactTree, artifactBank, ArtifactType.GoldFind);
+if (!goldFindBuy.Succeeded) throw new Exception("GoldFind first level should purchase");
+AssertEqual(1, (double)goldFindBuy.CostOrRefund, "GoldFind first-level cost");
+AssertEqual(999, (double)artifactBank.Spendable, "Time Cubes after GoldFind purchase");
+
+var redGoldBuy = ArtifactEconomy.BuyOne(
+    artifactTree, artifactBank, ArtifactType.GoldFindRed);
+if (!redGoldBuy.Succeeded) throw new Exception("GoldFindRed should unlock after GoldFind");
+AssertEqual(2, (double)ArtifactEconomy.GetTotalSpent(artifactTree), "Total Artifact spend");
+
+if (ArtifactEconomy.CanSell(artifactTree, ArtifactType.GoldFind))
+    throw new Exception("Required Artifact at level 1 cannot be sold while dependent is owned");
+
+var redGoldSell = ArtifactEconomy.SellOne(
+    artifactTree, artifactBank, ArtifactType.GoldFindRed);
+if (!redGoldSell.Succeeded) throw new Exception("GoldFindRed sell should succeed");
+AssertEqual(1, (double)redGoldSell.CostOrRefund, "Artifact sell refunds exact previous-level cost");
+
+var goldFindSell = ArtifactEconomy.SellOne(
+    artifactTree, artifactBank, ArtifactType.GoldFind);
+if (!goldFindSell.Succeeded) throw new Exception("GoldFind should sell after dependent is removed");
+AssertEqual(1000, (double)artifactBank.Spendable, "Artifact round-trip refund");
+
+// Weapon Augment economy
+var weaponBank = new WeaponCubeBankState();
+weaponBank.Add(1000);
+var augmentTree = new WeaponAugmentLoadout();
+
+var lockedAugmentBuy = WeaponAugmentEconomy.BuyOne(
+    augmentTree, weaponBank, WeaponAugmentType.ClickLauncherClicks);
+if (lockedAugmentBuy.Succeeded || lockedAugmentBuy.Reason != "locked")
+    throw new Exception("ClickLauncherClicks must be locked before launcher unlock");
+
+var launcherUnlock = WeaponAugmentEconomy.BuyOne(
+    augmentTree, weaponBank, WeaponAugmentType.ClickLauncherUnlock);
+if (!launcherUnlock.Succeeded) throw new Exception("Click Launcher unlock should purchase");
+AssertEqual(1, (double)launcherUnlock.CostOrRefund, "Click Launcher unlock cost");
+
+var launcherClicks = WeaponAugmentEconomy.BuyOne(
+    augmentTree, weaponBank, WeaponAugmentType.ClickLauncherClicks);
+if (!launcherClicks.Succeeded) throw new Exception("Click Launcher clicks should purchase");
+AssertEqual(5, (double)launcherClicks.CostOrRefund, "Click Launcher clicks first cost");
+AssertEqual(6, (double)WeaponAugmentEconomy.GetTotalSpent(augmentTree), "Total Weapon Augment spend");
+
+if (WeaponAugmentEconomy.CanSell(augmentTree, WeaponAugmentType.ClickLauncherUnlock))
+    throw new Exception("Launcher unlock cannot sell while dependent augment is owned");
+
+WeaponAugmentEconomy.SellOne(
+    augmentTree, weaponBank, WeaponAugmentType.ClickLauncherClicks);
+WeaponAugmentEconomy.SellOne(
+    augmentTree, weaponBank, WeaponAugmentType.ClickLauncherUnlock);
+AssertEqual(1000, (double)weaponBank.Spendable, "Weapon Augment round-trip refund");
+
+// Full original-style Artifact respec
+var respecGame = new GameState();
+respecGame.TimeCubes.AddPendingReward(100);
+respecGame.TimeWarp();
+var boughtForRespec = respecGame.BuyArtifact(ArtifactType.GoldFind);
+if (!boughtForRespec.Succeeded) throw new Exception("Respec fixture Artifact purchase failed");
+AssertEqual(99, (double)respecGame.TimeCubes.Spendable, "Spent Time Cube before respec");
+
+respecGame.TimeCubes.AddPendingReward(25);
+ulong respecPending = respecGame.RespecArtifacts();
+AssertEqual(25, (double)respecPending, "Respec includes pending timeline Time Cubes");
+AssertEqual(125, (double)respecGame.TimeCubes.LifetimeEarned, "Respec lifetime Time Cubes");
+AssertEqual(125, (double)respecGame.TimeCubes.Spendable, "Respec restores all earned Time Cubes");
+AssertEqual(0, (double)respecGame.Artifacts.GetLevel(ArtifactType.GoldFind), "Respec clears Artifact tree");
+AssertEqual(1000, respecGame.Gold.TotalGold, "Respec starts fresh timeline with default starting gold");
+AssertEqual(1, respecGame.Arena.Wave, "Respec resets arena to default start wave");
+
 Console.WriteLine("PortCore smoke tests passed.");
