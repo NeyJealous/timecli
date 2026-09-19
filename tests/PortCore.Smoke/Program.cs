@@ -273,4 +273,45 @@ AssertEqual(1.2, teamEffects.UnitedFrontMultiplier, "Canonical team United Front
 AssertEqual(1.25, teamEffects.GoldFindMultiplier, "Canonical team gold find");
 AssertEqual(0.02, teamEffects.CriticalChance, "Canonical team critical chance", 1e-6);
 
+// Canonical artifact / augment loadouts
+var artifactLoadout = new ArtifactLoadout();
+var defaultArtifacts = artifactLoadout.BuildEffects();
+AssertEqual(1.0, defaultArtifacts.GoldFindMultiplier, "Default artifact global gold");
+AssertEqual(1.0, defaultArtifacts.GoldFindRed, "Default red gold");
+AssertEqual(0.25, defaultArtifacts.TimeCubeChance, "Default Time Cube chance", 1e-6);
+AssertEqual(1.0, defaultArtifacts.TimeCubeMultiplier, "Default Time Cube find multiplier");
+AssertEqual(30, defaultArtifacts.BossTime, "Default boss timer");
+AssertEqual(10, defaultArtifacts.EnemiesToAdvance, "Default enemies to advance");
+AssertEqual(0.1, defaultArtifacts.RapidFireDelay, "Default rapid fire delay", 1e-6);
+AssertEqual(1.05, defaultArtifacts.DimensionShiftMultiplier, "Default Dimension Shift multiplier", 1e-12);
+
+artifactLoadout.SetLevel(ArtifactType.GoldFind, 10);
+defaultArtifacts = artifactLoadout.BuildEffects();
+AssertEqual(1.3, defaultArtifacts.GoldFindMultiplier, "Artifact loadout level evaluation", 1e-12);
+
+var augmentLoadout = new WeaponAugmentLoadout();
+var defaultAugments = augmentLoadout.BuildEffects();
+AssertEqual(25, defaultAugments.WeaponCubeChancePercent, "Default Weapon Cube chance");
+AssertEqual(1000, defaultAugments.WeaponCubeStartWave, "Default Weapon Cube start wave");
+AssertEqual(19, defaultAugments.ClickPistolGoldSpawnChance, "Default hit-gold chance");
+if (defaultAugments.ClickLauncherUnlocked) throw new Exception("Click Launcher must start locked");
+
+augmentLoadout.SetLevel(WeaponAugmentType.WeaponCubeFind, 10);
+defaultAugments = augmentLoadout.BuildEffects();
+AssertEqual(5, defaultAugments.WeaponCubeFindPercent, "Weapon Cube Find level evaluation");
+
+// Canonical click skill
+AssertEqual(6, CanonicalSkills.ClickPistol.Upgrades.Count, "Click Pistol upgrade count");
+AssertEqual(3, CanonicalSkills.ClickPistol.Upgrades[4].Get(UpgradeMod.ClickDamage), "Click Pistol 100 upgrade");
+AssertEqual(
+    600,
+    SkillMath.GetDamageForLevel(
+        CanonicalSkills.ClickPistol.BaseDamage,
+        50,
+        CanonicalSkills.ClickPistol.Upgrades,
+        3,
+        24,
+        1),
+    "Canonical Click Pistol damage");
+
 Console.WriteLine("PortCore smoke tests passed.");
