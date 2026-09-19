@@ -106,6 +106,45 @@ public static class HeroCombatMath
         return value;
     }
 
+    public static double GetColliderMod(
+        double baseCollider,
+        InfiniteUpgradeSchedule schedule,
+        int purchasedUpgrades,
+        double artifactColliderMultiplier = 1.0)
+    {
+        double value = baseCollider;
+
+        foreach (var upgrade in schedule.EnumeratePurchased(purchasedUpgrades))
+        {
+            if (upgrade.IncreasesRank)
+                value = baseCollider;
+
+            if (upgrade.Has(UpgradeMod.Collider))
+                value = (int)upgrade.Get(UpgradeMod.Collider);
+        }
+
+        return value * artifactColliderMultiplier;
+    }
+
+    public static double GetSplash(
+        double baseSplash,
+        InfiniteUpgradeSchedule schedule,
+        int purchasedUpgrades)
+    {
+        double value = baseSplash;
+
+        foreach (var upgrade in schedule.EnumeratePurchased(purchasedUpgrades))
+        {
+            if (upgrade.IncreasesRank)
+                value = baseSplash;
+
+            if (upgrade.Has(UpgradeMod.Splash))
+                value = upgrade.Get(UpgradeMod.Splash);
+        }
+
+        return value;
+    }
+
     public static double GetExtraClickDamagePercent(
         InfiniteUpgradeSchedule schedule,
         int purchasedUpgrades)
