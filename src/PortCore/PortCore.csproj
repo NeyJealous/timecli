@@ -5,4 +5,10 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <!-- Legacy save compatibility is kept as reference code until the
+       Rijndael-256 implementation is moved to a dedicated compatibility project. -->
+  <ItemGroup>
+    <Compile Remove="SaveCrypto.cs" />
+  </ItemGroup>
 </Project>
