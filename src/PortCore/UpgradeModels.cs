@@ -50,4 +50,7 @@ public sealed record HeroBaseSpec(
     float BaseRateOfFire,
     int BaseCostLevel,
     IReadOnlyList<UpgradeSpec> BaseUpgrades,
-    string Name = "");
+    string Name = "",
+    int BaseProjectileCount = 1,
+    double BaseCollider = 5.0,
+    double BaseSplash = 0.15);
