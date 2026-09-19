@@ -792,4 +792,81 @@ if (firstEnemy.Blocks[0].EnemyType != EnemyType.Rainbow)
 var modelStateFromPlan = VoxelSpawnPlanner.CreateEnemyModel(allocation);
 AssertEqual(4, modelStateFromPlan.BlockCount, "Spawn plan creates enemy model state");
 
+// End-to-end deterministic headless Arena: new game -> boss 5 -> wave 6
+static VoxelPoint[] Points(int count, float offset = 0) =>
+    Enumerable.Range(0, count)
+        .Select(i => new VoxelPoint(offset + i, 0, 0))
+        .ToArray();
+
+var arenaCatalog = new InMemoryVoxelModelCatalog(
+    new[]
+    {
+        new VoxelModelDescriptor("small", 0, 11),
+        new VoxelModelDescriptor("boss5", 999999, 42, BossWave: 5)
+    },
+    new[]
+    {
+        new VoxelModelLayout(
+            "small",
+            Red: Points(11),
+            White: Array.Empty<VoxelPoint>(),
+            Yellow: Array.Empty<VoxelPoint>(),
+            Blue: Array.Empty<VoxelPoint>()),
+        new VoxelModelLayout(
+            "boss5",
+            Red: Points(39),
+            White: Points(3, 100),
+            Yellow: Array.Empty<VoxelPoint>(),
+            Blue: Array.Empty<VoxelPoint>())
+    });
+
+var endToEndGame = new GameState();
+var arenaEngine = new HeadlessArenaEngine(endToEndGame, arenaCatalog);
+var deterministicRolls = new ArenaSpawnRolls(
+    ModelRandomIndex: 0,
+    RainbowEnemyRoll: 1f,
+    TimeCubeRoll: 1f,
+    WeaponCubeRoll: 1f);
+
+while (endToEndGame.Arena.Wave < 5)
+{
+    int startingWave = endToEndGame.Arena.Wave;
+
+    for (int enemy = 0; enemy < endToEndGame.ArtifactEffects.EnemiesToAdvance; enemy++)
+    {
+        var spawned = arenaEngine.SpawnCurrentEnemy(deterministicRolls);
+        int blockCount = spawned.Model.BlockCount;
+        ArenaBlockAttackResult? finalHit = null;
+
+        for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+            finalHit = arenaEngine.DamageBlock(blockIndex, double.MaxValue);
+
+        if (enemy < endToEndGame.ArtifactEffects.EnemiesToAdvance - 1)
+        {
+            if (finalHit?.ArenaResult != ArenaClearResult.ContinueSameWave)
+                throw new Exception("Regular wave advanced before required enemy count");
+        }
+    }
+
+    AssertEqual(startingWave + 1, endToEndGame.Arena.Wave, "Headless regular wave progression");
+}
+
+AssertEqual(5, endToEndGame.Arena.Wave, "Reached first boss wave");
+var bossSpawn = arenaEngine.SpawnCurrentEnemy(deterministicRolls, nowSeconds: 100);
+if (bossSpawn.ModelId != "boss5")
+    throw new Exception("Exact wave-5 boss model should be selected");
+AssertEqual(42, bossSpawn.Model.BlockCount, "Boss 5 block allocation");
+if (!endToEndGame.Arena.FightingBoss)
+    throw new Exception("Boss timer should be running");
+
+ArenaBlockAttackResult? bossFinal = null;
+for (int blockIndex = 0; blockIndex < bossSpawn.Model.BlockCount; blockIndex++)
+    bossFinal = arenaEngine.DamageBlock(blockIndex, double.MaxValue, nowSeconds: 105);
+
+if (bossFinal?.ArenaResult != ArenaClearResult.AdvancedToNextWave)
+    throw new Exception("Boss model clear should advance Arena");
+AssertEqual(6, endToEndGame.Arena.Wave, "Headless boss clear reaches wave 6");
+if (arenaEngine.CurrentEnemy is not null)
+    throw new Exception("Cleared model should be released by headless engine");
+
 Console.WriteLine("PortCore smoke tests passed.");
