@@ -90,3 +90,26 @@ python tools/voxels/extract_voxel_metadata.py \
 ```
 
 Omit `--include-layout` to emit only non-layout model metadata.
+
+
+## Local corpus validation
+
+The extractor has been run against the complete 1.4.5 APK corpus locally:
+
+- 141/141 TextAsset voxel payloads parsed successfully;
+- 43 numeric boss-key models detected;
+- no colors outside the four expected RGBA categories;
+- all exact block layouts were recovered into the private working data;
+- model-selection coverage was checked for every wave from **1 through 5000**;
+- zero waves were left without an eligible model;
+- the eligible-pool size ranged from 1 to 46 models;
+- every Time Cube-eligible candidate in that range had a White slot available for the original replacement rule;
+- every Weapon Cube-eligible candidate from wave 1000 onward had a Black/Yellow slot available.
+
+The public repository keeps only the parser, selection logic and aggregate validation facts. Exact recovered coordinates remain private original-derived data.
+
+Run the same validation after importing private metadata with:
+
+```bash
+python tools/voxels/validate_voxel_catalog.py voxel_models.json --max-wave 5000
+```
