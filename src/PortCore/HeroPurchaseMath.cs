@@ -102,14 +102,17 @@ public static class HeroPurchaseMath
             double cost = CalculateTotalCost(
                 hero, schedule, level, purchasedUpgrades, levelCount, upgradeCount);
 
-            return BuildPlanFlags(
-                schedule,
-                purchasedUpgrades,
+            // The original takes an early return here after explicitly
+            // clearing all "...Next" UI flags.
+            return new HeroPurchasePlan(
                 levelCount,
                 upgradeCount,
-                levelsUntilUpgrade,
                 cost,
-                availableGold);
+                CanAfford(availableGold, cost),
+                UpgradeNext: false,
+                PromotionNext: false,
+                TrainingNext: false,
+                SpecOpsNext: false);
         }
 
         levelCount = 1;
