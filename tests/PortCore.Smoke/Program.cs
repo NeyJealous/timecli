@@ -637,4 +637,39 @@ var offlineFallback = OfflineProgression.Calculate(
     currentArenaBaseHp: 50);
 AssertEqual(3456000, offlineFallback.GoldEarned, "Offline damage-to-gold fallback");
 
+// Sequential ability purchasing and Dimension Shift
+var abilityGold = new GoldWallet();
+abilityGold.Add(1e21);
+var abilityProgression = new ActiveAbilityProgression(
+    new ArtifactLoadout().BuildEffects());
+
+for (int i = 0; i <= (int)AbilityType.DimensionShift; i++)
+{
+    if (!abilityProgression.TryPurchaseNext(abilityGold))
+        throw new Exception($"Ability purchase {i} should succeed");
+}
+AssertEqual(7, abilityProgression.PurchasedCount, "Purchased abilities through Dimension Shift");
+AssertEqual(
+    250 * Math.Pow(90, 7),
+    abilityProgression.NextPurchaseCost,
+    "Next sequential ability purchase cost",
+    1e-12);
+
+if (!abilityProgression.Activate(AbilityType.DimensionShift, 100))
+    throw new Exception("Purchased Dimension Shift should activate");
+AssertEqual(1, abilityProgression.DimensionShifts, "Dimension Shift stack count");
+AssertEqual(
+    1.05,
+    abilityProgression.GetDimensionShiftMultiplier(new ArtifactLoadout().BuildEffects()),
+    "Dimension Shift DPS multiplier",
+    1e-12);
+
+abilityProgression.Update(100);
+if (abilityProgression.Abilities[(int)AbilityType.DimensionShift].State != AbilityState.Recharging)
+    throw new Exception("Zero-duration Dimension Shift should enter recharge on update");
+
+abilityProgression.TimeWarp(new ArtifactLoadout().BuildEffects());
+AssertEqual(0, abilityProgression.PurchasedCount, "Ability purchases reset on Time Warp");
+AssertEqual(0, abilityProgression.DimensionShifts, "Dimension Shifts reset on Time Warp");
+
 Console.WriteLine("PortCore smoke tests passed.");
