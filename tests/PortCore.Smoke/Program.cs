@@ -165,4 +165,50 @@ AssertEqual(
     GoldRewardMath.GetKillGoldTotal(600, EnemyType.TimeCube, 2, artifacts, true),
     "Time Cube enemy does not drop gold");
 
+// Weapon augments and deterministic cube/rainbow rules
+var augmentValues = new double[(int)WeaponAugmentType.Total];
+augmentValues[(int)WeaponAugmentType.WeaponCubeChance] = 25;
+augmentValues[(int)WeaponAugmentType.WeaponCubeFind] = 50;
+augmentValues[(int)WeaponAugmentType.WeaponCubeStartWave] = 1000;
+augmentValues[(int)WeaponAugmentType.ClickLauncherUnlock] = 1;
+augmentValues[(int)WeaponAugmentType.ClickCannonDamagePerShot] = 25;
+var augments = WeaponAugmentEffectsMath.Recalculate(augmentValues);
+
+if (!augments.ClickLauncherUnlocked) throw new Exception("Click Launcher should be unlocked");
+AssertEqual(25, augments.WeaponCubeChancePercent, "Weapon Cube chance");
+AssertEqual(50, augments.WeaponCubeFindPercent, "Weapon Cube find");
+AssertEqual(1000, augments.WeaponCubeStartWave, "Weapon Cube start wave");
+AssertEqual(10, SpawnRulesMath.ResolveTimeCubeReward(100, false, artifacts, 1f), "Time Cube boss reward");
+AssertEqual(2, SpawnRulesMath.ResolveTimeCubeReward(105, false, artifacts, 0.05f), "Time Cube random reward");
+AssertEqual(0, SpawnRulesMath.ResolveTimeCubeReward(105, false, artifacts, 0.5f), "Time Cube failed roll");
+AssertEqual(1, SpawnRulesMath.ResolveWeaponCubeReward(1000, false, augments, 1f), "Weapon Cube first boss reward");
+AssertEqual(2, SpawnRulesMath.ResolveWeaponCubeReward(1025, false, augments, 0.1f), "Weapon Cube random reward");
+AssertEqual(0, SpawnRulesMath.ResolveWeaponCubeReward(1025, false, augments, 0.9f), "Weapon Cube failed roll");
+
+artifactValues[(int)ArtifactType.RainbowEnemyChance] = 20;
+artifacts = ArtifactEffectsMath.Recalculate(artifactValues);
+if (!SpawnRulesMath.ShouldSpawnRainbowEnemy(101, 1, artifacts, 0.1f))
+    throw new Exception("Rainbow enemy should spawn for a successful roll");
+if (SpawnRulesMath.ShouldSpawnRainbowEnemy(101, 0, artifacts, 0.1f))
+    throw new Exception("First enemy on a wave cannot be rainbow");
+if (SpawnRulesMath.ShouldSpawnRainbowEnemy(100, 1, artifacts, 0f))
+    throw new Exception("Boss waves cannot become rainbow enemies");
+
+// Headless wave progression
+var timeline = new TimelineProgression(1);
+for (int i = 0; i < 9; i++)
+{
+    if (timeline.CompleteEnemy(10) != ArenaClearResult.ContinueSameWave)
+        throw new Exception("Regular wave advanced too early");
+}
+if (timeline.CompleteEnemy(10) != ArenaClearResult.AdvancedToNextWave)
+    throw new Exception("Regular wave did not advance");
+AssertEqual(2, timeline.Wave, "Timeline wave after regular clear");
+AssertEqual(2, timeline.MaxWave, "Timeline max wave");
+
+timeline.TimeWarpTo(5);
+if (timeline.CompleteEnemy(10) != ArenaClearResult.AdvancedToNextWave)
+    throw new Exception("Boss wave must advance after one complete enemy");
+AssertEqual(6, timeline.Wave, "Timeline wave after boss clear");
+
 Console.WriteLine("PortCore smoke tests passed.");
