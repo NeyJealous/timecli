@@ -1,0 +1,31 @@
+{
+  "arenaHP": [
+    { "wave": 1, "hp": 10 },
+    { "wave": 2, "hp": 30 },
+    { "wave": 3, "hp": 50 },
+    { "wave": 5, "hp": 696 },
+    { "wave": 10, "hp": 6962 },
+    { "wave": 26, "hp": 1267901 },
+    { "wave": 46, "hp": 15324955859 },
+    { "wave": 100, "hp": 1.6139061738043267e22 },
+    { "wave": 130, "hp": 2.145249268790831e28 },
+    { "wave": 131, "hp": 2.681561585988538e27 },
+    { "wave": 500, "hp": 1.542348713665857e64 },
+    { "wave": 501, "hp": 1.735142302874089e63 },
+    { "wave": 1000, "hp": 5.813581956630728e89 }
+  ],
+  "heroCosts": [
+    { "baseCostLevel": 0, "rank": 1, "level": 0, "levelUpCost": 45, "upgradeCost": 333 },
+    { "baseCostLevel": 0, "rank": 1, "level": 10, "levelUpCost": 97, "upgradeCost": 720 },
+    { "baseCostLevel": 1, "rank": 1, "level": 0, "levelUpCost": 90, "upgradeCost": 1887 },
+    { "baseCostLevel": 2, "rank": 1, "level": 0, "levelUpCost": 720, "upgradeCost": 10685 },
+    { "baseCostLevel": 3, "rank": 1, "level": 0, "levelUpCost": 4075, "upgradeCost": 60483 },
+    { "baseCostLevel": 4, "rank": 1, "level": 0, "levelUpCost": 23068, "upgradeCost": 342360 }
+  ],
+  "specialRewards": {
+    "timeCubeWaves": [100, 250, 500, 1000, 2000, 3000],
+    "timeCubeCounts": [10, 50, 200, 500, 1500, 2500],
+    "weaponCubeWaves": [1000, 1500, 2000, 3000, 4000],
+    "weaponCubeCounts": [1, 150, 350, 775, 1250]
+  }
+}
