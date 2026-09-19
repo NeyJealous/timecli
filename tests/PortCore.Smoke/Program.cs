@@ -245,4 +245,32 @@ AbilityRuntimeMath.ApplyCooldownAbility(
 AssertEqual(400, abilitySet[0].GetSecondsUntilRecharged(0), "Cooldown ability reduces other cooldowns");
 AssertEqual(4000, abilitySet[(int)AbilityType.Cooldown].GetSecondsUntilRecharged(0), "Cooldown does not reduce itself");
 
+// Canonical hero data
+AssertEqual(5, CanonicalHeroes.All.Count, "Canonical hero count");
+AssertEqual(35, CanonicalHeroes.PulsePistol.BaseUpgrades.Count, "Pulse canonical upgrade count");
+AssertEqual(22, CanonicalHeroes.FlakCannon.BaseDamage, "Flak base damage");
+AssertEqual(74, CanonicalHeroes.SpreadRifle.BaseDamage, "Spread base damage");
+AssertEqual(245, CanonicalHeroes.RocketLauncher.BaseDamage, "Rocket base damage");
+AssertEqual(976, CanonicalHeroes.ParticleBall.BaseDamage, "Particle base damage");
+AssertEqual(8, CanonicalHeroes.FlakCannon.BaseUpgrades[2].Get(UpgradeMod.Projectiles), "Flak projectile upgrade");
+AssertEqual(1.2, CanonicalHeroes.SpreadRifle.BaseUpgrades[4].Get(UpgradeMod.UnitedFront), "Spread United Front");
+AssertEqual(0.5, CanonicalHeroes.RocketLauncher.BaseUpgrades[1].Get(UpgradeMod.Splash), "Rocket splash");
+AssertEqual(10, CanonicalHeroes.ParticleBall.BaseUpgrades[2].Get(UpgradeMod.Collider), "Particle collider");
+
+var canonicalPulseSchedule = new InfiniteUpgradeSchedule(CanonicalHeroes.PulsePistol.BaseUpgrades);
+AssertEqual(
+    237250,
+    HeroCombatMath.GetDpsForLevel(CanonicalHeroes.PulsePistol, canonicalPulseSchedule, 100, 6, neutral),
+    "Canonical Pulse promotion DPS");
+
+var canonicalFlakSchedule = new InfiniteUpgradeSchedule(CanonicalHeroes.FlakCannon.BaseUpgrades);
+var teamEffects = TeamMath.RecalculateBaseUpgradeEffects(new[]
+{
+    new HeroUpgradeProgress(canonicalPulseSchedule, 17),
+    new HeroUpgradeProgress(canonicalFlakSchedule, 11)
+});
+AssertEqual(1.2, teamEffects.UnitedFrontMultiplier, "Canonical team United Front");
+AssertEqual(1.25, teamEffects.GoldFindMultiplier, "Canonical team gold find");
+AssertEqual(0.02, teamEffects.CriticalChance, "Canonical team critical chance", 1e-6);
+
 Console.WriteLine("PortCore smoke tests passed.");
