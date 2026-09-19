@@ -139,4 +139,30 @@ AssertEqual(4, artifacts.GetWeaponDpsMultiplier(WeaponType.Pistol), "Artifact pi
 AssertEqual(3, artifacts.RocketSplashDistance, "Artifact rocket splash distance");
 if (!artifacts.FlakNeverMisses) throw new Exception("Artifact NeverMissFlak should be enabled");
 
+// Enemy gold rewards
+artifactValues[(int)ArtifactType.GoldFindRed] = 2;
+artifactValues[(int)ArtifactType.GoldFindRainbowBlock] = 3;
+artifactValues[(int)ArtifactType.GoldRush] = 4;
+artifacts = ArtifactEffectsMath.Recalculate(artifactValues);
+
+AssertEqual(
+    200,
+    GoldRewardMath.GetKillGoldTotal(600, EnemyType.Red, 2, artifacts, false),
+    "Red enemy kill gold");
+
+AssertEqual(
+    15000,
+    GoldRewardMath.GetKillGoldTotal(600, EnemyType.Rainbow, 2, artifacts, false),
+    "Rainbow enemy kill gold");
+
+AssertEqual(
+    800,
+    GoldRewardMath.GetHitGold(600, 1, EnemyType.Red, 2, artifacts, true),
+    "Hit gold with Gold Rush");
+
+AssertEqual(
+    0,
+    GoldRewardMath.GetKillGoldTotal(600, EnemyType.TimeCube, 2, artifacts, true),
+    "Time Cube enemy does not drop gold");
+
 Console.WriteLine("PortCore smoke tests passed.");
