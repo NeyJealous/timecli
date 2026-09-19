@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TimeClickers.PortCore;
 
@@ -54,6 +55,12 @@ public sealed record ArenaBlockAttackResult(
     bool ModelCleared,
     ArenaClearResult? ArenaResult);
 
+public sealed record HeroVolleyExecutionResult(
+    HeroVolleyPlan Plan,
+    IReadOnlyList<BlockDamageResult> DamageResults,
+    bool ModelCleared,
+    ArenaClearResult? ArenaResult);
+
 /// <summary>
 /// Deterministic orchestration layer joining the reconstructed GameState,
 /// VoxelLibrary math, Arena spawn rules and BoxEnemy block state.
@@ -63,11 +70,15 @@ public sealed class HeadlessArenaEngine
 {
     private readonly GameState _game;
     private readonly IVoxelModelCatalog _voxels;
+    private readonly HeroAutoFireState[] _heroAttackStates;
 
     public HeadlessArenaEngine(GameState game, IVoxelModelCatalog voxels)
     {
         _game = game;
         _voxels = voxels;
+        _heroAttackStates = Enumerable.Range(0, game.Heroes.Length)
+            .Select(_ => new HeroAutoFireState())
+            .ToArray();
     }
 
     public GameState Game => _game;
@@ -178,6 +189,64 @@ public sealed class HeadlessArenaEngine
 
         var result = _game.ApplyDamageToBlock(block, damage);
         return FinishAttack(active, result, nowSeconds);
+    }
+
+    public HeroAutoFireState GetHeroAttackState(int heroId) =>
+        _heroAttackStates[heroId];
+
+    public HeroVolleyExecutionResult FireHero(
+        int heroId,
+        double nowSeconds,
+        IRandomSource random)
+    {
+        var active = RequireCurrentEnemy();
+        var hero = _game.Heroes[heroId];
+        var state = _heroAttackStates[heroId];
+
+        var plan = HeroAutoFirePlanner.Plan(
+            hero,
+            state,
+            active.Model,
+            _game.ArtifactEffects,
+            _game.GetHeroDpsMultipliers(heroId),
+            nowSeconds,
+            random);
+
+        if (!plan.Fired)
+        {
+            return new HeroVolleyExecutionResult(
+                plan,
+                Array.Empty<BlockDamageResult>(),
+                active.Model.IsCleared,
+                null);
+        }
+
+        var results = new List<BlockDamageResult>(plan.Applications.Count);
+        ArenaClearResult? arenaResult = null;
+
+        foreach (var application in plan.Applications)
+        {
+            var result = _game.ApplyDamageToBlock(
+                application.Target,
+                application.Damage);
+            results.Add(result);
+
+            if (result.Killed && active.Model.IsCleared)
+            {
+                arenaResult = _game.Arena.CompleteEnemy(
+                    _game.ArtifactEffects.EnemiesToAdvance,
+                    nowSeconds);
+
+                CurrentEnemy = null;
+                break;
+            }
+        }
+
+        return new HeroVolleyExecutionResult(
+            plan,
+            results,
+            active.Model.IsCleared,
+            arenaResult);
     }
 
     public BossTickResult TickBoss(double nowSeconds)
