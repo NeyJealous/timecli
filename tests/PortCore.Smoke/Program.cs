@@ -107,4 +107,36 @@ AssertEqual(250, AbilityMath.GetCostForLevel(0), "Ability cost 0");
 AssertEqual(22500, AbilityMath.GetCostForLevel(1), "Ability cost 1");
 AssertEqual(1.21, AbilityMath.GetDimensionShiftMultiplier(2, 1.1), "Dimension shift multiplier", 1e-10);
 
+// Artifact aggregate effects
+var artifactValues = new double[(int)ArtifactType.Total];
+artifactValues[(int)ArtifactType.GoldFind] = 25;
+artifactValues[(int)ArtifactType.TimeCubeChance] = 7.5;
+artifactValues[(int)ArtifactType.TimeCubeFind] = 50;
+artifactValues[(int)ArtifactType.DamageTargeted] = 20;
+artifactValues[(int)ArtifactType.CriticalStrikeChance] = 8;
+artifactValues[(int)ArtifactType.CriticalStrikeMultiplier] = 6;
+artifactValues[(int)ArtifactType.AbilityDuration1] = 5;
+artifactValues[(int)ArtifactType.AbilityDuration2] = 10;
+artifactValues[(int)ArtifactType.AbilityCooldown1] = 15;
+artifactValues[(int)ArtifactType.AbilityCooldown2] = 5;
+artifactValues[(int)ArtifactType.RapidFire] = 20;
+artifactValues[(int)ArtifactType.DimensionShift] = 10;
+artifactValues[(int)ArtifactType.PulsePistolDps] = 4;
+artifactValues[(int)ArtifactType.RocketSplashDiagonal] = 1;
+artifactValues[(int)ArtifactType.NeverMissFlak] = 1;
+
+var artifacts = ArtifactEffectsMath.Recalculate(artifactValues);
+AssertEqual(1.25, artifacts.GoldFindMultiplier, "Artifact gold find");
+AssertEqual(0.075, artifacts.TimeCubeChance, "Artifact time cube chance", 1e-6);
+AssertEqual(1.5, artifacts.TimeCubeMultiplier, "Artifact time cube multiplier");
+AssertEqual(1.2, artifacts.TargetedMultiplier, "Artifact targeted multiplier");
+AssertEqual(5, artifacts.AdditionalCriticalMultiplier, "Artifact critical multiplier delta");
+AssertEqual(15, artifacts.AbilityDurationAddSeconds, "Artifact ability duration");
+AssertEqual(0.8, artifacts.AbilityRechargeMultiplier, "Artifact recharge multiplier", 1e-6);
+AssertEqual(0.05, artifacts.RapidFireDelay, "Artifact rapid fire delay", 1e-6);
+AssertEqual(1.1, artifacts.DimensionShiftMultiplier, "Artifact dimension shift", 1e-12);
+AssertEqual(4, artifacts.GetWeaponDpsMultiplier(WeaponType.Pistol), "Artifact pistol DPS");
+AssertEqual(3, artifacts.RocketSplashDistance, "Artifact rocket splash distance");
+if (!artifacts.FlakNeverMisses) throw new Exception("Artifact NeverMissFlak should be enabled");
+
 Console.WriteLine("PortCore smoke tests passed.");
