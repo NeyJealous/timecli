@@ -107,6 +107,55 @@ public sealed class GameState
         return Gold.TrySpend(result.GoldSpent);
     }
 
+    public ProgressionTransaction BuyArtifact(ArtifactType type, double nowSeconds = 0)
+    {
+        var result = ArtifactEconomy.BuyOne(Artifacts, TimeCubes, type);
+        if (result.Succeeded)
+            RecalculateAbilities(nowSeconds);
+        return result;
+    }
+
+    public ProgressionTransaction SellArtifact(ArtifactType type, double nowSeconds = 0)
+    {
+        var result = ArtifactEconomy.SellOne(Artifacts, TimeCubes, type);
+        if (result.Succeeded)
+            RecalculateAbilities(nowSeconds);
+        return result;
+    }
+
+    public ProgressionTransaction BuyWeaponAugment(WeaponAugmentType type) =>
+        WeaponAugmentEconomy.BuyOne(WeaponAugments, WeaponCubes, type);
+
+    public ProgressionTransaction SellWeaponAugment(WeaponAugmentType type) =>
+        WeaponAugmentEconomy.SellOne(WeaponAugments, WeaponCubes, type);
+
+    /// <summary>
+    /// Full Artifact respec. The original does not merely refund the currently
+    /// visible tree: it restores all lifetime Time Cubes, includes the pending
+    /// timeline reward, resets all Artifact levels, and starts progression over.
+    /// </summary>
+    public ulong RespecArtifacts()
+    {
+        Artifacts.Reset();
+        ulong pendingAdded = TimeCubes.Respec();
+
+        foreach (var hero in Heroes)
+            hero.TimeWarp();
+
+        ClickPistol.TimeWarp();
+
+        foreach (var ability in Abilities)
+            ability.TimeWarp();
+
+        var effects = ArtifactEffects;
+        Arena.TimeWarpTo(effects.StartWave);
+        Gold.TimeWarp(effects.StartingGold);
+        WeaponCubes.TimeWarp();
+        RecalculateAbilities(0);
+
+        return pendingAdded;
+    }
+
     public void RecalculateAbilities(double nowSeconds)
     {
         var effects = ArtifactEffects;
