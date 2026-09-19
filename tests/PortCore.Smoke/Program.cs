@@ -501,4 +501,55 @@ AssertEqual(0, (double)respecGame.Artifacts.GetLevel(ArtifactType.GoldFind), "Re
 AssertEqual(1000, respecGame.Gold.TotalGold, "Respec starts fresh timeline with default starting gold");
 AssertEqual(1, respecGame.Arena.Wave, "Respec resets arena to default start wave");
 
+// Arena farm/navigation and boss timeout behavior
+var farmArena = new TimelineProgression(4, 6);
+if (!farmArena.IsFarmingLowerWave) throw new Exception("Wave 4/6 should be farming");
+if (farmArena.CompleteEnemy(10) != ArenaClearResult.ContinueSameWave)
+    throw new Exception("Lower regular farm wave should not auto-advance");
+AssertEqual(1, farmArena.EnemyKillsOnWave, "Lower farm wave first kill marker");
+
+for (int i = 0; i < 20; i++)
+{
+    if (farmArena.CompleteEnemy(10) != ArenaClearResult.ContinueSameWave)
+        throw new Exception("Lower regular farm wave must remain selected");
+}
+AssertEqual(4, farmArena.Wave, "Farm wave remains selected");
+AssertEqual(1, farmArena.EnemyKillsOnWave, "Lower farm wave kill counter stays at one");
+
+if (!farmArena.RequestNextArena()) throw new Exception("Manual next should move to unlocked wave 5");
+AssertEqual(5, farmArena.Wave, "Manual next wave");
+AssertEqual(0, farmArena.EnemyKillsOnWave, "Manual navigation resets enemy counter");
+
+farmArena.StartArena(100, 30);
+if (!farmArena.FightingBoss) throw new Exception("Wave 5 should start boss timer");
+AssertEqual(20, farmArena.GetBossTimeRemaining(110), "Boss remaining time");
+if (farmArena.TickBoss(129.9, 30) != BossTickResult.None)
+    throw new Exception("Boss should not fail before timer");
+if (farmArena.TickBoss(130, 30) != BossTickResult.FailedWaitingForRestart)
+    throw new Exception("Boss timeout should enter restart delay");
+AssertEqual(5, farmArena.Wave, "Boss failure stays on same wave");
+if (!farmArena.BossRestartPending) throw new Exception("Boss restart delay should be pending");
+if (farmArena.TickBoss(130.4, 30) != BossTickResult.None)
+    throw new Exception("Boss should wait full 0.5 seconds");
+if (farmArena.TickBoss(130.5, 30) != BossTickResult.Restarted)
+    throw new Exception("Boss should restart after 0.5 seconds");
+if (!farmArena.FightingBoss) throw new Exception("Restarted boss should be fighting");
+
+if (farmArena.CompleteEnemy(10, 140) != ArenaClearResult.AdvancedToNextWave)
+    throw new Exception("Boss clear should advance");
+AssertEqual(6, farmArena.Wave, "Boss clear returns to unlocked max wave");
+AssertEqual(6, farmArena.MaxWave, "Boss clear preserves max wave");
+AssertEqual(20.5, farmArena.BossTimerStoppedAt, "Boss clear stores remaining timer", 1e-6);
+
+if (farmArena.RequestNextArena())
+    throw new Exception("Cannot navigate beyond max wave");
+if (!farmArena.RequestPreviousArena())
+    throw new Exception("Previous wave navigation should work");
+AssertEqual(5, farmArena.Wave, "Previous wave selection");
+if (!farmArena.SelectUnlockedWave(4))
+    throw new Exception("Direct unlocked-wave selection should work");
+AssertEqual(4, farmArena.Wave, "Direct farm-wave selection");
+if (farmArena.SelectUnlockedWave(7))
+    throw new Exception("Cannot select a locked wave");
+
 Console.WriteLine("PortCore smoke tests passed.");
