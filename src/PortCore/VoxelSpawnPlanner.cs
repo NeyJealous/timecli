@@ -217,7 +217,8 @@ public static class VoxelSpawnPlanner
                 block.MaxHealth,
                 block.EnemyType,
                 block.TimeCubeCount,
-                block.WeaponCubeCount)));
+                block.WeaponCubeCount,
+                block.Position)));
 
     private static VoxelPoint TakeDirect(
         IReadOnlyList<VoxelPoint> source,
