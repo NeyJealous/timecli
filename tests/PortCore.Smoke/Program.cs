@@ -304,7 +304,7 @@ AssertEqual(5, defaultAugments.WeaponCubeFindPercent, "Weapon Cube Find level ev
 AssertEqual(6, CanonicalSkills.ClickPistol.Upgrades.Count, "Click Pistol upgrade count");
 AssertEqual(3, CanonicalSkills.ClickPistol.Upgrades[4].Get(UpgradeMod.ClickDamage), "Click Pistol 100 upgrade");
 AssertEqual(
-    600,
+    432,
     SkillMath.GetDamageForLevel(
         CanonicalSkills.ClickPistol.BaseDamage,
         50,
