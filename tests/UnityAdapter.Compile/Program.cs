@@ -1,7 +1,7 @@
 using TimeCli.UnityRuntime;
 using TimeClickers.PortCore;
 
-if (PortCoreApi.Version != "1.1.0")
+if (PortCoreApi.Version != "1.2.0")
     throw new Exception("Unexpected PortCore API version.");
 
 var bytes = BuildTinyCatalog();
