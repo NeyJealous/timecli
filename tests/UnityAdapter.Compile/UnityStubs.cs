@@ -186,7 +186,15 @@ namespace UnityEngine
     public enum ParticleSystemEmitterVelocityMode { Transform, Rigidbody, Custom }
     public enum ParticleSystemInheritVelocityMode { Initial, Current }
     public enum ParticleSystemShapeType { Cone = 4 }
-    public enum ParticleSystemRenderMode { Billboard = 0 }
+    public enum ParticleSystemRenderMode
+    {
+        Billboard = 0,
+        Stretch = 1,
+        HorizontalBillboard = 2,
+        VerticalBillboard = 3,
+        Mesh = 4,
+        None = 5
+    }
     public enum ParticleSystemSortMode
     {
         None = 0,
@@ -502,6 +510,8 @@ namespace UnityEngine
                 constantMax = constant;
                 multiplier = 1f;
                 curve = null;
+                curveMin = null;
+                curveMax = null;
             }
 
             public MinMaxCurve(float min, float max)
@@ -510,6 +520,8 @@ namespace UnityEngine
                 constantMax = max;
                 multiplier = 1f;
                 curve = null;
+                curveMin = null;
+                curveMax = null;
             }
 
             public MinMaxCurve(
@@ -520,12 +532,29 @@ namespace UnityEngine
                 constantMax = 0f;
                 this.multiplier = multiplier;
                 this.curve = curve;
+                curveMin = null;
+                curveMax = curve;
+            }
+
+            public MinMaxCurve(
+                float multiplier,
+                AnimationCurve min,
+                AnimationCurve max)
+            {
+                constantMin = 0f;
+                constantMax = 0f;
+                this.multiplier = multiplier;
+                curve = null;
+                curveMin = min;
+                curveMax = max;
             }
 
             public float constantMin { get; }
             public float constantMax { get; }
             public float multiplier { get; }
             public AnimationCurve? curve { get; }
+            public AnimationCurve? curveMin { get; }
+            public AnimationCurve? curveMax { get; }
         }
 
         public readonly struct MinMaxGradient
@@ -675,6 +704,9 @@ namespace UnityEngine
 
         public static float Pow(float f, float p) =>
             (float)Math.Pow(f, p);
+
+        public static float Abs(float value) =>
+            Math.Abs(value);
 
         public static float Min(float a, float b) =>
             a < b ? a : b;
