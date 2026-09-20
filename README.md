@@ -7,55 +7,56 @@
 
 ## Цель
 
-Восстановить игровой цикл Time Clickers максимально близко к поведению версии 1.4.5, используя подтверждённые формулы, структуру сцен и совместимость сохранений, а затем перенести проект на поддерживаемую версию Unity и собрать iOS-версию для ARM64.
+Восстановить игровой цикл Time Clickers максимально близко к поведению версии
+1.4.5 и перенести его на современный Unity/iOS без зависимости от старых
+Google Play / Steam / Amazon / Kongregate SDK.
 
 ## Текущее состояние
 
-**Phase 1 — forensic recovery: базовая часть завершена.**
+- **Phase 1 — forensic recovery: complete**
+- **Phase 2 — portable gameplay core: complete**
+- **Phase 3 — Unity reconstruction: in progress**
 
-Подтверждено:
+PortCore уже проходит отдельные regression-сценарии экономики, полного
+timeline до wave 100, всех Hero auto-fire механик и сборку
+`netstandard2.1` для Unity.
 
-- Unity **5.4.2f2**;
-- backend **Mono**, не IL2CPP;
-- package: `com.ProtonStudio.TimeClickers`;
-- отдельный OBB не используется;
-- найдены 6 build scenes;
-- восстановлены ключевые формулы Arena / Heroes / Artifacts / Weapon Augments;
-- разобран legacy save crypto и подготовлена совместимая реализация;
-- выделены старые платформенные зависимости Google Play / Steam / Amazon / Kongregate / Ads.
+Современный Unity-проект находится в:
 
-Следующая цель: **Phase 2 — source recovery + compile ledger**, затем реконструкция assets/scenes и перенос в современный Unity.
+`unity/TimeCli/`
 
 ## Структура
 
 ```text
-docs/                 аудит, архитектура и roadmap
-src/PortCore/         подтверждённая переносимая игровая математика
-reference/            контрольные данные и описания форматов
-tools/                собственные инструменты анализа/конвертации
-original-analysis/    только метаданные и манифесты, без оригинальных бинарников
+src/PortCore/          восстановленное Unity-независимое игровое ядро
+tests/                 regression/headless scenarios
+unity/TimeCli/         современный Unity presentation/runtime
+docs/                  аудит, архитектура, Phase status
+reference/             контрольные данные
+tools/                 extraction / validation / Unity sync tooling
 ```
+
+## Запуск Unity-ветки разработки
+
+Сначала собрать PortCore:
+
+```powershell
+.\tools\unity\sync-portcore.ps1
+```
+
+Затем открыть `unity/TimeCli` в зафиксированной версии Unity.
 
 ## Принцип реконструкции
 
-Мы не подменяем неизвестные механики догадками. Поведение считается каноническим только когда оно подтверждено анализом версии 1.4.5 или воспроизводимым тестом. Неподтверждённые участки остаются отмеченными как `TODO`.
+Игровая логика считается канонической только после подтверждения анализом
+1.4.5 и/или воспроизводимым regression-тестом. Unity-слой не должен повторять
+математику PortCore: он отвечает за визуал, input, audio и platform lifecycle.
+
+См. [ROADMAP.md](ROADMAP.md) и
+[PortCore <-> Unity contract](docs/PORTCORE_UNITY_CONTRACT.md).
 
 ## Репозиторная политика
 
-В GitHub хранятся только:
-
-- написанный нами код;
-- документация и карты зависимостей;
-- числовые/структурные reference-данные, необходимые для совместимости;
-- инструменты реконструкции;
-- тесты.
-
-Не коммитятся:
-
-- APK;
-- оригинальные managed DLL;
-- декомпилированный полный исходный код оригинала;
-- извлечённые оригинальные Texture/Audio/Mesh/Shader;
-- собранные Unity serialized files.
-
-Подробнее: [ROADMAP.md](ROADMAP.md).
+Публично хранятся наш код, тесты, инструменты, документация и минимальные
+reference-данные. Оригинальные APK/DLL, bulk-decompile и извлечённые
+графика/аудио/serialized assets хранятся отдельно и не публикуются здесь.
