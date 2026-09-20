@@ -47,7 +47,7 @@ namespace UnityEngine
         public GameObject(string name = "")
         {
             this.name = name;
-            transform = new Transform();
+            transform = new Transform(this);
         }
 
         public string name { get; set; }
@@ -70,6 +70,14 @@ namespace UnityEngine
 
     public sealed class Transform
     {
+        private readonly GameObject _gameObject;
+
+        internal Transform(GameObject gameObject)
+        {
+            _gameObject = gameObject;
+        }
+
+        public GameObject gameObject => _gameObject;
         public Vector3 position { get; set; }
         public Vector3 localPosition { get; set; }
         public Vector3 localScale { get; set; }
