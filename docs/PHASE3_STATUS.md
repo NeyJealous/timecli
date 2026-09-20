@@ -57,7 +57,9 @@ Implemented under `unity/TimeCli`:
 - Time/Weapon Cube deferred pickups and collection presentation;
 - clean replacements for original special-enemy shaders;
 - exact Hero impact presentation: canonical weapon colors, persistent
-  Outline, Flak/Rocket-splash FlashOutline, 0.2 s flash throttle/fade.
+  Outline, Flak/Rocket-splash FlashOutline, 0.2 s flash throttle/fade;
+- exact click-weapon Appear/Disappear root transform curves for Pistol,
+  Cannon and Launcher, including the recovered 0.05 s Show activation delay.
 
 Gameplay damage/rewards/wave state remain PortCore-owned.
 
