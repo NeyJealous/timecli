@@ -32,7 +32,8 @@ namespace TimeCli.UnityRuntime
             _state = state;
 
             transform.position = worldPosition;
-            transform.localScale = Vector3.one * 0.45f;
+            // Original TimeCube/WeaponCube prefabs both use localScale 0.25.
+            transform.localScale = Vector3.one * 0.25f;
 
             var camera = Camera.main;
             if (camera != null)
@@ -106,10 +107,6 @@ namespace TimeCli.UnityRuntime
                     _collectionStart,
                     _collectionTarget,
                     t);
-                transform.localScale = Vector3.Lerp(
-                    Vector3.one * 0.45f,
-                    Vector3.one * 0.18f,
-                    t);
             }
         }
 
@@ -132,16 +129,32 @@ namespace TimeCli.UnityRuntime
             if (shader == null)
                 shader = Shader.Find("TimeCli/BlockVertexColor");
 
+            bool isTimeCube =
+                _state.Kind == SpecialCubeKind.TimeCube;
+
             var material = new Material(shader)
             {
-                name = _state.Kind == SpecialCubeKind.TimeCube
+                name = isTimeCube
                     ? "TimeCli_TimeCubePickup"
-                    : "TimeCli_WeaponCubePickup"
+                    : "TimeCli_WeaponCubePickup",
+                color = isTimeCube
+                    ? OriginalEnemyPalette.TimeCube
+                    : OriginalEnemyPalette.WeaponCube
             };
 
-            material.color = _state.Kind == SpecialCubeKind.TimeCube
-                ? OriginalEnemyPalette.TimeCube
-                : OriginalEnemyPalette.WeaponCube;
+            // Original sharedassets1 pickup prefabs use their own materials
+            // named "TimeCube" and "WeaponCube", each with a distinct
+            // _MainTex. Private original-derived textures can be supplied
+            // through Resources without putting them in the public repo.
+            string resourceName = isTimeCube
+                ? "TimeCliTimeCubePickupTexture"
+                : "TimeCliWeaponCubePickupTexture";
+
+            Texture2D texture =
+                Resources.Load<Texture2D>(resourceName);
+
+            if (texture != null)
+                material.mainTexture = texture;
 
             _renderer.sharedMaterial = material;
         }
