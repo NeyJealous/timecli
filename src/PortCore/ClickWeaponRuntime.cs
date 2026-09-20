@@ -202,12 +202,20 @@ public sealed class ClickWeaponRuntime
             return ClickWeaponAutomaticFirePlan.None;
         }
 
+        IReadOnlyList<ClickCannonFirePlan> cannonResult =
+            cannonShots is null
+                ? Array.Empty<ClickCannonFirePlan>()
+                : cannonShots;
+
+        IReadOnlyList<ClickLauncherFirePlan> launcherResult =
+            launcherShots is null
+                ? Array.Empty<ClickLauncherFirePlan>()
+                : launcherShots;
+
         return new ClickWeaponAutomaticFirePlan(
             pistolShots,
-            cannonShots ??
-                Array.Empty<ClickCannonFirePlan>(),
-            launcherShots ??
-                Array.Empty<ClickLauncherFirePlan>());
+            cannonResult,
+            launcherResult);
     }
 
     /// <summary>
