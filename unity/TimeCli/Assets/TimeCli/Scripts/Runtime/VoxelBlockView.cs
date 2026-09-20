@@ -11,6 +11,7 @@ namespace TimeCli.UnityRuntime
         private ArenaRuntimeController _arena;
         private Renderer _renderer;
         private MaterialPropertyBlock _properties;
+        private OriginalBlockGeometry _originalGeometry;
 
         public int BlockIndex { get; private set; }
         public EnemyBlockState State { get; private set; }
@@ -24,10 +25,16 @@ namespace TimeCli.UnityRuntime
             BlockIndex = blockIndex;
             State = state;
 
+            _originalGeometry = GetComponent<OriginalBlockGeometry>();
+            if (_originalGeometry != null)
+                _originalGeometry.Initialize(state);
+
             _renderer = GetComponentInChildren<Renderer>();
             _properties = new MaterialPropertyBlock();
 
-            ApplyPlaceholderColor();
+            if (_originalGeometry == null)
+                ApplyPlaceholderColor();
+
             Refresh();
         }
 
@@ -37,7 +44,13 @@ namespace TimeCli.UnityRuntime
                 return;
 
             if (!State.IsAlive)
+            {
                 gameObject.SetActive(false);
+                return;
+            }
+
+            if (_originalGeometry != null)
+                _originalGeometry.RefreshHealth(State);
         }
 
         private void OnMouseDown()
