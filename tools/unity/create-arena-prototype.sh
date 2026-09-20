@@ -54,8 +54,19 @@ if [[ -n "$ORIGINAL_DATA_SOURCE" ]]; then
 
   PRIVATE_RESOURCES="$PROJECT_PATH/Assets/TimeCli/PrivateGenerated/Resources"
 
-  echo "3/5 Extracting private TimeCube/WeaponCube textures..."
-  python3 "$SCRIPT_DIR/extract-private-special-textures.py"     "$ORIGINAL_DATA_SOURCE"     "$PRIVATE_RESOURCES"
+  echo "3/5 Extracting private canonical textures..."
+  python3 "$SCRIPT_DIR/extract-private-special-textures.py" \
+    "$ORIGINAL_DATA_SOURCE" \
+    "$PRIVATE_RESOURCES"
+
+  if python3 -c "import UnityPy" >/dev/null 2>&1; then
+    echo "3/5 Extracting private SmallExplosion impact audio..."
+    python3 "$SCRIPT_DIR/extract-private-small-explosion-audio.py" \
+      "$ORIGINAL_DATA_SOURCE" \
+      "$PRIVATE_RESOURCES"
+  else
+    echo "3/5 UnityPy is not installed; SmallExplosion original audio extraction skipped."
+  fi
 else
   echo "3/5 No original Data source supplied; special cubes use procedural fallback visuals."
 fi
