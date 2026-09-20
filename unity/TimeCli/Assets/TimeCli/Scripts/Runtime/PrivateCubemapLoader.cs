@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TimeCli.UnityRuntime
@@ -15,9 +16,18 @@ namespace TimeCli.UnityRuntime
     {
         public const int CanonicalSize = 64;
 
+        private static readonly Dictionary<string, Cubemap> Cache =
+            new();
+
         public static Cubemap Load(
             string resourcePrefix)
         {
+            if (Cache.TryGetValue(
+                    resourcePrefix,
+                    out Cubemap cached))
+            {
+                return cached;
+            }
             Texture2D positiveX =
                 Resources.Load<Texture2D>(
                     resourcePrefix + "_PositiveX");
@@ -91,6 +101,9 @@ namespace TimeCli.UnityRuntime
             cubemap.Apply(
                 true,
                 false);
+
+            Cache[resourcePrefix] =
+                cubemap;
 
             return cubemap;
         }
