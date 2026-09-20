@@ -18,6 +18,7 @@ public sealed class GameState
         TimeCubes = new TimeCubeBank();
         WeaponCubes = new WeaponCubeBankState();
         ArenaRewards = new ArenaRewardHistory();
+        CubePickups = new SpecialCubePickupQueue();
 
         Heroes = CanonicalHeroes.All.Select(h => new HeroRuntime(h)).ToArray();
         ClickPistol = new SkillRuntime(CanonicalSkills.ClickPistol);
@@ -35,6 +36,7 @@ public sealed class GameState
     public TimeCubeBank TimeCubes { get; }
     public WeaponCubeBankState WeaponCubes { get; }
     public ArenaRewardHistory ArenaRewards { get; }
+    public SpecialCubePickupQueue CubePickups { get; }
 
     public HeroRuntime[] Heroes { get; }
     public SkillRuntime ClickPistol { get; }
@@ -294,7 +296,8 @@ public sealed class GameState
 
     public BlockDamageResult ApplyClickToBlock(
         EnemyBlockState block,
-        bool isCritical = false)
+        bool isCritical = false,
+        double nowSeconds = 0)
     {
         var result = block.ApplyClickDamage(
             GetClickDamage(isCritical),
@@ -302,13 +305,14 @@ public sealed class GameState
             GetHeroesGoldFindMultiplier(),
             IsAbilityActive(AbilityType.GoldRush));
 
-        ApplyBlockReward(block, result);
+        ApplyBlockReward(block, result, nowSeconds);
         return result;
     }
 
     public BlockDamageResult ApplyDamageToBlock(
         EnemyBlockState block,
-        double damage)
+        double damage,
+        double nowSeconds = 0)
     {
         var result = block.ApplyDamage(
             damage,
@@ -316,9 +320,15 @@ public sealed class GameState
             GetHeroesGoldFindMultiplier(),
             IsAbilityActive(AbilityType.GoldRush));
 
-        ApplyBlockReward(block, result);
+        ApplyBlockReward(block, result, nowSeconds);
         return result;
     }
+
+    public bool TryCollectCubePickup(long pickupId, double nowSeconds) =>
+        CubePickups.TryCollect(pickupId, nowSeconds);
+
+    public IReadOnlyList<SpecialCubeCollection> UpdateCubePickups(double nowSeconds) =>
+        CubePickups.Tick(nowSeconds, TimeCubes, WeaponCubes);
 
     public OfflineProgressionResult ApplyOfflineEarnings(double secondsSinceSave)
     {
@@ -338,7 +348,8 @@ public sealed class GameState
 
     private void ApplyBlockReward(
         EnemyBlockState block,
-        BlockDamageResult result)
+        BlockDamageResult result,
+        double nowSeconds)
     {
         if (!result.Killed)
             return;
@@ -349,13 +360,21 @@ public sealed class GameState
         if (result.Reward.TimeCubes > 0)
         {
             ArenaRewards.MarkTimeCubeReward(Arena.Wave);
-            TimeCubes.AddPendingReward(result.Reward.TimeCubes);
+            CubePickups.Spawn(
+                SpecialCubeKind.TimeCube,
+                result.Reward.TimeCubes,
+                nowSeconds,
+                block);
         }
 
         if (result.Reward.WeaponCubes > 0)
         {
             ArenaRewards.MarkWeaponCubeReward(Arena.Wave);
-            WeaponCubes.Add(result.Reward.WeaponCubes);
+            CubePickups.Spawn(
+                SpecialCubeKind.WeaponCube,
+                result.Reward.WeaponCubes,
+                nowSeconds,
+                block);
         }
     }
 }
