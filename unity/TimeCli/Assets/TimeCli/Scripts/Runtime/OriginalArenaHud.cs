@@ -62,6 +62,10 @@ namespace TimeCli.UnityRuntime
             DrawWaveHp(snapshot, scale, offsetX, offsetY);
             DrawArenaDisplay(snapshot, scale, offsetX, offsetY);
             DrawGold(snapshot, scale, offsetX, offsetY);
+            DrawClickWeaponModes(
+                scale,
+                offsetX,
+                offsetY);
         }
 
         private void DrawWaveHp(
@@ -315,6 +319,155 @@ namespace TimeCli.UnityRuntime
                     Color.white,
                     TextAnchor.MiddleCenter,
                     scale));
+        }
+
+        private void DrawClickWeaponModes(
+            float scale,
+            float offsetX,
+            float offsetY)
+        {
+            int purchasedHeroes =
+                GetPurchasedHeroCount();
+
+            DrawClickWeaponModeButton(
+                ClickWeaponSlot.Launcher,
+                OriginalClickWeaponAutoAimPresentation
+                    .LauncherButtonOffsetX,
+                purchasedHeroes,
+                scale,
+                offsetX,
+                offsetY);
+
+            DrawClickWeaponModeButton(
+                ClickWeaponSlot.Cannon,
+                OriginalClickWeaponAutoAimPresentation
+                    .CannonButtonOffsetX,
+                purchasedHeroes,
+                scale,
+                offsetX,
+                offsetY);
+
+            DrawClickWeaponModeButton(
+                ClickWeaponSlot.Pistol,
+                OriginalClickWeaponAutoAimPresentation
+                    .PistolButtonOffsetX,
+                purchasedHeroes,
+                scale,
+                offsetX,
+                offsetY);
+        }
+
+        private void DrawClickWeaponModeButton(
+            ClickWeaponSlot slot,
+            float offsetFromCenterX,
+            int purchasedHeroes,
+            float scale,
+            float offsetX,
+            float offsetY)
+        {
+            if (!IsClickWeaponModeButtonVisible(
+                    slot,
+                    purchasedHeroes))
+            {
+                return;
+            }
+
+            float size =
+                OriginalClickWeaponAutoAimPresentation
+                    .ModeButtonSize;
+
+            float logicalX =
+                ReferenceWidth * 0.5f +
+                offsetFromCenterX -
+                size * 0.5f;
+
+            // Toolbar is anchored five pixels above the bottom edge and each
+            // button has a bottom pivot in the recovered CanvasIdleMode.
+            float logicalY =
+                ReferenceHeight -
+                OriginalClickWeaponAutoAimPresentation
+                    .ModeToolbarBottom -
+                size;
+
+            Rect rect =
+                R(
+                    logicalX,
+                    logicalY,
+                    size,
+                    size,
+                    scale,
+                    offsetX,
+                    offsetY);
+
+            ClickWeaponMode mode =
+                bootstrap.Game.ClickWeapons.GetMode(
+                    slot);
+
+            Color previous =
+                GUI.color;
+
+            GUI.color =
+                mode == ClickWeaponMode.AutoAim
+                    ? OriginalClickWeaponAutoAimPresentation
+                        .ButtonOnColor
+                    : OriginalClickWeaponAutoAimPresentation
+                        .ButtonOffColor;
+
+            // The original uses the same crosshair sprite for Manual/Auto and
+            // communicates AutoAim through the orange button color. Disabled
+            // swaps to a separate disabled symbol.
+            string symbol =
+                mode == ClickWeaponMode.Disabled
+                    ? "×"
+                    : "+";
+
+            bool clicked =
+                GUI.Button(
+                    rect,
+                    symbol);
+
+            GUI.color =
+                previous;
+
+            if (clicked)
+                arena.CycleClickWeaponMode(slot);
+        }
+
+        private bool IsClickWeaponModeButtonVisible(
+            ClickWeaponSlot slot,
+            int purchasedHeroes)
+        {
+            if (purchasedHeroes <
+                OriginalClickWeaponAutoAimPresentation
+                    .GetHeroesRequired(slot))
+            {
+                return false;
+            }
+
+            return slot switch
+            {
+                ClickWeaponSlot.Pistol => true,
+                ClickWeaponSlot.Cannon =>
+                    bootstrap.Game.ClickWeapons.CannonUnlocked,
+                ClickWeaponSlot.Launcher =>
+                    bootstrap.Game.ClickWeapons.LauncherUnlocked,
+                _ => false
+            };
+        }
+
+        private int GetPurchasedHeroCount()
+        {
+            int count = 0;
+
+            for (int i = 0;
+                 i < bootstrap.Game.Heroes.Length;
+                 i++)
+            {
+                if (bootstrap.Game.Heroes[i].Level > 0)
+                    count++;
+            }
+
+            return count;
         }
 
         private void DrawRect(
