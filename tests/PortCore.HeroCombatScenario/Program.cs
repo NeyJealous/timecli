@@ -294,14 +294,23 @@ static HeroDpsMultipliers Neutral() => new();
     AssertTrue(spawned.IsVeryFirstEnemy && spawned.Model.BlockCount == 1,
         "First-game enemy should be one block");
 
-    var firstVolley = arena.FireHero(
-        0,
-        nowSeconds: 0,
-        new SequenceRandomSource(Array.Empty<int>()));
+    HeroVolleyExecutionResult? lastVolley = null;
+    double now = 0;
 
-    AssertTrue(firstVolley.Plan.Fired, "Pulse auto-fire should fire");
-    AssertTrue(firstVolley.ModelCleared, "Pulse first shot should clear wave-1 block");
-    AssertTrue(firstVolley.ArenaResult == ArenaClearResult.ContinueSameWave,
+    for (int shot = 0; shot < 10 && arena.CurrentEnemy is not null; shot++)
+    {
+        lastVolley = arena.FireHero(
+            0,
+            nowSeconds: now,
+            new SequenceRandomSource(Array.Empty<int>()));
+
+        AssertTrue(lastVolley.Plan.Fired, $"Pulse volley {shot + 1} should fire");
+        now = arena.GetHeroAttackState(0).NextFireTime;
+    }
+
+    AssertTrue(lastVolley is not null && lastVolley.ModelCleared,
+        "Pulse auto-fire should eventually clear the wave-1 block");
+    AssertTrue(lastVolley!.ArenaResult == ArenaClearResult.ContinueSameWave,
         "First of ten regular enemies should remain on wave 1");
 }
 
