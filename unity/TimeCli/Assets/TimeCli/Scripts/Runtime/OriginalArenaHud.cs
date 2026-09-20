@@ -35,6 +35,46 @@ namespace TimeCli.UnityRuntime
             _pixel.Apply();
         }
 
+        private void Update()
+        {
+            if (bootstrap == null ||
+                arena == null ||
+                !bootstrap.IsReady)
+            {
+                return;
+            }
+
+            int purchasedHeroes =
+                GetPurchasedHeroCount();
+
+            if (IsClickWeaponModeButtonVisible(
+                    ClickWeaponSlot.Launcher,
+                    purchasedHeroes) &&
+                Input.GetKeyDown(KeyCode.Q))
+            {
+                arena.CycleClickWeaponMode(
+                    ClickWeaponSlot.Launcher);
+            }
+
+            if (IsClickWeaponModeButtonVisible(
+                    ClickWeaponSlot.Cannon,
+                    purchasedHeroes) &&
+                Input.GetKeyDown(KeyCode.W))
+            {
+                arena.CycleClickWeaponMode(
+                    ClickWeaponSlot.Cannon);
+            }
+
+            if (IsClickWeaponModeButtonVisible(
+                    ClickWeaponSlot.Pistol,
+                    purchasedHeroes) &&
+                Input.GetKeyDown(KeyCode.E))
+            {
+                arena.CycleClickWeaponMode(
+                    ClickWeaponSlot.Pistol);
+            }
+        }
+
         private void OnGUI()
         {
             if (bootstrap == null ||
