@@ -273,15 +273,18 @@ static void AssertTrue(bool value, string name)
         atDelay.PistolShots,
         "Automatic Fire fires at exact nextFireTime");
 
-    // Eight additional 0.1-second ticks produce the 10th Launcher Shoot.
+    // Unity stores these timers as float. Repeated 0.1f additions can
+    // legitimately drift a few ULPs above a decimal frame boundary (for
+    // example 0.70000005f vs 0.7f), so sample just after each subsequent
+    // boundary rather than assuming ideal decimal arithmetic.
     ClickWeaponAutomaticFirePlan last =
         ClickWeaponAutomaticFirePlan.None;
 
     for (int i = 2; i <= 9; i++)
     {
         last = game.UpdateClickWeapons(
-            nowSeconds: i * 0.1,
-            deltaSeconds: 0.1);
+            nowSeconds: i * 0.101,
+            deltaSeconds: 0.101);
     }
 
     AssertNear(
