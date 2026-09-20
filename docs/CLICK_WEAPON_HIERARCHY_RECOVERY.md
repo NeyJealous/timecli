@@ -1,6 +1,6 @@
 # Click-weapon hierarchy recovery
 
-Status: **forensic extractor ready; exact hierarchy values not yet promoted**.
+Status: **canonical hierarchy and aim/vertical transform behavior promoted**.
 
 The original 1.4.5 Arena serialized data contains named objects including:
 
@@ -9,9 +9,14 @@ The original 1.4.5 Arena serialized data contains named objects including:
 - `ClickCannon`
 - `ClickLauncher`
 
-Earlier reconstruction recovered the authored rest fire-spot positions, but not
-the exact parent/child transform chain or aim/recoil pivot transforms. Those
-values must not be guessed.
+The canonical 1.4.5 APK was re-read directly. The exact parent/child transform
+chain, the three Firespots, the shared aim Pivot, per-weapon Vertical transforms,
+and ClickerWeapon aim/vertical IL behavior are now confirmed and promoted.
+
+The original script performs `gunPivot.LookAt` toward
+`Camera.ScreenPointToRay(crosshair)` at distance 100, then sets
+`verticalT.localPosition.y` to the negative value of the serialized
+`verticalCurve` evaluated at `1 - tapY / Screen.height`.
 
 ## Private extraction
 
@@ -96,16 +101,23 @@ REQUIRE_WEAPON_HIERARCHY=1 \
 bash tools/unity/create-arena-prototype.sh
 ```
 
-## Promotion gate
+## Promoted canonical hierarchy
 
-The hierarchy/pivot reconstruction can be promoted into public clean-room
-constants/code only after:
+Confirmed paths:
 
-1. the extractor runs successfully against the canonical 1.4.5 serialized
-   scene;
-2. target paths for Pistol/Cannon/Launcher are reviewed;
-3. Firespot / aim / recoil pivot nodes are identified from the report;
-4. the resulting constants are covered by Unity-adapter preflight tests.
+- `_SceneArenaRoot/ClickWeapons/ClickerPistol/Pivot/Vertical/Pistol/Firespot`
+- `_SceneArenaRoot/ClickWeapons/ClickCannon/Pivot/Vertical/s20/Firespot`
+- `_SceneArenaRoot/ClickWeapons/ClickLauncher/Pivot/Vertical/launcher/Firespot`
 
-Until then, the existing recovered rest fire-spot positions remain the
-presentation fallback.
+All three weapon roots use the same authored Pivot local position:
+`(0, -0.135000005, -0.521000028)`.
+
+The serialized vertical curves contain exactly two keys. Pistol ends at about
+`0.298796117`; Cannon/Launcher share the heavier curve ending at
+`0.401019126`. Their exact times, values and tangents now live in
+`OriginalClickWeaponPresentation` and are regression-tested by the Unity
+adapter preflight.
+
+The private extractor remains useful as an independent forensic verifier and
+for future original-derived nodes/assets, but runtime aiming no longer depends
+on the private hierarchy JSON.
