@@ -16,6 +16,8 @@ REQUIRED_GROUPS = (
     ("launcher", {"ClickLauncher"}),
 )
 
+MAX_FIRE_SPOT_DISTANCE = 0.05
+
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
@@ -85,6 +87,11 @@ def _validate_scene(scene: dict[str, Any]) -> dict[str, Any]:
             3,
             f"{name}:{hierarchy_path}:localScale",
         )
+        _number_list(
+            node.get("worldPosition"),
+            3,
+            f"{name}:{hierarchy_path}:worldPosition",
+        )
 
         if node.get("isRequestedTarget") is True:
             target_names.add(node_name)
@@ -115,6 +122,47 @@ def _validate_scene(scene: dict[str, Any]) -> dict[str, Any]:
                 by_transform.get(current, {}).get("parentTransformPathId", 0)
             )
 
+    fire_spot_matches = scene.get("fireSpotMatches")
+    _require(
+        isinstance(fire_spot_matches, dict),
+        f"{name}: missing fireSpotMatches",
+    )
+
+    verified_fire_spots = {}
+    for weapon_key, _accepted_names in REQUIRED_GROUPS:
+        match = fire_spot_matches.get(weapon_key)
+        if not isinstance(match, dict):
+            continue
+
+        transform_id = match.get("transformPathId")
+        _require(
+            isinstance(transform_id, int) and transform_id in by_transform,
+            f"{name}:{weapon_key}: invalid fire-spot transform",
+        )
+        distance = match.get("distance")
+        _require(
+            isinstance(distance, (int, float))
+            and not isinstance(distance, bool)
+            and math.isfinite(float(distance)),
+            f"{name}:{weapon_key}: invalid fire-spot distance",
+        )
+        _require(
+            float(distance) <= MAX_FIRE_SPOT_DISTANCE,
+            f"{name}:{weapon_key}: nearest transform is "
+            f"{float(distance):.6f} units from recovered fire spot",
+        )
+        _number_list(
+            match.get("worldPosition"),
+            3,
+            f"{name}:{weapon_key}:fireSpot.worldPosition",
+        )
+        _number_list(
+            match.get("expectedWorldPosition"),
+            3,
+            f"{name}:{weapon_key}:fireSpot.expectedWorldPosition",
+        )
+        verified_fire_spots[weapon_key] = match
+
     fire_candidates = []
     for node in nodes:
         node_name = str(node.get("name", ""))
@@ -130,6 +178,7 @@ def _validate_scene(scene: dict[str, Any]) -> dict[str, Any]:
         "scene": name,
         "targetNames": sorted(target_names),
         "fireCandidates": sorted(set(fire_candidates)),
+        "verifiedFireSpots": verified_fire_spots,
     }
 
 
@@ -161,6 +210,19 @@ def validate_report(report: dict[str, Any]) -> list[dict[str, Any]]:
             + " / ".join(sorted(accepted_names)),
         )
 
+    complete_scenes = [
+        summary
+        for summary in summaries
+        if all(
+            label in summary["verifiedFireSpots"]
+            for label, _accepted_names in REQUIRED_GROUPS
+        )
+    ]
+    _require(
+        bool(complete_scenes),
+        "no single scene contains verified Pistol/Cannon/Launcher fire spots",
+    )
+
     return summaries
 
 
@@ -180,6 +242,16 @@ def main() -> None:
             f"- {summary['scene']}: targets="
             f"{', '.join(summary['targetNames'])}"
         )
+        verified = summary["verifiedFireSpots"]
+        for weapon_key in ("pistol", "cannon", "launcher"):
+            match = verified.get(weapon_key)
+            if match is not None:
+                print(
+                    f"  {weapon_key} fire spot: "
+                    f"{match['hierarchyPath']} "
+                    f"(distance={float(match['distance']):.8f})"
+                )
+
         candidates = summary["fireCandidates"]
         if candidates:
             print("  fire/pivot candidates:")
