@@ -227,11 +227,11 @@ namespace TimeCli.UnityRuntime
 
                 MeshFilter filter =
                     visual.AddComponent<MeshFilter>();
-                MeshRenderer renderer =
+                MeshRenderer meshRenderer =
                     visual.AddComponent<MeshRenderer>();
 
                 filter.sharedMesh = mesh;
-                renderer.sharedMaterial = material;
+                meshRenderer.sharedMaterial = material;
                 return;
             }
 
@@ -256,10 +256,10 @@ namespace TimeCli.UnityRuntime
             if (collider != null)
                 UnityEngine.Object.Destroy(collider);
 
-            Renderer renderer =
+            Renderer fallbackRenderer =
                 fallback.GetComponent<Renderer>();
-            if (renderer != null)
-                renderer.sharedMaterial = material;
+            if (fallbackRenderer != null)
+                fallbackRenderer.sharedMaterial = material;
         }
 
         private static Material GetPistolMaterial()
