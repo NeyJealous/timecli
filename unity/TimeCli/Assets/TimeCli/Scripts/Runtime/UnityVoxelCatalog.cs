@@ -22,7 +22,8 @@ namespace TimeCli.UnityRuntime
                     Convert(entry.red),
                     Convert(entry.white),
                     Convert(entry.yellow),
-                    Convert(entry.blue));
+                    Convert(entry.blue),
+                    new VoxelPoint(entry.size.x, entry.size.y, entry.size.z));
 
                 _layouts.Add(entry.id, layout);
                 _models.Add(new VoxelModelDescriptor(
