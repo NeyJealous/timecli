@@ -68,6 +68,13 @@ if ($OriginalDataSource) {
         if ($LASTEXITCODE -ne 0) {
             throw "SmallExplosion audio extraction failed."
         }
+
+        $ProjectileExtractor = Join-Path $PSScriptRoot "extract-private-projectile-presentation.py"
+        Write-Host "3/5 Extracting private Flak/Rocket presentation..."
+        python $ProjectileExtractor $OriginalDataSource $PrivateResources
+        if ($LASTEXITCODE -ne 0) {
+            throw "Projectile presentation extraction failed."
+        }
     }
     else {
         Write-Warning "UnityPy is not installed; SmallExplosion original audio extraction was skipped."
