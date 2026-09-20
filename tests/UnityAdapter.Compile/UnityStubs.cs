@@ -178,6 +178,7 @@ namespace UnityEngine
 
     public enum PrimitiveType { Sphere, Capsule, Cylinder, Cube, Plane, Quad }
     public enum LightType { Directional }
+    public enum AudioRolloffMode { Logarithmic, Linear, Custom }
     public enum FilterMode { Point, Bilinear, Trilinear }
     public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
     public enum ParticleSystemSimulationSpace { Local, World, Custom }
@@ -224,6 +225,21 @@ namespace UnityEngine
     {
         public LightType type { get; set; }
         public float intensity { get; set; }
+    }
+
+    public sealed class AudioClip : Object { }
+
+    public sealed class AudioSource : Behaviour
+    {
+        public AudioClip clip { get; set; } = default!;
+        public bool playOnAwake { get; set; }
+        public float pitch { get; set; } = 1f;
+        public float volume { get; set; } = 1f;
+        public float minDistance { get; set; } = 1f;
+        public float maxDistance { get; set; } = 500f;
+        public float spatialBlend { get; set; }
+        public AudioRolloffMode rolloffMode { get; set; }
+        public void Play() { }
     }
 
     public class Renderer : Component
@@ -460,6 +476,22 @@ namespace UnityEngine
 
     public sealed class ParticleSystem : Component
     {
+        public struct EmitParams
+        {
+            public Vector3 position { get; set; }
+            public Vector3 velocity { get; set; }
+            public float startLifetime { get; set; }
+            public float startSize { get; set; }
+            public float rotation { get; set; }
+            public float angularVelocity { get; set; }
+            public Color startColor { get; set; }
+        }
+
+        public struct Particle
+        {
+            public Vector3 velocity { get; set; }
+        }
+
         public readonly struct MinMaxCurve
         {
             public MinMaxCurve(float constant)
@@ -582,6 +614,9 @@ namespace UnityEngine
         public ForceOverLifetimeModule forceOverLifetime => new();
 
         public void Emit(int count) { }
+        public void Emit(EmitParams emitParams, int count) { }
+        public int GetParticles(Particle[] particles) => 0;
+        public void SetParticles(Particle[] particles, int size) { }
         public void Play() { }
     }
 
@@ -591,6 +626,8 @@ namespace UnityEngine
         public string name { get; set; } = string.Empty;
         public Color color { get; set; }
         public Texture mainTexture { get; set; } = default!;
+        public void SetColor(string name, Color color) { }
+        public void SetFloat(string name, float value) { }
     }
 
     public sealed class MaterialPropertyBlock
@@ -606,6 +643,9 @@ namespace UnityEngine
 
     public static class Mathf
     {
+        public const float PI = (float)Math.PI;
+        public const float Deg2Rad = PI / 180f;
+
         public static float Clamp01(float value) =>
             value < 0f ? 0f : value > 1f ? 1f : value;
 
@@ -614,6 +654,9 @@ namespace UnityEngine
 
         public static float Sqrt(float value) =>
             (float)Math.Sqrt(value);
+
+        public static float Pow(float f, float p) =>
+            (float)Math.Pow(f, p);
 
         public static float Min(float a, float b) =>
             a < b ? a : b;
@@ -627,6 +670,7 @@ namespace UnityEngine
         public static int Range(int minInclusive, int maxExclusive) => minInclusive;
         public static float Range(float minInclusive, float maxInclusive) => minInclusive;
         public static float value => 0.5f;
+        public static Vector3 insideUnitSphere => Vector3.zero;
         public static Vector3 onUnitSphere => new(0f, 0f, 1f);
         public static Quaternion rotation => new();
     }
@@ -635,6 +679,7 @@ namespace UnityEngine
     {
         public static double timeAsDouble => 0.0;
         public static float time => 0f;
+        public static float timeScale => 1f;
         public static float deltaTime => 1f / 60f;
     }
 
