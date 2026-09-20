@@ -121,6 +121,12 @@ namespace TimeCli.UnityRuntime
                 OriginalClickWeaponPresentation.LauncherFireSpotScale,
                 "launcher");
 
+            ClickWeaponVisualFactory.Populate(
+                pistol.Model,
+                pistolSlide,
+                cannon.Model,
+                launcher.Model);
+
             arena.BindRecoveredClickWeaponFireSpots(
                 pistol.FireSpot,
                 cannon.FireSpot,
