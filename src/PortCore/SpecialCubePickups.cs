@@ -148,9 +148,12 @@ public sealed class SpecialCubePickupQueue
         if (count == 0)
             return Array.Empty<SpecialCubePickupState>();
 
-        var created = new SpecialCubePickupState[count];
+        if (count > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(count));
 
-        for (ulong i = 0; i < count; i++)
+        var created = new SpecialCubePickupState[(int)count];
+
+        for (int i = 0; i < created.Length; i++)
         {
             var pickup = new SpecialCubePickupState(
                 _nextId++,
