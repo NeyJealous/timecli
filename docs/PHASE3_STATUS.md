@@ -119,9 +119,14 @@ Recovered targets:
 - `TimeCliRocketProjectileMesh.txt` (requires UnityPy)
 - `TimeCliRocketProjectileTexture.png` (requires UnityPy)
 - `TimeCliRocketProjectileAudio.wav` (requires UnityPy)
+- click-weapon private meshes/textures for Pistol/Cannon/Launcher;
+- six `TimeCliChannelCubemap_*.bytes` faces for Pistol/Rocket;
+- six `TimeCliGreebleBoxCubemap_*.bytes` faces for Cannon/Launcher.
 
 The public project falls back to procedural clean visuals when those private
-files are absent.
+files are absent. The two canonical 64x64 ETC_RGB4 cubemaps are split into six
+faces each and validated against the original serialized payload before modern
+Unity rebuilds their mip chains at runtime.
 
 ## Original Arena presentation recovered
 
