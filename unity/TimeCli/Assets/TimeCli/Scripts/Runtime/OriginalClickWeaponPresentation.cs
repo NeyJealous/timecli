@@ -16,12 +16,27 @@ namespace TimeCli.UnityRuntime
         private readonly Transform _launcherPivot;
         private readonly Transform _launcherVertical;
         private readonly Transform _pistolSlide;
+        private readonly Transform _pistolModel;
         private readonly Transform _cannonModel;
         private readonly Transform _launcherModel;
 
         private float _pistolShootStart = float.NegativeInfinity;
         private float _cannonShootStart = float.NegativeInfinity;
         private float _launcherShootStart = float.NegativeInfinity;
+
+        private OriginalClickWeaponVisibilityAnimation.ClipCurves
+            _pistolVisibilityClip;
+        private OriginalClickWeaponVisibilityAnimation.ClipCurves
+            _cannonVisibilityClip;
+        private OriginalClickWeaponVisibilityAnimation.ClipCurves
+            _launcherVisibilityClip;
+
+        private float _pistolVisibilityStart = float.NegativeInfinity;
+        private float _cannonVisibilityStart = float.NegativeInfinity;
+        private float _launcherVisibilityStart = float.NegativeInfinity;
+        private float _pistolVisibilityDuration;
+        private float _cannonVisibilityDuration;
+        private float _launcherVisibilityDuration;
 
         private OriginalClickWeaponPresentationView(
             Transform pistolPivot,
@@ -31,6 +46,7 @@ namespace TimeCli.UnityRuntime
             Transform launcherPivot,
             Transform launcherVertical,
             Transform pistolSlide,
+            Transform pistolModel,
             Transform cannonModel,
             Transform launcherModel)
         {
@@ -41,6 +57,7 @@ namespace TimeCli.UnityRuntime
             _launcherPivot = launcherPivot;
             _launcherVertical = launcherVertical;
             _pistolSlide = pistolSlide;
+            _pistolModel = pistolModel;
             _cannonModel = cannonModel;
             _launcherModel = launcherModel;
         }
@@ -117,6 +134,7 @@ namespace TimeCli.UnityRuntime
                 launcher.Pivot,
                 launcher.Vertical,
                 pistolSlide,
+                pistol.Model,
                 cannon.Model,
                 launcher.Model);
         }
@@ -125,7 +143,7 @@ namespace TimeCli.UnityRuntime
             Vector3 crosshairPosition,
             float lastTapScreenY)
         {
-            UpdateShootAnimations(Time.time);
+            UpdateAnimations(Time.time);
 
             Camera camera = Camera.main;
             if (camera == null)
@@ -183,6 +201,42 @@ namespace TimeCli.UnityRuntime
             ApplyLauncherShoot(0f);
         }
 
+        public void PlayPistolAppear() =>
+            StartPistolVisibility(
+                OriginalClickWeaponVisibilityAnimation.PistolAppear,
+                OriginalClickWeaponVisibilityAnimation.PistolAppearDuration);
+
+        public void PlayPistolDisappear() =>
+            StartPistolVisibility(
+                OriginalClickWeaponVisibilityAnimation.PistolDisappear,
+                OriginalClickWeaponVisibilityAnimation.PistolDisappearDuration);
+
+        public void PlayCannonAppear() =>
+            StartCannonVisibility(
+                OriginalClickWeaponVisibilityAnimation.CannonAppear,
+                OriginalClickWeaponVisibilityAnimation.CannonAppearDuration);
+
+        public void PlayCannonDisappear() =>
+            StartCannonVisibility(
+                OriginalClickWeaponVisibilityAnimation.CannonDisappear,
+                OriginalClickWeaponVisibilityAnimation.CannonDisappearDuration);
+
+        public void PlayLauncherAppear() =>
+            StartLauncherVisibility(
+                OriginalClickWeaponVisibilityAnimation.LauncherAppear,
+                OriginalClickWeaponVisibilityAnimation.LauncherAppearDuration);
+
+        public void PlayLauncherDisappear() =>
+            StartLauncherVisibility(
+                OriginalClickWeaponVisibilityAnimation.LauncherDisappear,
+                OriginalClickWeaponVisibilityAnimation.LauncherDisappearDuration);
+
+        private void UpdateAnimations(float now)
+        {
+            UpdateShootAnimations(now);
+            UpdateVisibilityAnimations(now);
+        }
+
         private void UpdateShootAnimations(float now)
         {
             if (!float.IsNegativeInfinity(_pistolShootStart))
@@ -233,6 +287,91 @@ namespace TimeCli.UnityRuntime
                     _launcherShootStart = float.NegativeInfinity;
                 }
             }
+        }
+
+        private void UpdateVisibilityAnimations(float now)
+        {
+            UpdateVisibilityAnimation(
+                _pistolModel,
+                ref _pistolVisibilityClip,
+                ref _pistolVisibilityStart,
+                _pistolVisibilityDuration,
+                now);
+
+            UpdateVisibilityAnimation(
+                _cannonModel,
+                ref _cannonVisibilityClip,
+                ref _cannonVisibilityStart,
+                _cannonVisibilityDuration,
+                now);
+
+            UpdateVisibilityAnimation(
+                _launcherModel,
+                ref _launcherVisibilityClip,
+                ref _launcherVisibilityStart,
+                _launcherVisibilityDuration,
+                now);
+        }
+
+        private static void UpdateVisibilityAnimation(
+            Transform model,
+            ref OriginalClickWeaponVisibilityAnimation.ClipCurves clip,
+            ref float startTime,
+            float duration,
+            float now)
+        {
+            if (clip == null || float.IsNegativeInfinity(startTime))
+                return;
+
+            float elapsed = now - startTime;
+            if (elapsed >= duration)
+            {
+                ApplyVisibility(model, clip, duration);
+                clip = null;
+                startTime = float.NegativeInfinity;
+                return;
+            }
+
+            ApplyVisibility(model, clip, Mathf.Max(0f, elapsed));
+        }
+
+        private void StartPistolVisibility(
+            OriginalClickWeaponVisibilityAnimation.ClipCurves clip,
+            float duration)
+        {
+            _pistolVisibilityClip = clip;
+            _pistolVisibilityDuration = duration;
+            _pistolVisibilityStart = Time.time;
+            ApplyVisibility(_pistolModel, clip, 0f);
+        }
+
+        private void StartCannonVisibility(
+            OriginalClickWeaponVisibilityAnimation.ClipCurves clip,
+            float duration)
+        {
+            _cannonVisibilityClip = clip;
+            _cannonVisibilityDuration = duration;
+            _cannonVisibilityStart = Time.time;
+            ApplyVisibility(_cannonModel, clip, 0f);
+        }
+
+        private void StartLauncherVisibility(
+            OriginalClickWeaponVisibilityAnimation.ClipCurves clip,
+            float duration)
+        {
+            _launcherVisibilityClip = clip;
+            _launcherVisibilityDuration = duration;
+            _launcherVisibilityStart = Time.time;
+            ApplyVisibility(_launcherModel, clip, 0f);
+        }
+
+        private static void ApplyVisibility(
+            Transform model,
+            OriginalClickWeaponVisibilityAnimation.ClipCurves clip,
+            float elapsed)
+        {
+            model.localPosition = clip.EvaluatePosition(elapsed);
+            model.localRotation = clip.EvaluateRotation(elapsed);
         }
 
         private void ApplyPistolShoot(float elapsed)
