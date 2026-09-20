@@ -16,20 +16,20 @@ namespace TimeCli.UnityRuntime
         public const string PistolChamberTwoMeshResource =
             "TimeCliPistolChamberTwoMesh";
         public const string PistolTopMeshResource =
-            "TimeCliPistolTop1Mesh";
+            "TimeCliPistolTopMesh";
         public const string PistolTriggerMeshResource =
             "TimeCliPistolTriggerMesh";
         public const string CannonMeshResource =
-            "TimeCliClickCannonMesh";
+            "TimeCliCannonMesh";
         public const string LauncherMeshResource =
-            "TimeCliClickLauncherMesh";
+            "TimeCliLauncherMesh";
 
         public const string PistolTextureResource =
             "TimeCliPistolTexture";
         public const string CannonTextureResource =
-            "TimeCliClickCannonTexture";
+            "TimeCliCannonTexture";
         public const string LauncherTextureResource =
-            "TimeCliClickLauncherTexture";
+            "TimeCliLauncherTexture";
 
         public const int PistolBaseVertexCount = 684;
         public const int PistolChamberOneVertexCount = 287;
