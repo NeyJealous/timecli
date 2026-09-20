@@ -600,16 +600,73 @@ var cubeKill = timeCubeBlock.ApplyDamage(
 AssertEqual(0, cubeKill.Reward.Gold, "Time Cube block has no gold reward");
 AssertEqual(5, (double)cubeKill.Reward.TimeCubes, "Time Cube block reward count");
 
-// GameState auto-collection and per-timeline reward history
+// GameState deferred special-cube pickups and per-timeline reward history
 var combatGame = new GameState();
 var trackedCubeBlock = new EnemyBlockState(
     100,
     EnemyType.TimeCube,
     timeCubeCount: 3);
-combatGame.ApplyDamageToBlock(trackedCubeBlock, 1000);
-AssertEqual(3, (double)combatGame.TimeCubes.PendingTimelineReward, "Combat adds pending Time Cubes");
+combatGame.ApplyDamageToBlock(
+    trackedCubeBlock,
+    1000,
+    nowSeconds: 0);
+
+AssertEqual(0, (double)combatGame.TimeCubes.PendingTimelineReward, "Time Cubes are not credited at block death");
+AssertEqual(3, combatGame.CubePickups.Count, "Time Cube pickup object count");
+
+var firstTrackedPickup = combatGame.CubePickups.Active[0];
+if (firstTrackedPickup.IsColliderExpanded(1.999))
+    throw new Exception("Pickup collider must remain original size before two seconds");
+if (!firstTrackedPickup.IsColliderExpanded(2.0))
+    throw new Exception("Pickup collider must expand at two seconds");
+
+AssertEqual(
+    0,
+    combatGame.UpdateCubePickups(5.49).Count,
+    "Auto pickup must wait for 0.5-second collection tween");
+AssertEqual(0, (double)combatGame.TimeCubes.PendingTimelineReward, "No Time Cubes before collection tween completes");
+
+var autoCollected = combatGame.UpdateCubePickups(5.5);
+AssertEqual(3, autoCollected.Count, "Three Time Cube pickups auto-collected");
+AssertEqual(3, (double)combatGame.TimeCubes.PendingTimelineReward, "Auto-collected Time Cubes enter pending timeline reward");
+AssertEqual(0, combatGame.CubePickups.Count, "Collected Time Cube pickups are removed");
+
 if (!combatGame.ArenaRewards.HasTimeCubeReward(combatGame.Arena.Wave))
     throw new Exception("Destroyed Time Cube block must mark current wave");
+
+// Manual Weapon Cube collection uses the same original 0.5-second tween.
+var weaponPickupBlock = new EnemyBlockState(
+    100,
+    EnemyType.WeaponCube,
+    weaponCubeCount: 2);
+combatGame.ApplyDamageToBlock(
+    weaponPickupBlock,
+    1000,
+    nowSeconds: 10);
+
+AssertEqual(2, combatGame.CubePickups.Count, "Weapon Cube pickup object count");
+long manualWeaponPickupId = combatGame.CubePickups.Active[0].Id;
+if (!combatGame.TryCollectCubePickup(manualWeaponPickupId, 10.2))
+    throw new Exception("Manual Weapon Cube collection should start");
+
+AssertEqual(
+    0,
+    combatGame.UpdateCubePickups(10.69).Count,
+    "Manual collection must wait the full 0.5-second tween");
+AssertEqual(0, (double)combatGame.WeaponCubes.Spendable, "Weapon Cube not credited before tween completes");
+
+AssertEqual(
+    1,
+    combatGame.UpdateCubePickups(10.7).Count,
+    "Manual Weapon Cube collection completion");
+AssertEqual(1, (double)combatGame.WeaponCubes.Spendable, "Manual Weapon Cube bank credit");
+
+// The second pickup follows the 5.0 s auto-collect + 0.5 s tween path.
+AssertEqual(
+    1,
+    combatGame.UpdateCubePickups(15.5).Count,
+    "Remaining Weapon Cube auto-collection");
+AssertEqual(2, (double)combatGame.WeaponCubes.Spendable, "Both Weapon Cubes collected");
 
 combatGame.TimeWarp();
 if (combatGame.ArenaRewards.HasTimeCubeReward(combatGame.Arena.Wave))
