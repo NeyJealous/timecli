@@ -797,6 +797,18 @@ namespace UnityEngine
         public static Quaternion rotation => new();
     }
 
+    public enum KeyCode
+    {
+        E = 101,
+        Q = 113,
+        W = 119
+    }
+
+    public static class Input
+    {
+        public static bool GetKeyDown(KeyCode key) => false;
+    }
+
     public static class Time
     {
         public static double timeAsDouble => 0.0;
