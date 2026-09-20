@@ -18,6 +18,32 @@ var debugCatalog = DebugVoxelCatalogProxy.Create();
 if (debugCatalog.Models.Count == 0)
     throw new Exception("Debug catalog should not be empty.");
 
+// Recovered ClickerWeapon vertical AnimationCurve values are evaluated
+// through the same two-key Hermite segment used by Unity 5.4.
+AssertClose(
+    OriginalClickWeaponAimMath.EvaluatePistolVertical(0.85f),
+    0.039455987f,
+    0.000001f,
+    "Pistol vertical curve");
+
+AssertClose(
+    OriginalClickWeaponAimMath.EvaluateHeavyVertical(0.90f),
+    0.106816078f,
+    0.000001f,
+    "Cannon/Launcher vertical curve");
+
+AssertClose(
+    OriginalClickWeaponAimMath.EvaluatePistolVertical(1f),
+    OriginalClickWeaponPresentation.PistolVerticalSecondValue,
+    0.000001f,
+    "Pistol vertical endpoint");
+
+AssertClose(
+    OriginalClickWeaponAimMath.EvaluateHeavyVertical(1f),
+    OriginalClickWeaponPresentation.HeavyVerticalSecondValue,
+    0.000001f,
+    "Heavy vertical endpoint");
+
 // Recovered Rocket tail cadence: no emission before 25 ms, then one
 // emission at 25 ms and three emissions across a 75 ms frame.
 float rocketTailAccumulator = 0f;
@@ -34,6 +60,17 @@ if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.075f) != 3)
     throw new Exception("Rocket tail cadence must preserve multiple emissions on long frames.");
 
 Console.WriteLine("Unity adapter compile/preflight passed.");
+
+static void AssertClose(
+    float actual,
+    float expected,
+    float tolerance,
+    string label)
+{
+    if (Math.Abs(actual - expected) > tolerance)
+        throw new Exception(
+            $"{label}: expected {expected}, got {actual}.");
+}
 
 static byte[] BuildTinyCatalog()
 {
