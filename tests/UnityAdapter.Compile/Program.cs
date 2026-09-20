@@ -118,6 +118,105 @@ AssertColor(
     1f,
     "Flak midpoint flash fade");
 
+// Canonical click-weapon Shoot AnimationClips.
+AssertClose(
+    OriginalClickWeaponShootAnimation.PistolDuration,
+    0.0833333358f,
+    0.000001f,
+    "Pistol shoot duration");
+
+Vector3 pistolRecoilStart =
+    OriginalClickWeaponShootAnimation.EvaluatePistolSlide(0f);
+Vector3 pistolRecoilEnd =
+    OriginalClickWeaponShootAnimation.EvaluatePistolSlide(
+        OriginalClickWeaponShootAnimation.PistolDuration);
+
+AssertClose(
+    pistolRecoilStart.y,
+    0.1410000026f,
+    0.000001f,
+    "Pistol top1 recoil start Y");
+AssertClose(
+    pistolRecoilStart.z,
+   -0.0610000007f,
+    0.000001f,
+    "Pistol top1 recoil start Z");
+AssertClose(
+    pistolRecoilEnd.y,
+    OriginalClickWeaponPresentation.PistolTopRestPosition.y,
+    0.000001f,
+    "Pistol top1 recoil end Y");
+AssertClose(
+    pistolRecoilEnd.z,
+    OriginalClickWeaponPresentation.PistolTopRestPosition.z,
+    0.000001f,
+    "Pistol top1 recoil end Z");
+
+AssertClose(
+    OriginalClickWeaponShootAnimation.CannonDuration,
+    0.0833333358f,
+    0.000001f,
+    "Cannon shoot duration");
+
+Vector3 cannonRecoilStart =
+    OriginalClickWeaponShootAnimation.EvaluateCannon(0f);
+Vector3 cannonRecoilEnd =
+    OriginalClickWeaponShootAnimation.EvaluateCannon(
+        OriginalClickWeaponShootAnimation.CannonDuration);
+
+AssertClose(
+    cannonRecoilStart.z,
+   -0.0500000007f,
+    0.000001f,
+    "Cannon recoil start Z");
+AssertClose(
+    cannonRecoilEnd.z,
+   -0.0000003576f,
+    0.000001f,
+    "Cannon recoil clip end Z");
+
+AssertClose(
+    OriginalClickWeaponShootAnimation.LauncherDuration,
+    0.1666666716f,
+    0.000001f,
+    "Launcher shoot duration");
+
+Vector3 launcherRecoilStart =
+    OriginalClickWeaponShootAnimation.EvaluateLauncherPosition(0f);
+Vector3 launcherRecoilEnd =
+    OriginalClickWeaponShootAnimation.EvaluateLauncherPosition(
+        OriginalClickWeaponShootAnimation.LauncherDuration);
+
+AssertClose(
+    launcherRecoilStart.y,
+    0f,
+    0.000001f,
+    "Launcher recoil start Y");
+AssertClose(
+    launcherRecoilStart.z,
+   -0.0599999987f,
+    0.000001f,
+    "Launcher recoil start Z");
+AssertClose(
+    launcherRecoilEnd.y,
+   -0.0590000004f,
+    0.000001f,
+    "Launcher recoil end Y");
+AssertClose(
+    launcherRecoilEnd.z,
+    0.1899999976f,
+    0.000001f,
+    "Launcher recoil end Z");
+
+if (OriginalClickWeaponShootAnimation.LauncherRotationX.keys.Length != 11 ||
+    OriginalClickWeaponShootAnimation.LauncherRotationY.keys.Length != 11 ||
+    OriginalClickWeaponShootAnimation.LauncherRotationZ.keys.Length != 11 ||
+    OriginalClickWeaponShootAnimation.LauncherRotationW.keys.Length != 11)
+{
+    throw new Exception(
+        "Launcher recoil quaternion must retain all 11 recovered 60 Hz keys.");
+}
+
 // Canonical "Toon Rocket 02 PS": VirtualPS emits 10 particles for
 // each recovered 25 ms tail invocation.
 if (OriginalRocketTailPresentation.ParticlesPerEmission != 10)
