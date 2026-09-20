@@ -19,6 +19,8 @@ namespace TimeCli.UnityRuntime
             "TimeCliRocketProjectileTexture";
         public const string RocketAudioResource =
             "TimeCliRocketProjectileAudio";
+        public const string RocketCubemapResourcePrefix =
+            "TimeCliChannelCubemap";
 
         public static readonly Vector3 FlakRootScale =
             new(1f, 1f, 2f);
@@ -467,6 +469,18 @@ namespace TimeCli.UnityRuntime
 
                 _rocketMaterial.mainTexture =
                     texture;
+            }
+
+            Cubemap cubemap =
+                PrivateCubemapLoader.Load(
+                    OriginalProjectileVisualPresentation
+                        .RocketCubemapResourcePrefix);
+
+            if (cubemap != null)
+            {
+                _rocketMaterial.SetTexture(
+                    "_CubeMap",
+                    cubemap);
             }
 
             return _rocketMaterial;
