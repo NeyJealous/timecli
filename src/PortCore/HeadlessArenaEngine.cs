@@ -42,6 +42,7 @@ public readonly record struct ArenaSpawnRolls(
 
 public sealed record HeadlessSpawnedEnemy(
     string ModelId,
+    VoxelModelLayout Layout,
     VoxelHpPlan HpPlan,
     VoxelSpawnPlan SpawnPlan,
     EnemyModelState Model,
@@ -156,6 +157,7 @@ public sealed class HeadlessArenaEngine
 
         CurrentEnemy = new HeadlessSpawnedEnemy(
             descriptor.Id,
+            layout,
             hpPlan,
             spawnPlan,
             model,
