@@ -10,13 +10,13 @@ Outputs:
     TimeCliPistolBaseAndGripMesh.txt
     TimeCliPistolChamberOneMesh.txt
     TimeCliPistolChamberTwoMesh.txt
-    TimeCliPistolTopMesh.txt
+    TimeCliPistolTop1Mesh.txt
     TimeCliPistolTriggerMesh.txt
-    TimeCliCannonMesh.txt
-    TimeCliLauncherMesh.txt
+    TimeCliClickCannonMesh.txt
+    TimeCliClickLauncherMesh.txt
     TimeCliPistolTexture.png
-    TimeCliCannonTexture.png
-    TimeCliLauncherTexture.png
+    TimeCliClickCannonTexture.png
+    TimeCliClickLauncherTexture.png
 
 The public repository only contains this extraction recipe and clean runtime
 loaders. Exported original-derived resources remain under ignored
@@ -35,16 +35,16 @@ MESHES = {
     242: ("base_and_grip", "TimeCliPistolBaseAndGripMesh.txt"),
     261: ("chamber_one", "TimeCliPistolChamberOneMesh.txt"),
     259: ("chamber_two", "TimeCliPistolChamberTwoMesh.txt"),
-    265: ("top1", "TimeCliPistolTopMesh.txt"),
+    265: ("top1", "TimeCliPistolTop1Mesh.txt"),
     263: ("trigger", "TimeCliPistolTriggerMesh.txt"),
-    246: ("Plane_001", "TimeCliCannonMesh.txt"),
-    256: ("Mesh", "TimeCliLauncherMesh.txt"),
+    246: ("Plane_001", "TimeCliClickCannonMesh.txt"),
+    256: ("Mesh", "TimeCliClickLauncherMesh.txt"),
 }
 
 TEXTURES = {
     21: ("PulsePistol_Diff_A_WHITE", "TimeCliPistolTexture.png"),
-    20: ("s20_dwith spec for unity MOD 2", "TimeCliCannonTexture.png"),
-    16: ("tgalauncher MOD", "TimeCliLauncherTexture.png"),
+    20: ("s20_dwith spec for unity MOD 2", "TimeCliClickCannonTexture.png"),
+    16: ("tgalauncher MOD", "TimeCliClickLauncherTexture.png"),
 }
 
 def gather_split_parts(data_dir: Path, base: str) -> list[Path]:
