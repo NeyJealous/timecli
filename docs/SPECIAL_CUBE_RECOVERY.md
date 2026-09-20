@@ -1,7 +1,7 @@
 # Special enemy / cube pickup recovery — Time Clickers 1.4.5
 
 This document records behavior recovered directly from the Android 1.4.5
-managed IL and serialized shader data.
+managed IL and serialized Unity data.
 
 ## BoxEnemy shader switching
 
@@ -26,52 +26,70 @@ Recovered original shader asset names:
 - `Custom/RainbowEnemy`
 - `Custom/TimeCubeEnemy`
 
-The modern project uses clean replacements:
+Modern clean replacements:
 
 - `TimeCli/BlockVertexColor`
 - `TimeCli/RainbowEnemy`
 - `TimeCli/TimeCubeEnemy`
+- `TimeCli/PickupTexture`
 
-The obsolete compiled Unity 5 shader binaries are not copied into the modern
-project.
+The obsolete Unity 5 compiled shader binaries are not copied into the public
+modern project.
 
-For WeaponCube, `OriginalBlockGeometry` supports the original texture override
-semantics through an optional private Resources texture named:
+## Recovered private texture identities
 
-`TimeCliWeaponCubeTexture`
+`sharedassets1` contains the original-derived textures required for the
+special cube presentation:
 
-If that private original-derived texture is absent, the clean TimeCube shader
-uses its procedural fallback presentation.
+```text
+TimeCube pickup:
+  64x64 RGB565, 7 mip levels
+
+WeaponCube pickup:
+  64x64 RGB24, 7 mip levels
+
+WeaponCube BoxEnemy mask:
+  64x64 Alpha8, 7 mip levels
+```
+
+Public extraction tool:
+
+```bash
+python tools/unity/extract-private-special-textures.py \
+  /path/to/Data-or-sharedassets1.assets \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources
+```
+
+Generated private Resource names:
+
+- `TimeCliTimeCubePickupTexture`
+- `TimeCliWeaponCubePickupTexture`
+- `TimeCliWeaponCubeTexture`
+
+These files remain under ignored `PrivateGenerated/` and are not committed.
 
 ## Special block death
 
 `BoxEnemy.SpawnGold` does not immediately add cube currency.
 
-### TimeCube block
+For TimeCube or WeaponCube, the original instantiates **one pickup GameObject
+per cube**, each with value 1, at the destroyed block position/rotation.
 
-For `timeCubeCount` times:
+The pickup faces `Camera.main`, then its rotation is blended 10% toward
+`Quaternion.LookRotation(Random.onUnitSphere)`.
 
-1. instantiate `timeCubePrefab` at the destroyed block position/rotation;
-2. make the pickup face `Camera.main`;
-3. blend its rotation 10% toward
-   `Quaternion.LookRotation(Random.onUnitSphere)`;
-4. set `TimeCube.timeCubeValue = 1`.
+## Pickup prefab
 
-After all pickup objects are spawned, the original updates Time Cube statistics
-for the total count.
+Recovered shared prefab properties:
 
-### WeaponCube block
+```text
+TimeCube localScale   = 0.25
+WeaponCube localScale = 0.25
+```
 
-The same flow is used with `weaponCubePrefab` and
-`WeaponCube.weaponCubeValue = 1`.
-
-The Weapon Cube statistics total is updated at spawn time.
+Both use a cube mesh and their own material/texture.
 
 ## Pickup lifecycle
-
-TimeCube and WeaponCube use equivalent coroutine timing.
-
-### Spawn / FloatAway
 
 At Start:
 
@@ -83,80 +101,111 @@ wait 3.0 seconds
 Collect(false)
 ```
 
-`FloatAway` chooses:
+FloatAway:
 
 ```text
 speed = Random.Range(2.5, 6.0)
+
+while speed > 0:
+    position += transform.forward * speed * deltaTime
+    speed -= deltaTime * 2
 ```
 
-Every frame while `speed > 0`:
-
-```text
-position += transform.forward * speed * deltaTime
-speed -= deltaTime * 2
-```
-
-Thus the pickup launches away from the destroyed block, decelerates to rest,
-becomes much easier to click after two seconds, and auto-collects at five
-seconds if the player has not collected it manually.
+So auto-collection begins five seconds after spawn.
 
 ## Collect
 
-Collection is ignored when `isCollected` is already true.
-
 When collection begins:
 
-1. set `isCollected = true`;
-2. optionally play pickup audio at volume `0.75`;
-3. stop the FloatAway coroutine;
-4. destroy the pickup BoxCollider;
+1. mark collected;
+2. optionally play pickup audio at volume 0.75;
+3. stop FloatAway;
+4. destroy BoxCollider;
 5. configure `TweenPosition.duration = 0.5`;
-6. set Tween start to current world position;
-7. set Tween end to the relevant UI collection point;
-8. play TweenPosition;
-9. wait 0.5 seconds;
-10. credit the currency;
-11. destroy the pickup GameObject.
+6. tween from current world position to WidgetGold collection point;
+7. wait 0.5 s;
+8. credit currency;
+9. destroy pickup GameObject.
 
-Collection targets:
+Currency is credited **after** the tween.
 
-- TimeCube -> `WidgetGold.GetTimeCubeCollectionPoint()`
-- WeaponCube -> `WidgetGold.GetWeaponCubeCollectionPoint()`
+## Exact active WidgetGold collection targets
 
-Currency is therefore credited **after the 0.5-second collection tween**, not
-when the special BoxEnemy dies.
+The active hierarchy is:
 
-## PortCore correction
+`_SceneArenaRoot/WidgetGold`
 
-PortCore API **1.1.0** now models this deferred lifecycle.
+A second WidgetGold exists below an inactive StatsWidget branch and is not the
+gameplay target.
 
-`SpecialCubePickupQueue` owns one state object per spawned cube and reproduces:
+Recovered active WidgetGold transform:
 
-- 2.0 s collider-expansion time;
+```text
+initial position =
+  (17, -5.900000095, 14.100000381)
+
+rotation quaternion =
+  (-0.256685704,
+    0.730564594,
+   -0.546390772,
+   -0.319131702)
+
+scale =
+  (0.173205093,
+   0.173205048,
+   0.173205048)
+```
+
+Its responsive placement uses:
+
+```text
+Camera.main.ViewportToWorldPoint(
+    0.9,
+    0.1,
+    23.200000763)
+```
+
+Recovered local child positions:
+
+```text
+TimeCubeCollectionPoint =
+  (-4.949999809,
+    51.209999084,
+   -47.659999847)
+
+WeaponCubeCollectionPoint =
+  (-23.180000305,
+     36.259998322,
+    -68.379997253)
+```
+
+`OriginalWidgetGoldPresentation` reconstructs those targets.
+
+## PortCore
+
+The deferred lifecycle was introduced in API 1.1 and remains part of current
+PortCore 1.2.
+
+`SpecialCubePickupQueue` reproduces:
+
+- 2.0 s collider expansion;
 - 5.0 s auto-collect trigger;
 - manual collection;
 - 0.5 s collection completion;
 - Time Cube pending-reward credit on completion;
 - Weapon Cube bank credit on completion.
 
-`GameState.UpdateCubePickups(nowSeconds)` advances the queue.
-
-`GameState.TryCollectCubePickup(id, nowSeconds)` starts manual collection.
-
-Regression coverage confirms both the auto and manual timing paths.
-
 ## Unity presentation
 
-`SpecialCubePickupView` reproduces the visible motion:
+`SpecialCubePickupView` reproduces:
 
+- original 0.25 scale;
 - camera-facing spawn;
 - 10% random rotation perturbation;
-- random 2.5–6.0 launch speed;
+- 2.5–6.0 launch speed;
 - 2 units/s² speed decay;
-- x10 collider enlargement after two seconds;
-- collider destruction on collection;
-- 0.5-second move toward a collection anchor.
-
-Exact original HUD collection-anchor transforms are still pending scene-layout
-recovery; until then the Unity adapter uses explicit optional anchor Transforms
-or a visible world-space fallback.
+- x10 collider enlargement;
+- collider destruction on collect;
+- 0.5-second move to the recovered WidgetGold target;
+- private original pickup textures when available;
+- procedural clean fallback when private textures are absent.
