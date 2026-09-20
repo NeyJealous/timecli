@@ -24,7 +24,10 @@ namespace TimeCli.UnityRuntime.Editor
             var root = new GameObject("TimeCli");
             root.AddComponent<TimeCliBootstrap>();
             root.AddComponent<ArenaRuntimeController>();
-            root.AddComponent<PrototypeHud>();
+            root.AddComponent<OriginalArenaHud>();
+
+            var debugHud = root.AddComponent<PrototypeHud>();
+            debugHud.enabled = false;
 
             var cameraObject = new GameObject("Game Camera");
             var camera = cameraObject.AddComponent<Camera>();
@@ -53,7 +56,8 @@ namespace TimeCli.UnityRuntime.Editor
 
             Debug.Log(
                 $"TimeCli: created {ScenePath}. " +
-                "Press Play to run the placeholder Arena.");
+                "Press Play to run the reconstructed Arena HUD. " +
+                "Enable PrototypeHud manually for development controls.");
         }
 
         private static void EnsureFolder(string parent, string name)
