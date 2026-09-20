@@ -65,7 +65,7 @@ else {
 }
 
 if ($OriginalDataSource) {
-    $HierarchyOutput = Join-Path $ProjectPath "Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json"
+    $HierarchyOutput = Join-Path $ProjectPath "Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json"
     $HierarchyExtractor = Join-Path $PSScriptRoot "extract-private-weapon-hierarchy.py"
     $HierarchyValidator = Join-Path $PSScriptRoot "validate-private-weapon-hierarchy.py"
 
