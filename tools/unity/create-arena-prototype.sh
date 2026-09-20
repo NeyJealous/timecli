@@ -9,6 +9,7 @@ LOG_PATH="$LOG_DIR/arena-prototype-batch.log"
 
 UNITY_PATH="${UNITY_PATH:-}"
 PRIVATE_VOXEL_JSON="${PRIVATE_VOXEL_JSON:-}"
+ORIGINAL_DATA_SOURCE="${ORIGINAL_DATA_SOURCE:-}"
 
 if [[ -z "$UNITY_PATH" ]]; then
   if [[ "$(uname -s)" == "Darwin" ]]; then
@@ -27,7 +28,7 @@ fi
 
 mkdir -p "$LOG_DIR"
 
-echo "1/3 Building PortCore for Unity..."
+echo "1/4 Building PortCore for Unity..."
 "$SCRIPT_DIR/sync-portcore.sh"
 
 if [[ -n "$PRIVATE_VOXEL_JSON" ]]; then
@@ -38,13 +39,27 @@ if [[ -n "$PRIVATE_VOXEL_JSON" ]]; then
 
   OUTPUT_CATALOG="$PROJECT_PATH/Assets/TimeCli/PrivateGenerated/Resources/TimeCliVoxelCatalog.bytes"
 
-  echo "2/3 Building private canonical voxel catalog..."
+  echo "2/4 Building private canonical voxel catalog..."
   python3 "$SCRIPT_DIR/build-private-voxel-catalog.py"     "$PRIVATE_VOXEL_JSON"     "$OUTPUT_CATALOG"
 else
-  echo "2/3 No private voxel JSON supplied; Unity will use the development catalog."
+  echo "2/4 No private voxel JSON supplied; Unity will use the development catalog."
 fi
 
-echo "3/3 Running Unity batch compile + Arena scene generation..."
+if [[ -n "$ORIGINAL_DATA_SOURCE" ]]; then
+  if [[ ! -e "$ORIGINAL_DATA_SOURCE" ]]; then
+    echo "Original Data/sharedassets source not found: $ORIGINAL_DATA_SOURCE"
+    exit 1
+  fi
+
+  PRIVATE_RESOURCES="$PROJECT_PATH/Assets/TimeCli/PrivateGenerated/Resources"
+
+  echo "3/4 Extracting private TimeCube/WeaponCube textures..."
+  python3 "$SCRIPT_DIR/extract-private-special-textures.py"     "$ORIGINAL_DATA_SOURCE"     "$PRIVATE_RESOURCES"
+else
+  echo "3/4 No original Data source supplied; special cubes use procedural fallback visuals."
+fi
+
+echo "4/4 Running Unity batch compile + Arena scene generation..."
 "$UNITY_PATH"   -batchmode   -nographics   -quit   -projectPath "$PROJECT_PATH"   -executeMethod TimeCli.UnityRuntime.Editor.TimeCliProjectSetup.CreateArenaPrototypeScene   -logFile "$LOG_PATH"
 
 echo
