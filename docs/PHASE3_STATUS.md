@@ -58,8 +58,16 @@ Implemented under `unity/TimeCli`:
 - clean replacements for original special-enemy shaders;
 - exact Hero impact presentation: canonical weapon colors, persistent
   Outline, Flak/Rocket-splash FlashOutline, 0.2 s flash throttle/fade;
-- exact click-weapon Appear/Disappear root transform curves for Pistol,
-  Cannon and Launcher, including the recovered 0.05 s Show activation delay.
+- exact click-weapon Shoot plus Appear/Disappear transform curves for Pistol,
+  Cannon and Launcher;
+- canonical Manual Aim -> Auto Aim -> Disabled control modes, immediate Hide
+  semantics, 0.05 s Show reactivation gate, and delayed/latching first unlock:
+  Cannon 1.5 s, Launcher 1.0 s;
+- canonical click-weapon firing audio plus shared delayed PistolWield appear
+  audio through the six-source Pickups one-shot queue;
+- canonical VirtualPS.Sparks presentation for pistol/projectile hits and block
+  deaths, including dynamic particle counts/lifetimes and exact projectile-root
+  final-contact position.
 
 Gameplay damage/rewards/wave state remain PortCore-owned.
 
@@ -221,8 +229,9 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- exact Rocket `Custom/Weapon Diffuse Color` cubemap/reflection math; the
-  confirmed mesh, color, MainTex and audio are already reconstructed;
-- remaining click-weapon Appear/Disappear Animator clips (Shoot recoil is
-  already recovered);
-- remaining combat audio/presentation fidelity.
+- exact Rocket / click-weapon `Custom/Weapon Diffuse Color`
+  cubemap/reflection math; canonical private cubemap extraction/rebuild is now
+  available, while exact shader math remains under verification;
+- remaining VirtualPS/combat presentation systems outside the recovered
+  Sparks, RocketTail and SmallExplosion paths;
+- remaining combat/UI audio fidelity and native Unity integration checks.
