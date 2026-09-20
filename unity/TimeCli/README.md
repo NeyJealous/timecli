@@ -129,6 +129,8 @@ The prototype now contains reconstructed behavior/presentation for:
 - ClickCannon charge/fire plans;
 - ClickLauncher click threshold/fire plans;
 - Flak/Rocket trajectory and collision timing;
+- canonical Rocket-tail ParticleSystem behavior and private original texture
+  loading, with a clean fallback texture;
 - all Hero authoritative combat through PortCore;
 - original Hero visual impact rules (no fake travelling Hero bullets):
   exact weapon colors, Outline/FlashOutline and 0.2 s flash timing.
