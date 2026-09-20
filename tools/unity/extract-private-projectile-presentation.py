@@ -20,6 +20,7 @@ the Mesh in Unity.
 from __future__ import annotations
 
 import argparse
+import io
 import shutil
 import tempfile
 from pathlib import Path
@@ -240,8 +241,10 @@ def write_cubemap_faces(
             getattr(cube, "m_PlatformBlob", None),
             True,
         )
-        target = output_dir / f"{output_prefix}_{face_name}.png"
-        image.save(target, format="PNG")
+        target = output_dir / f"{output_prefix}_{face_name}.bytes"
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        target.write_bytes(buffer.getvalue())
         print(
             f"{target.name}: cubemap pathID={path_id} "
             f"face={face_name} size={image.width}x{image.height}"
