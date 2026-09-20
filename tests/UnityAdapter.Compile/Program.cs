@@ -856,6 +856,50 @@ if (OriginalClickWeaponVisualPresentation.PistolTopMeshResource !=
         "Click-weapon private resource contract changed.");
 }
 
+// Canonical click-weapon firing AudioSource settings.
+if (OriginalClickWeaponAudioPresentation.PistolClipName != "pistol1" ||
+    OriginalClickWeaponAudioPresentation.CannonClipName !=
+        "MechWeapons_Shock_Fire_02" ||
+    OriginalClickWeaponAudioPresentation.LauncherClipName !=
+        "MechWeapons_Grenade_Fire_01")
+{
+    throw new Exception(
+        "Click-weapon recovered firing clip identities changed.");
+}
+
+AssertClose(
+    OriginalClickWeaponAudioPresentation.Volume,
+    0.75f,
+    0.000001f,
+    "Click-weapon firing volume");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.Pitch,
+    1f,
+    0.000001f,
+    "Click-weapon firing pitch");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.MinDistance,
+    1f,
+    0.000001f,
+    "Click-weapon firing min distance");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.MaxDistance,
+    500f,
+    0.000001f,
+    "Click-weapon firing max distance");
+
+if (OriginalClickWeaponAudioPresentation.Priority != 128 ||
+    OriginalClickWeaponAudioPresentation.PistolFireResource !=
+        "TimeCliClickPistolFire" ||
+    OriginalClickWeaponAudioPresentation.CannonFireResource !=
+        "TimeCliClickCannonFire" ||
+    OriginalClickWeaponAudioPresentation.LauncherFireResource !=
+        "TimeCliClickLauncherFire")
+{
+    throw new Exception(
+        "Click-weapon firing audio resource contract changed.");
+}
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
