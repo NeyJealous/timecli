@@ -69,6 +69,11 @@ if [[ -n "$ORIGINAL_DATA_SOURCE" ]]; then
     python3 "$SCRIPT_DIR/extract-private-projectile-presentation.py" \
       "$ORIGINAL_DATA_SOURCE" \
       "$PRIVATE_RESOURCES"
+
+    echo "3/5 Extracting private click-weapon models/textures..."
+    python3 "$SCRIPT_DIR/extract-private-click-weapon-presentation.py" \
+      "$ORIGINAL_DATA_SOURCE" \
+      "$PRIVATE_RESOURCES"
   else
     echo "3/5 UnityPy is not installed; SmallExplosion original audio extraction skipped."
   fi
