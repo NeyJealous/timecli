@@ -38,6 +38,20 @@ namespace TimeCli.UnityRuntime
             Refresh();
         }
 
+        public void ApplyHeroImpact(
+            WeaponType weaponType,
+            bool isSplash,
+            double nowSeconds)
+        {
+            if (_originalGeometry == null)
+                return;
+
+            _originalGeometry.ApplyHeroImpact(
+                weaponType,
+                isSplash,
+                nowSeconds);
+        }
+
         public void Refresh()
         {
             if (State == null)
