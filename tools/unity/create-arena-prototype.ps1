@@ -53,11 +53,24 @@ if ($OriginalDataSource) {
     $PrivateResources = Join-Path $ProjectPath "Assets/TimeCli/PrivateGenerated/Resources"
     $TextureExtractor = Join-Path $PSScriptRoot "extract-private-special-textures.py"
 
-    Write-Host "3/5 Extracting private TimeCube/WeaponCube textures..."
+    Write-Host "3/5 Extracting private canonical textures..."
     python $TextureExtractor $OriginalDataSource $PrivateResources
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Special-cube texture extraction failed."
+        throw "Private texture extraction failed."
+    }
+
+    $AudioExtractor = Join-Path $PSScriptRoot "extract-private-small-explosion-audio.py"
+    python -c "import UnityPy" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "3/5 Extracting private SmallExplosion impact audio..."
+        python $AudioExtractor $OriginalDataSource $PrivateResources
+        if ($LASTEXITCODE -ne 0) {
+            throw "SmallExplosion audio extraction failed."
+        }
+    }
+    else {
+        Write-Warning "UnityPy is not installed; SmallExplosion original audio extraction was skipped."
     }
 }
 else {
