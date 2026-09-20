@@ -51,7 +51,8 @@ Next:
 - generate/review the canonical click-weapon hierarchy report and promote
   confirmed pivot/recoil animation values;
 - exact original Rocket tail particle/material fidelity;
-- original Hero projectile presentation;
+- remaining VirtualPS particle/audio fidelity now that canonical Hero
+  presentation is confirmed to be immediate damage + BoxEnemy outlines;
 - remaining Splash / Arena / TimeWarp presentation;
 - Artifacts / WeaponAugments / TimelineSummary additive screens;
 - exact audio reconstruction.
