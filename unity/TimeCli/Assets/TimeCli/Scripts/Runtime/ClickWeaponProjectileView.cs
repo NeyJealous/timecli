@@ -1,0 +1,278 @@
+using System;
+using TimeClickers.PortCore;
+using UnityEngine;
+
+namespace TimeCli.UnityRuntime
+{
+    /// <summary>
+    /// Unity presentation/physics adapter for the original ClickCannon FlakBullet
+    /// and ClickLauncher RocketPrefab.
+    ///
+    /// PortCore remains authoritative for damage/rewards/wave progression.
+    /// This component only reproduces trajectory/collision timing and reports
+    /// collision contacts back to ArenaRuntimeController.
+    /// </summary>
+    public sealed class ClickWeaponProjectileView : MonoBehaviour
+    {
+        private ArenaRuntimeController _arena;
+        private WeaponType _weaponType;
+        private double _damage;
+        private float _speed;
+        private float _remainingLifetime;
+        private Vector3 _previousCollisionPosition;
+        private float _collisionAccumulator;
+        private bool _processedHit;
+
+        private bool _rocketOrbit;
+        private Transform _rocketVisual;
+        private float _rocketRotationOffset;
+        private float _rocketRadialTimer;
+
+        public static ClickWeaponProjectileView SpawnFlak(
+            ArenaRuntimeController arena,
+            Vector3 start,
+            Vector3 target,
+            double damage,
+            double fireConeNormalized)
+        {
+            GameObject go = CreateVisual(
+                "ClickCannon_FlakBullet",
+                new Vector3(0.12f, 0.12f, 0.24f));
+
+            go.transform.position = start;
+            go.transform.LookAt(target);
+            go.transform.rotation = Quaternion.Slerp(
+                go.transform.rotation,
+                UnityEngine.Random.rotation,
+                (float)fireConeNormalized);
+
+            var view =
+                go.AddComponent<ClickWeaponProjectileView>();
+
+            view.Initialize(
+                arena,
+                WeaponType.FlakCannon,
+                damage,
+                OriginalProjectilePresentation.BaseVelocity,
+                OriginalProjectilePresentation.FlakLifetime);
+
+            return view;
+        }
+
+        public static ClickWeaponProjectileView SpawnRocket(
+            ArenaRuntimeController arena,
+            Vector3 start,
+            Vector3 target,
+            double damage,
+            double speedMultiplier,
+            int rocketIndex,
+            int rocketCount)
+        {
+            var root = new GameObject(
+                $"ClickLauncher_Rocket_{rocketIndex}");
+
+            root.transform.position = start;
+            root.transform.LookAt(target);
+
+            var visual = CreateVisual(
+                "RocketProjectile",
+                new Vector3(0.18f, 0.18f, 0.42f));
+
+            visual.transform.SetParent(
+                root.transform,
+                false);
+
+            var view =
+                root.AddComponent<ClickWeaponProjectileView>();
+
+            view.Initialize(
+                arena,
+                WeaponType.RocketLauncher,
+                damage,
+                OriginalProjectilePresentation.BaseVelocity *
+                    (float)speedMultiplier,
+                OriginalProjectilePresentation.RocketLifetime);
+
+            view._rocketVisual = visual.transform;
+
+            if (rocketIndex > 0 &&
+                rocketCount > 1)
+            {
+                view._rocketOrbit = true;
+                view._rocketRotationOffset =
+                    360f /
+                    (rocketCount - 1) *
+                    rocketIndex;
+            }
+
+            return view;
+        }
+
+        private static GameObject CreateVisual(
+            string name,
+            Vector3 scale)
+        {
+            GameObject go =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Sphere);
+
+            go.name = name;
+            go.transform.localScale = scale;
+
+            Collider collider =
+                go.GetComponent<Collider>();
+
+            if (collider != null)
+                Destroy(collider);
+
+            Renderer renderer =
+                go.GetComponent<Renderer>();
+
+            if (renderer != null)
+            {
+                Shader shader =
+                    Shader.Find("TimeCli/BlockVertexColor");
+
+                renderer.sharedMaterial =
+                    new Material(shader)
+                    {
+                        name =
+                            "TimeCli_Reconstructed_ClickProjectile",
+                        color = new Color(
+                            1f,
+                            0.75f,
+                            0.2f,
+                            1f)
+                    };
+            }
+
+            return go;
+        }
+
+        private void Initialize(
+            ArenaRuntimeController arena,
+            WeaponType weaponType,
+            double damage,
+            float speed,
+            float lifetime)
+        {
+            _arena = arena;
+            _weaponType = weaponType;
+            _damage = damage;
+            _speed = speed;
+            _remainingLifetime = lifetime;
+            _previousCollisionPosition =
+                transform.position;
+        }
+
+        private void Update()
+        {
+            float dt = Time.deltaTime;
+
+            transform.position +=
+                transform.forward *
+                _speed *
+                dt;
+
+            UpdateRocketOrbit(dt);
+
+            _remainingLifetime -= dt;
+            if (_remainingLifetime <= 0f)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (_processedHit)
+                return;
+
+            _collisionAccumulator += dt;
+
+            if (_collisionAccumulator <
+                OriginalProjectilePresentation.CollisionCheckInterval)
+            {
+                return;
+            }
+
+            _collisionAccumulator = 0f;
+            CheckForCollision();
+        }
+
+        private void UpdateRocketOrbit(float dt)
+        {
+            if (!_rocketOrbit ||
+                _rocketVisual == null)
+            {
+                return;
+            }
+
+            transform.localRotation =
+                Quaternion.Euler(
+                    0f,
+                    0f,
+                    Time.time *
+                        OriginalProjectilePresentation.RocketRotationSpeed +
+                    _rocketRotationOffset);
+
+            if (_rocketRadialTimer < 1f)
+            {
+                _rocketRadialTimer +=
+                    dt *
+                    OriginalProjectilePresentation.RocketRadialRampSpeed;
+
+                if (_rocketRadialTimer < 1f)
+                {
+                    _rocketVisual.localPosition =
+                        new Vector3(
+                            0f,
+                            Mathf.Lerp(
+                                0f,
+                                1f,
+                                _rocketRadialTimer),
+                            0f);
+
+                    return;
+                }
+            }
+
+            _rocketVisual.localPosition =
+                new Vector3(1f, 0f, 0f);
+        }
+
+        private void CheckForCollision()
+        {
+            Vector3 current =
+                transform.position;
+
+            Vector3 movement =
+                current -
+                _previousCollisionPosition;
+
+            float magnitude =
+                movement.magnitude;
+
+            if (magnitude > 0f &&
+                Physics.Raycast(
+                    _previousCollisionPosition,
+                    movement,
+                    out RaycastHit hit,
+                    magnitude,
+                    OriginalProjectilePresentation.HitboxMask))
+            {
+                _processedHit = true;
+
+                _arena.ProcessClickWeaponProjectileImpact(
+                    hit.point,
+                    _damage,
+                    _weaponType,
+                    Time.timeAsDouble);
+
+                Destroy(gameObject);
+                return;
+            }
+
+            _previousCollisionPosition =
+                current;
+        }
+    }
+}
