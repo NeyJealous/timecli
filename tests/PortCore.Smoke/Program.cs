@@ -672,6 +672,89 @@ combatGame.TimeWarp();
 if (combatGame.ArenaRewards.HasTimeCubeReward(combatGame.Arena.Wave))
     throw new Exception("Time Warp must clear per-wave cube reward history");
 
+// Physical Gold pickup lifecycle
+var goldPickupGame = new GameState();
+double startingPickupGold = goldPickupGame.Gold.TotalGold;
+
+var normalGoldBlock = new EnemyBlockState(
+    100,
+    EnemyType.Red);
+
+var normalGoldKill =
+    goldPickupGame.ApplyDamageToBlock(
+        normalGoldBlock,
+        1000,
+        nowSeconds: 0);
+
+AssertEqual(7, normalGoldKill.Reward.Gold, "Normal kill Gold reward value");
+AssertEqual(startingPickupGold, goldPickupGame.Gold.TotalGold, "Kill Gold waits for physical pickup collection");
+AssertEqual(1, goldPickupGame.GoldPickups.Count, "Normal kill spawns one Gold pickup");
+
+AssertEqual(
+    0,
+    goldPickupGame.UpdateGoldPickups(3.74).Count,
+    "Default Gold pickup waits 0.25 + 3 + 0.5 seconds");
+AssertEqual(startingPickupGold, goldPickupGame.Gold.TotalGold, "Gold bank unchanged before pickup tween completes");
+
+AssertEqual(
+    1,
+    goldPickupGame.UpdateGoldPickups(3.75).Count,
+    "Default Gold pickup auto-collection completion");
+AssertEqual(startingPickupGold + 7, goldPickupGame.Gold.TotalGold, "Collected normal Gold enters bank");
+
+var rainbowGoldBlock = new EnemyBlockState(
+    100,
+    EnemyType.Rainbow);
+
+var rainbowGoldKill =
+    goldPickupGame.ApplyDamageToBlock(
+        rainbowGoldBlock,
+        1000,
+        nowSeconds: 10);
+
+AssertEqual(670, rainbowGoldKill.Reward.Gold, "Rainbow total Gold reward");
+AssertEqual(10, goldPickupGame.GoldPickups.Count, "Rainbow block spawns ten physical Gold pickups");
+AssertEqual(67, goldPickupGame.GoldPickups.Active[0].GoldValue, "Rainbow per-pickup Gold value");
+
+goldPickupGame.UpdateGoldPickups(13.75);
+AssertEqual(startingPickupGold + 677, goldPickupGame.Gold.TotalGold, "Rainbow ten-pickup collection total");
+
+// ClickerPistol.ProcessHit hit-gold branch on special cube blocks.
+goldPickupGame.WeaponAugments.SetLevel(
+    WeaponAugmentType.ClickPistolGoldSpawnChance,
+    1);
+goldPickupGame.WeaponAugments.SetLevel(
+    WeaponAugmentType.ClickPistolGoldSpawnValue,
+    1);
+
+var hitGoldSource = new EnemyBlockState(
+    100,
+    EnemyType.TimeCube,
+    timeCubeCount: 1);
+
+var hitGoldPickup =
+    goldPickupGame.TrySpawnClickPistolHitGold(
+        hitGoldSource,
+        random01: 0f,
+        nowSeconds: 20);
+
+if (hitGoldPickup is null)
+    throw new Exception("Owned hit-gold augment with zero random roll should spawn");
+
+AssertEqual(0.5, hitGoldPickup.TimeBeforeCollection, "Hit Gold collection delay");
+AssertEqual(4, hitGoldPickup.FloatAwaySpeed, "Hit Gold float-away speed");
+AssertEqual(1, hitGoldPickup.GoldValue, "Hit Gold value fixture");
+
+AssertEqual(
+    0,
+    goldPickupGame.UpdateGoldPickups(23.99).Count,
+    "Hit Gold waits 0.5 + 3 + 0.5 seconds");
+
+AssertEqual(
+    1,
+    goldPickupGame.UpdateGoldPickups(24.0).Count,
+    "Hit Gold auto-collection completion");
+
 // Offline progression
 var offline = OfflineProgression.Calculate(
     secondsSinceSave: 200000,
