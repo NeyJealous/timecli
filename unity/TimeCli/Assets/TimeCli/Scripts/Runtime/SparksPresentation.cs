@@ -40,6 +40,9 @@ namespace TimeCli.UnityRuntime
 
         public const float SizeCurveMultiplier = 3f;
         public const float ForceCurveMultiplier = 20f;
+        public const float GravityModifier = 2f;
+        public const float LimitVelocityCurveMultiplier = 30f;
+        public const float LimitVelocityDampen = 0.3f;
 
         public const float RendererMaxParticleSize = 0.5f;
         public const float RendererLengthScale = 2f;
@@ -97,6 +100,19 @@ namespace TimeCli.UnityRuntime
                 new Keyframe(
                     1f,
                     -1f,
+                    0f,
+                    0f));
+
+        public static AnimationCurve BuildLimitVelocityCurve() =>
+            new(
+                new Keyframe(
+                    0f,
+                    1f,
+                    -3.1012473106f,
+                    -3.1012473106f),
+                new Keyframe(
+                    1f,
+                    0f,
                     0f,
                     0f));
 
@@ -249,6 +265,7 @@ namespace TimeCli.UnityRuntime
             ConfigureSizeOverLifetime();
             ConfigureColorOverLifetime();
             ConfigureForceOverLifetime();
+            ConfigureLimitVelocityOverLifetime();
             ConfigureRenderer(particleObject);
 
             _particleSystem.Play();
@@ -284,7 +301,8 @@ namespace TimeCli.UnityRuntime
             main.startColor =
                 new ParticleSystem.MinMaxGradient(
                     Color.white);
-            main.gravityModifier = 0f;
+            main.gravityModifier =
+                OriginalSparksPresentation.GravityModifier;
             main.maxParticles =
                 OriginalSparksPresentation.MaxParticles;
         }
@@ -369,6 +387,24 @@ namespace TimeCli.UnityRuntime
             force.z = axis;
         }
 
+        private void ConfigureLimitVelocityOverLifetime()
+        {
+            ParticleSystem.LimitVelocityOverLifetimeModule limit =
+                _particleSystem.limitVelocityOverLifetime;
+
+            limit.enabled = true;
+            limit.separateAxes = false;
+            limit.limit =
+                new ParticleSystem.MinMaxCurve(
+                    OriginalSparksPresentation
+                        .LimitVelocityCurveMultiplier,
+                    OriginalSparksPresentation
+                        .BuildLimitVelocityCurve());
+            limit.dampen =
+                OriginalSparksPresentation
+                    .LimitVelocityDampen;
+        }
+
         private static void ConfigureRenderer(
             GameObject particleObject)
         {
@@ -442,11 +478,13 @@ namespace TimeCli.UnityRuntime
             texture.filterMode =
                 FilterMode.Bilinear;
             texture.wrapMode =
-                TextureWrapMode.Clamp;
-            texture.anisoLevel = 1;
+                TextureWrapMode.Repeat;
+            texture.anisoLevel = 9;
 
             _material.mainTexture =
                 texture;
+            _material.mainTextureScale =
+                new Vector2(-1f, 1f);
 
             return _material;
         }
