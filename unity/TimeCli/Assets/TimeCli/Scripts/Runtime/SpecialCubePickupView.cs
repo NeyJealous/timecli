@@ -125,33 +125,38 @@ namespace TimeCli.UnityRuntime
             if (_renderer == null || _state == null)
                 return;
 
-            Shader shader = Shader.Find("TimeCli/TimeCubeEnemy");
-            if (shader == null)
-                shader = Shader.Find("TimeCli/BlockVertexColor");
-
             bool isTimeCube =
                 _state.Kind == SpecialCubeKind.TimeCube;
 
-            var material = new Material(shader)
-            {
-                name = isTimeCube
-                    ? "TimeCli_TimeCubePickup"
-                    : "TimeCli_WeaponCubePickup",
-                color = isTimeCube
-                    ? OriginalEnemyPalette.TimeCube
-                    : OriginalEnemyPalette.WeaponCube
-            };
-
-            // Original sharedassets1 pickup prefabs use their own materials
-            // named "TimeCube" and "WeaponCube", each with a distinct
-            // _MainTex. Private original-derived textures can be supplied
-            // through Resources without putting them in the public repo.
             string resourceName = isTimeCube
                 ? "TimeCliTimeCubePickupTexture"
                 : "TimeCliWeaponCubePickupTexture";
 
             Texture2D texture =
                 Resources.Load<Texture2D>(resourceName);
+
+            // When the private original-derived pickup texture is present,
+            // use it directly with a clean modern unlit shader. Without it,
+            // retain the procedural special-cube fallback so the public
+            // project still runs standalone.
+            Shader shader = texture != null
+                ? Shader.Find("TimeCli/PickupTexture")
+                : Shader.Find("TimeCli/TimeCubeEnemy");
+
+            if (shader == null)
+                shader = Shader.Find("TimeCli/BlockVertexColor");
+
+            var material = new Material(shader)
+            {
+                name = isTimeCube
+                    ? "TimeCli_TimeCubePickup"
+                    : "TimeCli_WeaponCubePickup",
+                color = texture != null
+                    ? Color.white
+                    : isTimeCube
+                        ? OriginalEnemyPalette.TimeCube
+                        : OriginalEnemyPalette.WeaponCube
+            };
 
             if (texture != null)
                 material.mainTexture = texture;
