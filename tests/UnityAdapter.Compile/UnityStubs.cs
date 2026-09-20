@@ -189,6 +189,16 @@ namespace UnityEngine
     public enum AudioRolloffMode { Logarithmic, Linear, Custom }
     public enum FilterMode { Point, Bilinear, Trilinear }
     public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
+    public enum TextureFormat { RGBA32 = 4 }
+    public enum CubemapFace
+    {
+        PositiveX = 0,
+        NegativeX = 1,
+        PositiveY = 2,
+        NegativeY = 3,
+        PositiveZ = 4,
+        NegativeZ = 5
+    }
     public enum ParticleSystemSimulationSpace { Local, World, Custom }
     public enum ParticleSystemScalingMode { Hierarchy, Local, Shape }
     public enum ParticleSystemEmitterVelocityMode { Transform, Rigidbody, Custom }
@@ -377,13 +387,43 @@ namespace UnityEngine
     public class Texture : Object { }
     public sealed class Texture2D : Texture
     {
-        public Texture2D(int width, int height) { }
+        public Texture2D(int width, int height)
+        {
+            this.width = width;
+            this.height = height;
+        }
+
         public string name { get; set; } = string.Empty;
+        public int width { get; }
+        public int height { get; }
         public FilterMode filterMode { get; set; }
         public TextureWrapMode wrapMode { get; set; }
         public int anisoLevel { get; set; }
         public void SetPixel(int x, int y, Color color) { }
+        public Color[] GetPixels() => Array.Empty<Color>();
         public void Apply() { }
+    }
+
+    public sealed class Cubemap : Texture
+    {
+        public Cubemap(
+            int width,
+            TextureFormat format,
+            bool mipChain) { }
+
+        public string name { get; set; } = string.Empty;
+        public FilterMode filterMode { get; set; }
+        public TextureWrapMode wrapMode { get; set; }
+        public int anisoLevel { get; set; }
+
+        public void SetPixels(
+            Color[] colors,
+            CubemapFace face,
+            int miplevel = 0) { }
+
+        public void Apply(
+            bool updateMipmaps = true,
+            bool makeNoLongerReadable = false) { }
     }
 
     public readonly struct Keyframe
@@ -698,6 +738,7 @@ namespace UnityEngine
         public Vector2 mainTextureScale { get; set; }
         public void SetColor(string name, Color color) { }
         public void SetFloat(string name, float value) { }
+        public void SetTexture(string name, Texture value) { }
     }
 
     public sealed class MaterialPropertyBlock
