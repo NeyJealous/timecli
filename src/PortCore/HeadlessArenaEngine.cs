@@ -177,7 +177,10 @@ public sealed class HeadlessArenaEngine
         var active = RequireCurrentEnemy();
         var block = active.Model.GetBlock(blockIndex);
 
-        var damage = _game.ApplyClickToBlock(block, critical);
+        var damage = _game.ApplyClickToBlock(
+            block,
+            critical,
+            nowSeconds);
         return FinishAttack(active, damage, nowSeconds);
     }
 
@@ -189,7 +192,10 @@ public sealed class HeadlessArenaEngine
         var active = RequireCurrentEnemy();
         var block = active.Model.GetBlock(blockIndex);
 
-        var result = _game.ApplyDamageToBlock(block, damage);
+        var result = _game.ApplyDamageToBlock(
+            block,
+            damage,
+            nowSeconds);
         return FinishAttack(active, result, nowSeconds);
     }
 
@@ -230,7 +236,8 @@ public sealed class HeadlessArenaEngine
         {
             var result = _game.ApplyDamageToBlock(
                 application.Target,
-                application.Damage);
+                application.Damage,
+                nowSeconds);
             results.Add(result);
 
             if (result.Killed && active.Model.IsCleared)
