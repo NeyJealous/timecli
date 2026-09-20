@@ -14,10 +14,32 @@ public sealed record VoxelModelLayout(
     VoxelPoint[] Red,
     VoxelPoint[] White,
     VoxelPoint[] Yellow,
-    VoxelPoint[] Blue)
+    VoxelPoint[] Blue,
+    VoxelPoint Size = default)
 {
     public VoxelPoint[][] Blocks => new[] { Red, White, Yellow, Blue };
     public int EnemyCount => Red.Length + White.Length + Yellow.Length + Blue.Length;
+}
+
+public static class VoxelCoordinateMath
+{
+    /// <summary>
+    /// Exact Arena.SpawnEnemy transform for Qubicle block coordinates:
+    /// center = size / 2; center.y = 0; center.x/z -= 0.5;
+    /// local = raw - center; local.z *= -1.
+    /// </summary>
+    public static VoxelPoint ToArenaLocalPosition(
+        VoxelPoint raw,
+        VoxelPoint size)
+    {
+        float centerX = size.X / 2f - 0.5f;
+        float centerZ = size.Z / 2f - 0.5f;
+
+        return new VoxelPoint(
+            raw.X - centerX,
+            raw.Y,
+            -(raw.Z - centerZ));
+    }
 }
 
 public sealed record SpawnedBlockPlan(
