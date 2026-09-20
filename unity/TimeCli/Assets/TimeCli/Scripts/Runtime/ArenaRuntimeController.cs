@@ -17,7 +17,7 @@ namespace TimeCli.UnityRuntime
         private GameObject blockPrefab;
 
         [SerializeField]
-        private float blockSpacing = 0.35f;
+        private float blockSpacing = OriginalArenaPresentation.BlockSpacing;
 
         [SerializeField]
         private bool autoFireHeroes = true;
@@ -36,6 +36,7 @@ namespace TimeCli.UnityRuntime
                 return;
             }
 
+            EnsureBlockRoot();
             SpawnCurrentEnemy();
         }
 
@@ -169,8 +170,7 @@ namespace TimeCli.UnityRuntime
         {
             ClearViews();
 
-            if (blockRoot == null)
-                blockRoot = transform;
+            EnsureBlockRoot();
 
             for (int i = 0; i < spawned.Model.BlockCount; i++)
             {
@@ -198,6 +198,22 @@ namespace TimeCli.UnityRuntime
                 view.Bind(this, i, state);
                 _views.Add(view);
             }
+        }
+
+        private void EnsureBlockRoot()
+        {
+            if (blockRoot != null)
+                return;
+
+            var root = new GameObject("Arena");
+            root.transform.SetParent(transform, false);
+            root.transform.localPosition = OriginalArenaPresentation.ArenaPosition;
+            root.transform.localRotation = Quaternion.Euler(
+                OriginalArenaPresentation.ArenaEuler.X,
+                OriginalArenaPresentation.ArenaEuler.Y,
+                OriginalArenaPresentation.ArenaEuler.Z);
+
+            blockRoot = root.transform;
         }
 
         private GameObject CreateBlockObject()
