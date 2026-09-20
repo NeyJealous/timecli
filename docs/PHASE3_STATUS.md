@@ -239,4 +239,6 @@ Code-side work can continue in parallel. The next reconstruction targets are:
 - remaining actively-called VirtualPS progression systems outside the
   recovered Sparks, RocketTail and SmallExplosion paths: LevelUp, Upgrade,
   ArtifactBuy/Sell, Promote, Training, SpecOps and DimensionShift;
-- remaining combat/UI audio fidelity and native Unity integration checks.
+- remaining combat/UI audio fidelity and native Unity integration checks;
+- secondary duplicate Cannon idle-mode control under the original Canvas Screen
+  hierarchy, if it remains visible/relevant after the real Unity import gate.
