@@ -622,28 +622,12 @@ namespace TimeCli.UnityRuntime
         private void SpawnRocketExplosion(
             Vector3 position)
         {
-            GameObject explosion =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Sphere);
-
-            explosion.name =
-                "RocketExplosion";
-            explosion.transform.position =
-                position;
-            explosion.transform.localScale =
-                Vector3.one * 0.55f;
-
-            Collider collider =
-                explosion.GetComponent<Collider>();
-
-            if (collider != null)
-                Destroy(collider);
-
-            var lifetime =
-                explosion.AddComponent<TimedVisualDestroy>();
-
-            lifetime.Lifetime =
-                OriginalProjectilePresentation.RocketExplosionLifetime;
+            // Original ProjectileDamager does not instantiate the
+            // RocketExplosion prefab here. It routes RocketLauncher impacts to
+            // VirtualPS.SmallExplosion, which reuses one world-space legacy
+            // particle emitter and the Explosions one-shot audio queue.
+            SmallExplosionParticleView.Emit(
+                position);
         }
 
         public Vector3 GetPickupCollectionPoint(
