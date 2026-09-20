@@ -202,6 +202,7 @@ namespace TimeCli.UnityRuntime
             ConfigureMain();
             ConfigureEmission();
             ConfigureShape();
+            ConfigureInheritVelocity();
             ConfigureColorAnimation();
             ConfigureRenderer();
 
@@ -221,6 +222,8 @@ namespace TimeCli.UnityRuntime
                 ParticleSystemSimulationSpace.World;
             main.scalingMode =
                 ParticleSystemScalingMode.Hierarchy;
+            main.emitterVelocityMode =
+                ParticleSystemEmitterVelocityMode.Transform;
             main.startLifetime =
                 new ParticleSystem.MinMaxCurve(
                     OriginalSmallExplosionPresentation
@@ -269,6 +272,20 @@ namespace TimeCli.UnityRuntime
             // ellipsoid (0.2, 0, 0.2) can be reproduced without relying on a
             // modern ShapeModule interpretation.
             shape.enabled = false;
+        }
+
+        private void ConfigureInheritVelocity()
+        {
+            ParticleSystem.InheritVelocityModule inherit =
+                _particleSystem.inheritVelocity;
+
+            inherit.enabled = true;
+            inherit.mode =
+                ParticleSystemInheritVelocityMode.Initial;
+            inherit.curve =
+                new ParticleSystem.MinMaxCurve(
+                    OriginalSmallExplosionPresentation
+                        .EmitterVelocityScale);
         }
 
         private void ConfigureColorAnimation()
@@ -328,7 +345,7 @@ namespace TimeCli.UnityRuntime
                  i++)
             {
                 Vector3 unit =
-                    UnityEngine.Random.insideUnitSphere;
+                    UnityEngine.UnityEngine.Random.insideUnitSphere;
 
                 Vector3 spawnOffset =
                     new(
@@ -342,9 +359,9 @@ namespace TimeCli.UnityRuntime
 
                 Vector3 randomVelocity =
                     new(
-                        UnityEngine.Random.Range(-6f, 6f),
-                        UnityEngine.Random.Range(-6f, 6f),
-                        UnityEngine.Random.Range(-6f, 6f));
+                        UnityEngine.UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.UnityEngine.Random.Range(-6f, 6f));
 
                 var emit =
                     new ParticleSystem.EmitParams
@@ -357,23 +374,23 @@ namespace TimeCli.UnityRuntime
                                 .LocalVelocity +
                             randomVelocity,
                         startLifetime =
-                            UnityEngine.Random.Range(
+                            UnityEngine.UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMin,
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMax),
                         startSize =
-                            UnityEngine.Random.Range(
+                            UnityEngine.UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .SizeMin,
                                 OriginalSmallExplosionPresentation
                                     .SizeMax),
                         rotation =
-                            UnityEngine.Random.Range(
+                            UnityEngine.UnityEngine.Random.Range(
                                 0f,
                                 2f * Mathf.PI),
                         angularVelocity =
-                            UnityEngine.Random.Range(
+                            UnityEngine.UnityEngine.Random.Range(
                                -OriginalSmallExplosionPresentation
                                     .RandomAngularVelocity,
                                 OriginalSmallExplosionPresentation
@@ -606,7 +623,6 @@ namespace TimeCli.UnityRuntime
                 source.maxDistance =
                     OriginalSmallExplosionPresentation
                         .AudioMaxDistance;
-                source.spatialBlend = 1f;
 
                 _sources[i] = source;
             }
