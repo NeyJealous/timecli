@@ -40,7 +40,14 @@ namespace TimeCli.UnityRuntime
         private readonly List<VoxelBlockView> _views = new();
         private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
-        private Vector3 _crosshairPosition;
+        private Vector3 _pistolCrosshairPosition;
+        private Vector3 _cannonCrosshairPosition;
+        private Vector3 _launcherCrosshairPosition;
+
+        private Vector3 _pistolAutoAimTargetPosition;
+        private Vector3 _cannonAutoAimTargetPosition;
+        private Vector3 _launcherAutoAimTargetPosition;
+
         private float _lastTapScreenY;
         private OriginalClickWeaponPresentationView _clickWeaponPresentation;
 
@@ -61,15 +68,22 @@ namespace TimeCli.UnityRuntime
             _clickWeaponPresentation =
                 OriginalClickWeaponPresentationView.Create(this);
 
-            _crosshairPosition = new Vector3(
-                Screen.width * 0.5f,
-                Screen.height * 0.5f,
-                0f);
+            Vector3 screenCenter =
+                new Vector3(
+                    Screen.width * 0.5f,
+                    Screen.height * 0.5f,
+                    0f);
+
+            _pistolCrosshairPosition = screenCenter;
+            _cannonCrosshairPosition = screenCenter;
+            _launcherCrosshairPosition = screenCenter;
+
+            _pistolAutoAimTargetPosition = screenCenter;
+            _cannonAutoAimTargetPosition = screenCenter;
+            _launcherAutoAimTargetPosition = screenCenter;
 
             _lastTapScreenY = 0f;
-            _clickWeaponPresentation.UpdateAim(
-                _crosshairPosition,
-                _lastTapScreenY);
+            UpdateClickWeaponAimPresentation();
 
             SpawnCurrentEnemy();
         }
@@ -79,12 +93,11 @@ namespace TimeCli.UnityRuntime
             if (!bootstrap.IsReady)
                 return;
 
-            _clickWeaponPresentation?.UpdateAim(
-                _crosshairPosition,
-                _lastTapScreenY);
-
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
+
+            UpdateAutoAimCrosshairs();
+            UpdateClickWeaponAimPresentation();
             bootstrap.Game.UpdateCubePickups(now);
             bootstrap.Game.UpdateGoldPickups(now);
 
@@ -168,18 +181,19 @@ namespace TimeCli.UnityRuntime
                     camera.WorldToScreenPoint(
                         targetPosition);
 
-                _crosshairPosition =
+                Vector3 tapPosition =
                     new Vector3(
                         screenPosition.x,
                         screenPosition.y,
                         0f);
 
+                ApplyManualCrosshairPosition(
+                    tapPosition);
+
                 _lastTapScreenY = screenPosition.y;
             }
 
-            _clickWeaponPresentation?.UpdateAim(
-                _crosshairPosition,
-                _lastTapScreenY);
+            UpdateClickWeaponAimPresentation();
 
             ClickWeaponFirePlan auxiliary =
                 bootstrap.Game.RegisterManualClickWeapons(
@@ -188,8 +202,7 @@ namespace TimeCli.UnityRuntime
             ConsumeClickWeaponUnlockPresentationEvents();
 
             SpawnClickWeaponProjectiles(
-                auxiliary,
-                GetCrosshairTargetPoint());
+                auxiliary);
 
             if (bootstrap.Game.ClickWeapons.IsWeaponActive(
                     ClickWeaponSlot.Pistol,
@@ -512,6 +525,165 @@ namespace TimeCli.UnityRuntime
                 0f);
         }
 
+        private void UpdateClickWeaponAimPresentation()
+        {
+            _clickWeaponPresentation?.UpdateAim(
+                _pistolCrosshairPosition,
+                _cannonCrosshairPosition,
+                _launcherCrosshairPosition,
+                _lastTapScreenY);
+        }
+
+        private void ApplyManualCrosshairPosition(
+            Vector3 screenPosition)
+        {
+            ClickWeaponRuntime weapons =
+                bootstrap.Game.ClickWeapons;
+
+            // Disabled weapons still run UpdateAimManual in the original
+            // because Hide changes weaponIsActive but not isIdle. Only
+            // AutoAim ignores the real touch position.
+            if (!weapons.IsIdle(
+                    ClickWeaponSlot.Pistol))
+            {
+                _pistolCrosshairPosition =
+                    screenPosition;
+            }
+
+            if (!weapons.IsIdle(
+                    ClickWeaponSlot.Cannon))
+            {
+                _cannonCrosshairPosition =
+                    screenPosition;
+            }
+
+            if (!weapons.IsIdle(
+                    ClickWeaponSlot.Launcher))
+            {
+                _launcherCrosshairPosition =
+                    screenPosition;
+            }
+        }
+
+        private void UpdateAutoAimCrosshairs()
+        {
+            UpdateAutoAimCrosshair(
+                ClickWeaponSlot.Pistol,
+                ref _pistolCrosshairPosition,
+                ref _pistolAutoAimTargetPosition);
+
+            UpdateAutoAimCrosshair(
+                ClickWeaponSlot.Cannon,
+                ref _cannonCrosshairPosition,
+                ref _cannonAutoAimTargetPosition);
+
+            UpdateAutoAimCrosshair(
+                ClickWeaponSlot.Launcher,
+                ref _launcherCrosshairPosition,
+                ref _launcherAutoAimTargetPosition);
+        }
+
+        private void UpdateAutoAimCrosshair(
+            ClickWeaponSlot slot,
+            ref Vector3 crosshairPosition,
+            ref Vector3 autoAimTargetPosition)
+        {
+            if (!bootstrap.Game.ClickWeapons.IsIdle(
+                    slot))
+            {
+                return;
+            }
+
+            TryRefreshAutoAimTarget(
+                slot,
+                ref autoAimTargetPosition);
+
+            float moveDistance =
+                OriginalClickWeaponAutoAimPresentation
+                    .GetMoveDistance(
+                        bootstrap.Game,
+                        slot,
+                        Time.deltaTime,
+                        Screen.width);
+
+            crosshairPosition =
+                OriginalClickWeaponAutoAimPresentation
+                    .MoveTowards(
+                        crosshairPosition,
+                        autoAimTargetPosition,
+                        moveDistance);
+        }
+
+        private void TryRefreshAutoAimTarget(
+            ClickWeaponSlot slot,
+            ref Vector3 autoAimTargetPosition)
+        {
+            int heroId =
+                OriginalClickWeaponAutoAimPresentation
+                    .GetTargetHeroId(slot);
+
+            if (heroId < 0 ||
+                heroId >= bootstrap.Game.Heroes.Length ||
+                bootstrap.Game.Heroes[heroId].Level == 0)
+            {
+                return;
+            }
+
+            EnemyBlockState target =
+                bootstrap.Arena
+                    .GetHeroAttackState(heroId)
+                    .CurrentSingleTarget;
+
+            if (target == null ||
+                !target.IsAlive)
+            {
+                return;
+            }
+
+            Camera camera = Camera.main;
+            if (camera == null)
+                return;
+
+            for (int i = 0;
+                 i < _views.Count;
+                 i++)
+            {
+                VoxelBlockView view =
+                    _views[i];
+
+                if (!ReferenceEquals(
+                        view.State,
+                        target))
+                {
+                    continue;
+                }
+
+                Vector3 screen =
+                    camera.WorldToScreenPoint(
+                        view.transform.position);
+
+                autoAimTargetPosition =
+                    new Vector3(
+                        screen.x,
+                        screen.y,
+                        0f);
+                return;
+            }
+        }
+
+        private Vector3 GetClickWeaponCrosshair(
+            ClickWeaponSlot slot) =>
+            slot switch
+            {
+                ClickWeaponSlot.Pistol =>
+                    _pistolCrosshairPosition,
+                ClickWeaponSlot.Cannon =>
+                    _cannonCrosshairPosition,
+                ClickWeaponSlot.Launcher =>
+                    _launcherCrosshairPosition,
+                _ => _pistolCrosshairPosition
+            };
+
         private void ConsumeClickWeaponUnlockPresentationEvents()
         {
             if (_clickWeaponPresentation == null ||
@@ -541,9 +713,6 @@ namespace TimeCli.UnityRuntime
             for (int i = 0; i < plan.PistolShots; i++)
                 ShootClickPistol(nowSeconds);
 
-            Vector3 targetPosition =
-                GetCrosshairTargetPoint();
-
             for (int i = 0;
                  i < plan.CannonShots.Count;
                  i++)
@@ -551,8 +720,7 @@ namespace TimeCli.UnityRuntime
                 SpawnClickWeaponProjectiles(
                     new ClickWeaponFirePlan(
                         plan.CannonShots[i],
-                        null),
-                    targetPosition);
+                        null));
             }
 
             for (int i = 0;
@@ -562,12 +730,12 @@ namespace TimeCli.UnityRuntime
                 SpawnClickWeaponProjectiles(
                     new ClickWeaponFirePlan(
                         null,
-                        plan.LauncherShots[i]),
-                    targetPosition);
+                        plan.LauncherShots[i]));
             }
         }
 
-        private Vector3 GetCrosshairTargetPoint()
+        private Vector3 GetCrosshairTargetPoint(
+            ClickWeaponSlot slot)
         {
             Camera camera = Camera.main;
             if (camera == null)
@@ -575,7 +743,7 @@ namespace TimeCli.UnityRuntime
 
             Ray ray =
                 camera.ScreenPointToRay(
-                    _crosshairPosition);
+                    GetClickWeaponCrosshair(slot));
 
             if (Physics.Raycast(
                 ray,
@@ -611,7 +779,7 @@ namespace TimeCli.UnityRuntime
 
             Ray baseRay =
                 camera.ScreenPointToRay(
-                    _crosshairPosition);
+                    _pistolCrosshairPosition);
 
             FireClickPistolRay(
                 baseRay,
@@ -775,12 +943,15 @@ namespace TimeCli.UnityRuntime
         }
 
         private void SpawnClickWeaponProjectiles(
-            ClickWeaponFirePlan plan,
-            Vector3 targetPosition)
+            ClickWeaponFirePlan plan)
         {
             if (plan.Cannon is not null)
             {
                 _clickWeaponPresentation?.PlayCannonShoot();
+
+                Vector3 cannonTargetPosition =
+                    GetCrosshairTargetPoint(
+                        ClickWeaponSlot.Cannon);
 
                 for (int i = 0;
                      i < plan.Cannon.ProjectileCount;
@@ -789,7 +960,7 @@ namespace TimeCli.UnityRuntime
                     ClickWeaponProjectileView.SpawnFlak(
                         this,
                         GetClickCannonFireSpot(),
-                        targetPosition,
+                        cannonTargetPosition,
                         plan.Cannon.DamagePerProjectile,
                         plan.Cannon.FireConeNormalized);
                 }
@@ -799,6 +970,10 @@ namespace TimeCli.UnityRuntime
             {
                 _clickWeaponPresentation?.PlayLauncherShoot();
 
+                Vector3 launcherTargetPosition =
+                    GetCrosshairTargetPoint(
+                        ClickWeaponSlot.Launcher);
+
                 for (int i = 0;
                      i < plan.Launcher.RocketCount;
                      i++)
@@ -806,7 +981,7 @@ namespace TimeCli.UnityRuntime
                     ClickWeaponProjectileView.SpawnRocket(
                         this,
                         GetClickLauncherFireSpot(),
-                        targetPosition,
+                        launcherTargetPosition,
                         plan.Launcher.DamagePerRocket,
                         plan.Launcher.RocketSpeedMultiplier,
                         i,
