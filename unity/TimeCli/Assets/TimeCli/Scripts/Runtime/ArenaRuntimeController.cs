@@ -28,6 +28,9 @@ namespace TimeCli.UnityRuntime
         [SerializeField]
         private Transform weaponCubeCollectionPoint;
 
+        [SerializeField]
+        private Transform clickPistolFireSpot;
+
         private readonly List<VoxelBlockView> _views = new();
         private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
@@ -102,13 +105,32 @@ namespace TimeCli.UnityRuntime
 
         public void ClickBlock(int blockIndex)
         {
-            if (bootstrap == null || bootstrap.Arena.CurrentEnemy == null)
+            if (bootstrap == null ||
+                bootstrap.Arena.CurrentEnemy == null ||
+                blockIndex < 0 ||
+                blockIndex >= _views.Count)
+            {
                 return;
+            }
 
             double now = Time.timeAsDouble;
+            Vector3 targetPosition =
+                _views[blockIndex].transform.position;
+
+            // Original Skills.GetIsCritical:
+            // UnityEngine.Random.value < Skills.GetCriticalChance().
+            bool critical =
+                UnityEngine.Random.value <
+                bootstrap.Game.GetCriticalChance();
+
+            ClickTracerView.Spawn(
+                GetClickPistolFireSpot(),
+                targetPosition,
+                critical);
+
             var result = bootstrap.Arena.ClickBlock(
                 blockIndex,
-                critical: false,
+                critical,
                 nowSeconds: now);
 
             RefreshView(blockIndex);
@@ -186,6 +208,13 @@ namespace TimeCli.UnityRuntime
             bootstrap.Game.TryCollectCubePickup(
                 pickupId,
                 Time.timeAsDouble);
+        }
+
+        public Vector3 GetClickPistolFireSpot()
+        {
+            return clickPistolFireSpot != null
+                ? clickPistolFireSpot.position
+                : OriginalArenaPresentation.ClickPistolFireSpot;
         }
 
         public Vector3 GetPickupCollectionPoint(
