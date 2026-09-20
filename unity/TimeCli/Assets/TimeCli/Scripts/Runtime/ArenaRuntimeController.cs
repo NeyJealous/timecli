@@ -93,6 +93,8 @@ namespace TimeCli.UnityRuntime
                     now,
                     Time.deltaTime);
 
+            ConsumeClickWeaponUnlockPresentationEvents();
+
             ProcessAutomaticClickWeapons(
                 automaticClickWeapons,
                 now);
@@ -182,6 +184,8 @@ namespace TimeCli.UnityRuntime
             ClickWeaponFirePlan auxiliary =
                 bootstrap.Game.RegisterManualClickWeapons(
                     now);
+
+            ConsumeClickWeaponUnlockPresentationEvents();
 
             SpawnClickWeaponProjectiles(
                 auxiliary,
@@ -506,6 +510,28 @@ namespace TimeCli.UnityRuntime
                 weaponType,
                 SparksKind.Small,
                 0f);
+        }
+
+        private void ConsumeClickWeaponUnlockPresentationEvents()
+        {
+            if (_clickWeaponPresentation == null ||
+                bootstrap == null ||
+                !bootstrap.IsReady)
+            {
+                return;
+            }
+
+            if (bootstrap.Game.ClickWeapons.ConsumeUnlockShowEvent(
+                    ClickWeaponSlot.Cannon))
+            {
+                _clickWeaponPresentation.PlayCannonAppear();
+            }
+
+            if (bootstrap.Game.ClickWeapons.ConsumeUnlockShowEvent(
+                    ClickWeaponSlot.Launcher))
+            {
+                _clickWeaponPresentation.PlayLauncherAppear();
+            }
         }
 
         private void ProcessAutomaticClickWeapons(
