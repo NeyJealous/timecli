@@ -163,6 +163,31 @@ Projectile.velocity *=
     ClickLauncherRocketSpeed.GetModValue() * 0.01
 ```
 
+## Click weapon control modes and auto aim
+
+The recovered `UIButtonIdleMode` cycles each click weapon through:
+`ManualAim -> AutoAim -> Disabled -> ManualAim`.
+
+The primary `CanvasIdleMode/Toolbar` instances are 45x45 and use the
+original blue/off color `(0, 0.40668535, 1, 1)` and orange/auto color
+`(1, 0.4846797, 0, 1)`. Recovered toolbar offsets from screen center are:
+Launcher `-210`, Cannon `-50`, Pistol `+210`, five pixels above the
+bottom edge. Visibility gates are one purchased hero for Pistol, four for
+Launcher and five for Cannon. Keyboard bindings are Q / W / E respectively.
+
+AutoAim is independent for all three weapons. The original target pairings are:
+Pistol -> Pulse Pistol hero, Cannon -> Particle Ball hero, Launcher -> Rocket
+Launcher hero. Each crosshair moves toward that hero's current BoxEnemy target
+at `200 * Screen.width / 1000` pixels/second. While Automatic Fire is active,
+the corresponding idle-speed Weapon Augment multiplies that movement speed.
+The gun Pivot follows the auto-aim crosshair, while the Vertical transform
+continues to use the most recent real touch/mouse Y position.
+
+The modern adapter now keeps separate Pistol/Cannon/Launcher crosshair state,
+routes manual and automatic shots through the correct weapon-specific ray,
+restores the recovered toolbar/hotkeys, and preserves Disabled -> Show
+animation/audio timing.
+
 ## Shared Projectile
 
 Recovered `Projectile`:
