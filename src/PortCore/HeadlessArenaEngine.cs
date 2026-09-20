@@ -199,6 +199,27 @@ public sealed class HeadlessArenaEngine
         return FinishAttack(active, result, nowSeconds);
     }
 
+    public ArenaBlockAttackResult ClickWeaponDamageBlock(
+        int blockIndex,
+        double precomputedClickDamage,
+        double nowSeconds = 0)
+    {
+        var active = RequireCurrentEnemy();
+        var block = active.Model.GetBlock(blockIndex);
+
+        var result =
+            _game.ApplyPrecomputedClickDamageToBlock(
+                block,
+                precomputedClickDamage,
+                nowSeconds);
+
+        return FinishAttack(
+            active,
+            result,
+            nowSeconds);
+    }
+
+
     public HeroAutoFireState GetHeroAttackState(int heroId) =>
         _heroAttackStates[heroId];
 
