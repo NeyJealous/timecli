@@ -89,6 +89,20 @@ bash tools/unity/create-arena-prototype.sh
 All generated original-derived files live under
 `Assets/TimeCli/PrivateGenerated/`, which is ignored by Git.
 
+## Private click-weapon hierarchy recovery
+
+The exact original Pistol/Cannon/Launcher parent/pivot chain is intentionally
+not guessed. A forensic extractor is available:
+
+```bash
+python -m pip install UnityPy
+python tools/unity/extract-private-weapon-hierarchy.py \
+  /path/to/apk/assets/bin/Data \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+```
+
+See `docs/CLICK_WEAPON_HIERARCHY_RECOVERY.md`.
+
 ## Current prototype
 
 The prototype now contains reconstructed behavior/presentation for:

@@ -184,5 +184,6 @@ Code-side work can continue in parallel. The next reconstruction targets are:
 
 - exact original Rocket tail particle/material fidelity (the recovered
   0.025-second emission cadence is now implemented);
-- exact click-weapon hierarchy/pivot animation;
+- exact click-weapon hierarchy/pivot animation (public forensic extractor is
+  now ready; original-derived transform report still needs to be generated);
 - original Hero projectile presentation.
