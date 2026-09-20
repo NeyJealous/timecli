@@ -654,6 +654,15 @@ namespace UnityEngine
             public MinMaxCurve curve { get; set; }
         }
 
+        public struct LimitVelocityOverLifetimeModule
+        {
+            public bool enabled { get; set; }
+            public bool separateAxes { get; set; }
+            public MinMaxCurve limit { get; set; }
+            public float dampen { get; set; }
+            public ParticleSystemSimulationSpace space { get; set; }
+        }
+
         public MainModule main => new();
         public ShapeModule shape => new();
         public EmissionModule emission => new();
@@ -661,6 +670,7 @@ namespace UnityEngine
         public ColorOverLifetimeModule colorOverLifetime => new();
         public ForceOverLifetimeModule forceOverLifetime => new();
         public InheritVelocityModule inheritVelocity => new();
+        public LimitVelocityOverLifetimeModule limitVelocityOverLifetime => new();
 
         public void Emit(int count) { }
         public void Emit(EmitParams emitParams, int count) { }
@@ -675,6 +685,7 @@ namespace UnityEngine
         public string name { get; set; } = string.Empty;
         public Color color { get; set; }
         public Texture mainTexture { get; set; } = default!;
+        public Vector2 mainTextureScale { get; set; }
         public void SetColor(string name, Color color) { }
         public void SetFloat(string name, float value) { }
     }
