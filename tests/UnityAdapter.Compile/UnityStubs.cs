@@ -72,6 +72,7 @@ namespace UnityEngine
         public Vector3 position { get; set; }
         public Vector3 localPosition { get; set; }
         public Quaternion rotation { get; set; }
+        public Quaternion localRotation { get; set; }
 
         public void SetParent(Transform parent, bool worldPositionStays) { }
         public void LookAt(Vector3 worldPosition) { }
@@ -109,15 +110,23 @@ namespace UnityEngine
     {
         public Color(float r, float g, float b, float a = 1f) { }
         public static Color gray => new(0.5f, 0.5f, 0.5f, 1f);
+        public static Color black => new(0f, 0f, 0f, 1f);
     }
 
     public enum PrimitiveType { Cube }
     public enum LightType { Directional }
+    public enum CameraClearFlags { Skybox = 1, SolidColor = 2, Depth = 3, Nothing = 4 }
 
     public sealed class Camera : Behaviour
     {
         public bool orthographic { get; set; }
         public float orthographicSize { get; set; }
+        public float fieldOfView { get; set; }
+        public float nearClipPlane { get; set; }
+        public float farClipPlane { get; set; }
+        public float depth { get; set; }
+        public CameraClearFlags clearFlags { get; set; }
+        public Color backgroundColor { get; set; }
     }
 
     public sealed class Light : Behaviour
