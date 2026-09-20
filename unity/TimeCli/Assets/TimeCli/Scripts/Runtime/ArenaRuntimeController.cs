@@ -131,7 +131,10 @@ namespace TimeCli.UnityRuntime
                     now,
                     bootstrap.Random);
 
-                ApplyVolleyToViews(execution);
+                ApplyVolleyToViews(
+                    heroId,
+                    execution,
+                    now);
                 SyncPickupViews(now);
 
                 if (bootstrap.Arena.CurrentEnemy == null)
@@ -230,23 +233,44 @@ namespace TimeCli.UnityRuntime
                 SpawnCurrentEnemy();
         }
 
-        private void ApplyVolleyToViews(HeroVolleyExecutionResult execution)
+        private void ApplyVolleyToViews(
+            int heroId,
+            HeroVolleyExecutionResult execution,
+            double nowSeconds)
         {
             int count = Math.Min(
                 execution.Plan.Applications.Count,
                 execution.DamageResults.Count);
 
+            WeaponType weaponType =
+                bootstrap.Game.Heroes[heroId].Spec.Weapon;
+
             for (int i = 0; i < count; i++)
             {
-                EnemyBlockState target = execution.Plan.Applications[i].Target;
+                HeroDamageApplication application =
+                    execution.Plan.Applications[i];
+
+                EnemyBlockState target =
+                    application.Target;
 
                 for (int viewIndex = 0; viewIndex < _views.Count; viewIndex++)
                 {
-                    if (ReferenceEquals(_views[viewIndex].State, target))
+                    if (!ReferenceEquals(
+                        _views[viewIndex].State,
+                        target))
                     {
-                        _views[viewIndex].Refresh();
-                        break;
+                        continue;
                     }
+
+                    // In the original Hero.ApplyDamage is authoritative and
+                    // BoxEnemy Outline/FlashOutline is presentation-only.
+                    _views[viewIndex].ApplyHeroImpact(
+                        weaponType,
+                        application.IsSplash,
+                        nowSeconds);
+
+                    _views[viewIndex].Refresh();
+                    break;
                 }
             }
         }
