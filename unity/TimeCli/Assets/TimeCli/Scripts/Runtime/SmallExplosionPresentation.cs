@@ -328,7 +328,7 @@ namespace TimeCli.UnityRuntime
                  i++)
             {
                 Vector3 unit =
-                    Random.insideUnitSphere;
+                    UnityEngine.Random.insideUnitSphere;
 
                 Vector3 spawnOffset =
                     new(
@@ -342,9 +342,9 @@ namespace TimeCli.UnityRuntime
 
                 Vector3 randomVelocity =
                     new(
-                        Random.Range(-6f, 6f),
-                        Random.Range(-6f, 6f),
-                        Random.Range(-6f, 6f));
+                        UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.Random.Range(-6f, 6f));
 
                 var emit =
                     new ParticleSystem.EmitParams
@@ -357,23 +357,23 @@ namespace TimeCli.UnityRuntime
                                 .LocalVelocity +
                             randomVelocity,
                         startLifetime =
-                            Random.Range(
+                            UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMin,
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMax),
                         startSize =
-                            Random.Range(
+                            UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .SizeMin,
                                 OriginalSmallExplosionPresentation
                                     .SizeMax),
                         rotation =
-                            Random.Range(
+                            UnityEngine.Random.Range(
                                 0f,
                                 2f * Mathf.PI),
                         angularVelocity =
-                            Random.Range(
+                            UnityEngine.Random.Range(
                                -OriginalSmallExplosionPresentation
                                     .RandomAngularVelocity,
                                 OriginalSmallExplosionPresentation
