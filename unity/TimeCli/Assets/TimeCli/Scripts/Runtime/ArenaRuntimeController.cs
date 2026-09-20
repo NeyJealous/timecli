@@ -72,6 +72,7 @@ namespace TimeCli.UnityRuntime
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
             bootstrap.Game.UpdateCubePickups(now);
+            bootstrap.Game.UpdateGoldPickups(now);
 
             ClickWeaponAutomaticFirePlan automaticClickWeapons =
                 bootstrap.Game.UpdateClickWeapons(
@@ -506,6 +507,11 @@ namespace TimeCli.UnityRuntime
                     view.BlockIndex,
                     clickDamage,
                     nowSeconds);
+
+            bootstrap.Game.TrySpawnClickPistolHitGold(
+                view.State,
+                UnityEngine.Random.value,
+                nowSeconds);
 
             view.Refresh();
 
