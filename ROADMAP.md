@@ -43,14 +43,15 @@ Current:
 - Time/Weapon Cube and Gold pickup presentation;
 - Click Pistol tracer, Cannon/Launcher projectile motion and collision;
 - Automatic Fire schedules and reconstructed Rocket tail cadence;
-- exact private click-weapon hierarchy extraction/validation/runtime binding
-  path, pending generation of the canonical transform report.
+- exact click-weapon hierarchy, aim/vertical curves, Shoot recoil and
+  Appear/Disappear visibility curves promoted from canonical 1.4.5 data;
+- canonical SmallExplosion, RocketTail and Sparks presentation paths;
+- canonical Flak/Rocket projectile visual binding with private mesh import.
 
 Next:
 
-- generate/review the canonical click-weapon hierarchy report and promote
-  confirmed pivot/recoil animation values;
-- remaining VirtualPS death/sparks particle fidelity and combat audio;
+- click-weapon model geometry/material presentation and appear audio;
+- remaining combat audio and VirtualPS presentation;
 - remaining Splash / Arena / TimeWarp presentation;
 - Artifacts / WeaponAugments / TimelineSummary additive screens;
 - exact audio reconstruction.
