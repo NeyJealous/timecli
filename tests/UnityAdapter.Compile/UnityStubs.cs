@@ -151,10 +151,29 @@ namespace UnityEngine
 
     public readonly struct Color
     {
-        public Color(float r, float g, float b, float a = 1f) { }
+        public Color(float r, float g, float b, float a = 1f)
+        {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+
+        public float r { get; }
+        public float g { get; }
+        public float b { get; }
+        public float a { get; }
+
         public static Color gray => new(0.5f, 0.5f, 0.5f, 1f);
         public static Color black => new(0f, 0f, 0f, 1f);
         public static Color white => new(1f, 1f, 1f, 1f);
+
+        public static Color Lerp(Color a, Color b, float t) =>
+            new(
+                a.r + (b.r - a.r) * t,
+                a.g + (b.g - a.g) * t,
+                a.b + (b.b - a.b) * t,
+                a.a + (b.a - a.a) * t);
     }
 
     public enum PrimitiveType { Sphere, Capsule, Cylinder, Cube, Plane, Quad }
