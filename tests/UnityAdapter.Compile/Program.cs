@@ -18,6 +18,21 @@ var debugCatalog = DebugVoxelCatalogProxy.Create();
 if (debugCatalog.Models.Count == 0)
     throw new Exception("Debug catalog should not be empty.");
 
+// Recovered Rocket tail cadence: no emission before 25 ms, then one
+// emission at 25 ms and three emissions across a 75 ms frame.
+float rocketTailAccumulator = 0f;
+if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.024f) != 0)
+    throw new Exception("Rocket tail emitted before recovered 25 ms delay.");
+
+if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.001f) != 1)
+    throw new Exception("Rocket tail did not emit at recovered 25 ms delay.");
+
+if (Math.Abs(rocketTailAccumulator) > 0.0001f)
+    throw new Exception("Rocket tail cadence accumulator should reset at 25 ms.");
+
+if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.075f) != 3)
+    throw new Exception("Rocket tail cadence must preserve multiple emissions on long frames.");
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static byte[] BuildTinyCatalog()

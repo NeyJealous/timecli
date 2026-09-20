@@ -235,6 +235,21 @@ The modern adapter mirrors that division:
 `HeadlessArenaEngine.ClickWeaponDamageBlock`, which sends the damage through
 the same PortCore BoxEnemy click-damage/reward path.
 
+## Rocket tail presentation
+
+Recovered scheduling value:
+
+```text
+tail emission interval = 0.025 s
+```
+
+The Unity reconstruction now preserves that cadence independently of frame
+rate, including multiple emissions when a frame spans more than one interval.
+The emitted public-project particles are intentionally a clean procedural
+fallback. Exact original particle mesh/material/serialized visual parameters
+have not yet been promoted into the public reconstruction and are not claimed
+as recovered here.
+
 ## Rocket orbital presentation
 
 Serialized Rocket values:
@@ -266,8 +281,9 @@ after ramp:
 ```
 
 The current clean Unity reconstruction implements the root movement, orbital
-pivot and collision timing. Original mesh/particle/audio assets remain private
-inputs and are not committed publicly.
+pivot, 0.025-second tail emission cadence and collision timing. Original
+mesh/particle/audio assets remain private inputs and are not committed
+publicly.
 
 ## Recovered click-weapon fire spots
 

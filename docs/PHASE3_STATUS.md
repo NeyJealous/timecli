@@ -42,6 +42,8 @@ Implemented under `unity/TimeCli`:
 - ClickCannon transient charge/fire state;
 - ClickLauncher click-progress/fire state;
 - Cannon/Launcher projectile movement and collision reporting;
+- ClickLauncher Rocket tail emission at the recovered 0.025 s cadence,
+  with a clean procedural fallback particle;
 - Time/Weapon Cube deferred pickups and collection presentation;
 - clean replacements for original special-enemy shaders.
 
@@ -180,8 +182,7 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- Automatic Fire / augment-driven ClickerWeapon firing schedules;
-- exact Rocket tail particle presentation;
-- original WidgetGold/HUD instead of the development HUD;
+- exact original Rocket tail particle/material fidelity (the recovered
+  0.025-second emission cadence is now implemented);
 - exact click-weapon hierarchy/pivot animation;
 - original Hero projectile presentation.

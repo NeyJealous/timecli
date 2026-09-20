@@ -29,6 +29,7 @@ namespace TimeCli.UnityRuntime
         private Transform _rocketVisual;
         private float _rocketRotationOffset;
         private float _rocketRadialTimer;
+        private float _rocketTailAccumulator;
 
         public static ClickWeaponProjectileView SpawnFlak(
             ArenaRuntimeController arena,
@@ -189,6 +190,7 @@ namespace TimeCli.UnityRuntime
                 dt;
 
             UpdateRocketOrbit(dt);
+            UpdateRocketTail(dt);
 
             _remainingLifetime -= dt;
             if (_remainingLifetime <= 0f)
@@ -252,6 +254,28 @@ namespace TimeCli.UnityRuntime
 
             _rocketVisual.localPosition =
                 new Vector3(1f, 0f, 0f);
+        }
+
+        private void UpdateRocketTail(float dt)
+        {
+            if (_weaponType != WeaponType.RocketLauncher)
+                return;
+
+            int emissionCount =
+                RocketTailCadence.Advance(
+                    ref _rocketTailAccumulator,
+                    dt);
+
+            if (emissionCount <= 0)
+                return;
+
+            Vector3 position =
+                _rocketVisual != null
+                    ? _rocketVisual.position
+                    : transform.position;
+
+            for (int i = 0; i < emissionCount; i++)
+                RocketTailParticleView.Spawn(position);
         }
 
         private void CheckForCollision()
