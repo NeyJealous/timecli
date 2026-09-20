@@ -423,6 +423,12 @@ namespace UnityEngine
     public sealed class TextAsset : Object
     {
         public byte[] bytes { get; set; } = Array.Empty<byte>();
+        public string text { get; set; } = string.Empty;
+    }
+
+    public static class JsonUtility
+    {
+        public static T FromJson<T>(string json) => default!;
     }
 
     public static class Resources
