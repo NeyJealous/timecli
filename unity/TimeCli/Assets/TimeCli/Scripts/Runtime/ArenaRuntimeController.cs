@@ -199,10 +199,13 @@ namespace TimeCli.UnityRuntime
             if (target != null)
                 return target.position;
 
-            // Until the original HUD collection anchors are reconstructed,
-            // keep the pickup tween visible and deterministic in world space.
-            float x = kind == SpecialCubeKind.TimeCube ? -2f : 2f;
-            return fallback + new Vector3(x, 2f, 0f);
+            Camera camera = Camera.main;
+            if (camera == null)
+                return fallback;
+
+            return kind == SpecialCubeKind.TimeCube
+                ? OriginalWidgetGoldPresentation.GetTimeCubeCollectionPoint(camera)
+                : OriginalWidgetGoldPresentation.GetWeaponCubeCollectionPoint(camera);
         }
 
         private void SyncPickupViews(double nowSeconds)
