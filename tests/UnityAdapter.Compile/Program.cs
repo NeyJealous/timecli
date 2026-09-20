@@ -44,6 +44,80 @@ AssertClose(
     0.000001f,
     "Heavy vertical endpoint");
 
+// Hero damage in 1.4.5 is instantaneous. Presentation is weapon-colored
+// BoxEnemy Outline/FlashOutline rather than travelling Hero projectiles.
+AssertColor(
+    OriginalHeroPresentation.GetWeaponColor(WeaponType.Pistol),
+    0f,
+    0.4066853523f,
+    1f,
+    1f,
+    "Pulse Pistol color");
+
+AssertColor(
+    OriginalHeroPresentation.GetWeaponColor(WeaponType.FlakCannon),
+    1f,
+    0.7019498944f,
+    0f,
+    1f,
+    "Flak Cannon color");
+
+AssertColor(
+    OriginalHeroPresentation.GetWeaponColor(WeaponType.SpreadRifle),
+    1f,
+    0f,
+    0f,
+    1f,
+    "Spread Rifle color");
+
+AssertColor(
+    OriginalHeroPresentation.GetWeaponColor(WeaponType.RocketLauncher),
+    0f,
+    1f,
+    0.1559889317f,
+    1f,
+    "Rocket Launcher color");
+
+AssertColor(
+    OriginalHeroPresentation.GetWeaponColor(WeaponType.ParticleBall),
+    0.5626740456f,
+    0f,
+    1f,
+    1f,
+    "Particle Ball color");
+
+if (OriginalHeroPresentation.GetImpactStyle(
+        WeaponType.FlakCannon,
+        false) != HeroImpactStyle.Flash)
+{
+    throw new Exception("Flak Cannon must use FlashOutline.");
+}
+
+if (OriginalHeroPresentation.GetImpactStyle(
+        WeaponType.RocketLauncher,
+        false) != HeroImpactStyle.Outline ||
+    OriginalHeroPresentation.GetImpactStyle(
+        WeaponType.RocketLauncher,
+        true) != HeroImpactStyle.Flash)
+{
+    throw new Exception(
+        "Rocket primary must Outline and splash must FlashOutline.");
+}
+
+var flakMidFade =
+    OriginalHeroPresentation.EvaluateFlashColor(
+        OriginalHeroPresentation.FlakCannonColor,
+        OriginalHeroPresentation.DefaultOutlineColor,
+        OriginalHeroPresentation.FlashDuration * 0.5f);
+
+AssertColor(
+    flakMidFade,
+    0.5f,
+    0.3509749472f,
+    0f,
+    1f,
+    "Flak midpoint flash fade");
+
 // Recovered Rocket tail cadence: no emission before 25 ms, then one
 // emission at 25 ms and three emissions across a 75 ms frame.
 float rocketTailAccumulator = 0f;
@@ -60,6 +134,20 @@ if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.075f) != 3)
     throw new Exception("Rocket tail cadence must preserve multiple emissions on long frames.");
 
 Console.WriteLine("Unity adapter compile/preflight passed.");
+
+static void AssertColor(
+    UnityEngine.Color actual,
+    float r,
+    float g,
+    float b,
+    float a,
+    string label)
+{
+    AssertClose(actual.r, r, 0.000001f, label + " r");
+    AssertClose(actual.g, g, 0.000001f, label + " g");
+    AssertClose(actual.b, b, 0.000001f, label + " b");
+    AssertClose(actual.a, a, 0.000001f, label + " a");
+}
 
 static void AssertClose(
     float actual,
