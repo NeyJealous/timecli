@@ -87,13 +87,16 @@ namespace UnityEngine
 
     public readonly struct Vector3
     {
-        public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
-        public float X { get; }
-        public float Y { get; }
-        public float Z { get; }
+        public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
+        public float x { get; }
+        public float y { get; }
+        public float z { get; }
+
+        public static Vector3 zero => new(0f, 0f, 0f);
+        public static Vector3 one => new(1f, 1f, 1f);
 
         public static Vector3 operator *(Vector3 value, float scalar) =>
-            new(value.X * scalar, value.Y * scalar, value.Z * scalar);
+            new(value.x * scalar, value.y * scalar, value.z * scalar);
     }
 
     public readonly struct Quaternion
@@ -135,10 +138,40 @@ namespace UnityEngine
         public float intensity { get; set; }
     }
 
-    public sealed class Renderer : Component
+    public class Renderer : Component
     {
+        public Material sharedMaterial { get; set; } = default!;
         public void GetPropertyBlock(MaterialPropertyBlock properties) { }
         public void SetPropertyBlock(MaterialPropertyBlock properties) { }
+    }
+
+    public sealed class MeshRenderer : Renderer { }
+
+    public sealed class MeshFilter : Component
+    {
+        public Mesh sharedMesh { get; set; } = default!;
+    }
+
+    public sealed class BoxCollider : Component
+    {
+        public Vector3 center { get; set; }
+        public Vector3 size { get; set; }
+    }
+
+    public sealed class Mesh : Object
+    {
+        public string name { get; set; } = string.Empty;
+        public Vector3[] vertices { get; set; } = Array.Empty<Vector3>();
+        public int[] triangles { get; set; } = Array.Empty<int>();
+        public Vector2[] uv { get; set; } = Array.Empty<Vector2>();
+        public Color[] colors { get; set; } = Array.Empty<Color>();
+        public void RecalculateBounds() { }
+    }
+
+    public sealed class Material : Object
+    {
+        public Material(Shader shader) { }
+        public string name { get; set; } = string.Empty;
     }
 
     public sealed class MaterialPropertyBlock
@@ -146,9 +179,16 @@ namespace UnityEngine
         public void SetColor(int id, Color color) { }
     }
 
-    public static class Shader
+    public sealed class Shader : Object
     {
         public static int PropertyToID(string name) => 0;
+        public static Shader Find(string name) => new();
+    }
+
+    public static class Mathf
+    {
+        public static float Clamp01(float value) =>
+            value < 0f ? 0f : value > 1f ? 1f : value;
     }
 
     public static class Random
