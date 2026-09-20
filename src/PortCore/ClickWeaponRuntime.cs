@@ -437,7 +437,7 @@ public sealed class ClickWeaponRuntime
                     game,
                     augmentType,
                     level,
-                    nowSeconds);
+                    now);
 
             return;
         }
