@@ -54,6 +54,8 @@ namespace TimeCli.UnityRuntime
                 return;
             }
 
+            PrivateWeaponHierarchyPresentation.TryBind(this);
+
             EnsureBlockRoot();
 
             _crosshairPosition = new Vector3(
@@ -239,6 +241,19 @@ namespace TimeCli.UnityRuntime
             bootstrap.Game.TryCollectCubePickup(
                 pickupId,
                 Time.timeAsDouble);
+        }
+
+        public void BindRecoveredClickWeaponFireSpots(
+            Transform pistol,
+            Transform cannon,
+            Transform launcher)
+        {
+            if (pistol != null)
+                clickPistolFireSpot = pistol;
+            if (cannon != null)
+                clickCannonFireSpot = cannon;
+            if (launcher != null)
+                clickLauncherFireSpot = launcher;
         }
 
         public Vector3 GetClickPistolFireSpot()
