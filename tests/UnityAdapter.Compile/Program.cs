@@ -313,6 +313,117 @@ if (Math.Abs(rocketTailAccumulator) > 0.0001f)
 if (RocketTailCadence.Advance(ref rocketTailAccumulator, 0.075f) != 3)
     throw new Exception("Rocket tail cadence must preserve multiple emissions on long frames.");
 
+// Canonical VirtualPS.SmallExplosion / Fire legacy particle system.
+if (OriginalSmallExplosionPresentation.ParticleCount != 10)
+    throw new Exception("SmallExplosion must emit exactly 10 particles.");
+
+AssertClose(
+    OriginalSmallExplosionPresentation.LifetimeMin,
+    0.1f,
+    0.000001f,
+    "SmallExplosion lifetime min");
+AssertClose(
+    OriginalSmallExplosionPresentation.LifetimeMax,
+    0.3f,
+    0.000001f,
+    "SmallExplosion lifetime max");
+AssertClose(
+    OriginalSmallExplosionPresentation.SizeMin,
+    1.5f,
+    0.000001f,
+    "SmallExplosion size min");
+AssertClose(
+    OriginalSmallExplosionPresentation.SizeMax,
+    3f,
+    0.000001f,
+    "SmallExplosion size max");
+AssertClose(
+    OriginalSmallExplosionPresentation.LocalVelocity.y,
+    6f,
+    0.000001f,
+    "SmallExplosion local Y velocity");
+AssertClose(
+    OriginalSmallExplosionPresentation.RandomVelocity.x,
+    6f,
+    0.000001f,
+    "SmallExplosion random X velocity");
+AssertClose(
+    OriginalSmallExplosionPresentation.RandomAngularVelocity,
+    200f,
+    0.000001f,
+    "SmallExplosion random angular velocity");
+AssertClose(
+    OriginalSmallExplosionPresentation.Ellipsoid.x,
+    0.2f,
+    0.000001f,
+    "SmallExplosion ellipsoid X");
+AssertClose(
+    OriginalSmallExplosionPresentation.Ellipsoid.y,
+    0f,
+    0.000001f,
+    "SmallExplosion ellipsoid Y");
+AssertClose(
+    OriginalSmallExplosionPresentation.Damping,
+    0.1f,
+    0.000001f,
+    "SmallExplosion damping");
+
+AssertColor(
+    OriginalSmallExplosionPresentation.Color0,
+    1f, 1f, 1f, 10f / 255f,
+    "SmallExplosion color 0");
+AssertColor(
+    OriginalSmallExplosionPresentation.Color2,
+    1f, 145f / 255f, 82f / 255f, 1f,
+    "SmallExplosion color 2");
+AssertColor(
+    OriginalSmallExplosionPresentation.Color3,
+    1f, 122f / 255f, 23f / 255f, 1f,
+    "SmallExplosion color 3");
+AssertColor(
+    OriginalSmallExplosionPresentation.Color4,
+    1f, 72f / 255f, 0f, 10f / 255f,
+    "SmallExplosion color 4");
+
+var smallExplosionGradient =
+    OriginalSmallExplosionPresentation.BuildColorAnimation();
+
+if (smallExplosionGradient.colorKeys.Length != 5 ||
+    smallExplosionGradient.alphaKeys.Length != 4)
+{
+    throw new Exception(
+        "SmallExplosion legacy five-color animation key counts changed.");
+}
+
+AssertClose(
+    smallExplosionGradient.colorKeys[2].time,
+    0.5f,
+    0.000001f,
+    "SmallExplosion midpoint color time");
+AssertClose(
+    OriginalSmallExplosionPresentation.GetDampingMultiplier(1f),
+    0.1f,
+    0.000001f,
+    "SmallExplosion one-second damping");
+AssertClose(
+    OriginalSmallExplosionPresentation.AudioVolume,
+    0.5f,
+    0.000001f,
+    "SmallExplosion audio volume");
+AssertClose(
+    OriginalSmallExplosionPresentation.AudioQueueCooldown,
+    0.1f,
+    0.000001f,
+    "SmallExplosion audio queue cooldown");
+
+if (OriginalSmallExplosionPresentation.AudioSourcesPerQueue != 6 ||
+    OriginalSmallExplosionPresentation.AudioClipChannels != 2 ||
+    OriginalSmallExplosionPresentation.AudioClipFrequency != 48000)
+{
+    throw new Exception(
+        "SmallExplosion recovered audio metadata changed.");
+}
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
