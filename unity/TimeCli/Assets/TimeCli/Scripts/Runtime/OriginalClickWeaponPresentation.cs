@@ -332,7 +332,7 @@ namespace TimeCli.UnityRuntime
                 return;
             }
 
-            ApplyVisibility(model, clip, Mathf.Max(0f, elapsed));
+            ApplyVisibility(model, clip, elapsed < 0f ? 0f : elapsed);
         }
 
         private void StartPistolVisibility(
