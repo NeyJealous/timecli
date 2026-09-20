@@ -49,6 +49,7 @@ namespace TimeCli.UnityRuntime
         public const float CollisionCheckInterval =
             0.0333333313f;
         public const float ImpactRadius = 1f;
+        public const float ClickWeaponMaxDistance = 100f;
         public const int HitboxMask = 2560;
 
         public const float RocketRotationSpeed = 360f;
