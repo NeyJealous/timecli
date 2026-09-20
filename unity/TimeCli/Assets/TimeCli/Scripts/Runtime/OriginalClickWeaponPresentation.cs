@@ -15,6 +15,13 @@ namespace TimeCli.UnityRuntime
         private readonly Transform _cannonVertical;
         private readonly Transform _launcherPivot;
         private readonly Transform _launcherVertical;
+        private readonly Transform _pistolSlide;
+        private readonly Transform _cannonModel;
+        private readonly Transform _launcherModel;
+
+        private float _pistolShootStart = float.NegativeInfinity;
+        private float _cannonShootStart = float.NegativeInfinity;
+        private float _launcherShootStart = float.NegativeInfinity;
 
         private OriginalClickWeaponPresentationView(
             Transform pistolPivot,
@@ -22,7 +29,10 @@ namespace TimeCli.UnityRuntime
             Transform cannonPivot,
             Transform cannonVertical,
             Transform launcherPivot,
-            Transform launcherVertical)
+            Transform launcherVertical,
+            Transform pistolSlide,
+            Transform cannonModel,
+            Transform launcherModel)
         {
             _pistolPivot = pistolPivot;
             _pistolVertical = pistolVertical;
@@ -30,6 +40,9 @@ namespace TimeCli.UnityRuntime
             _cannonVertical = cannonVertical;
             _launcherPivot = launcherPivot;
             _launcherVertical = launcherVertical;
+            _pistolSlide = pistolSlide;
+            _cannonModel = cannonModel;
+            _launcherModel = launcherModel;
         }
 
         public static OriginalClickWeaponPresentationView Create(
@@ -55,6 +68,13 @@ namespace TimeCli.UnityRuntime
                 OriginalClickWeaponPresentation.PistolFireSpotRotation,
                 OriginalClickWeaponPresentation.PistolFireSpotScale,
                 "Pistol");
+
+            Transform pistolSlide = CreateTransform(
+                "top1",
+                pistol.Model,
+                OriginalClickWeaponPresentation.PistolTopRestPosition,
+                new Quaternion(0f, 0f, 0f, 1f),
+                Vector3.one);
 
             WeaponHierarchy cannon = BuildWeapon(
                 clickWeapons.transform,
@@ -95,13 +115,18 @@ namespace TimeCli.UnityRuntime
                 cannon.Pivot,
                 cannon.Vertical,
                 launcher.Pivot,
-                launcher.Vertical);
+                launcher.Vertical,
+                pistolSlide,
+                cannon.Model,
+                launcher.Model);
         }
 
         public void UpdateAim(
             Vector3 crosshairPosition,
             float lastTapScreenY)
         {
+            UpdateShootAnimations(Time.time);
+
             Camera camera = Camera.main;
             if (camera == null)
                 return;
@@ -137,6 +162,103 @@ namespace TimeCli.UnityRuntime
 
             _launcherVertical.localPosition =
                 new Vector3(0f, -heavyVertical, 0f);
+        }
+
+
+        public void PlayPistolShoot()
+        {
+            _pistolShootStart = Time.time;
+            ApplyPistolShoot(0f);
+        }
+
+        public void PlayCannonShoot()
+        {
+            _cannonShootStart = Time.time;
+            ApplyCannonShoot(0f);
+        }
+
+        public void PlayLauncherShoot()
+        {
+            _launcherShootStart = Time.time;
+            ApplyLauncherShoot(0f);
+        }
+
+        private void UpdateShootAnimations(float now)
+        {
+            if (!float.IsNegativeInfinity(_pistolShootStart))
+            {
+                float elapsed = now - _pistolShootStart;
+                if (elapsed <= OriginalClickWeaponShootAnimation.PistolDuration)
+                {
+                    ApplyPistolShoot(elapsed);
+                }
+                else
+                {
+                    _pistolSlide.localPosition =
+                        OriginalClickWeaponPresentation.PistolTopRestPosition;
+                    _pistolShootStart = float.NegativeInfinity;
+                }
+            }
+
+            if (!float.IsNegativeInfinity(_cannonShootStart))
+            {
+                float elapsed = now - _cannonShootStart;
+                if (elapsed <= OriginalClickWeaponShootAnimation.CannonDuration)
+                {
+                    ApplyCannonShoot(elapsed);
+                }
+                else
+                {
+                    _cannonModel.localPosition =
+                        OriginalClickWeaponPresentation.CannonModelPosition;
+                    _cannonModel.localRotation =
+                        OriginalClickWeaponPresentation.CannonModelRotation;
+                    _cannonShootStart = float.NegativeInfinity;
+                }
+            }
+
+            if (!float.IsNegativeInfinity(_launcherShootStart))
+            {
+                float elapsed = now - _launcherShootStart;
+                if (elapsed <= OriginalClickWeaponShootAnimation.LauncherDuration)
+                {
+                    ApplyLauncherShoot(elapsed);
+                }
+                else
+                {
+                    _launcherModel.localPosition =
+                        OriginalClickWeaponPresentation.LauncherModelPosition;
+                    _launcherModel.localRotation =
+                        OriginalClickWeaponPresentation.LauncherModelRotation;
+                    _launcherShootStart = float.NegativeInfinity;
+                }
+            }
+        }
+
+        private void ApplyPistolShoot(float elapsed)
+        {
+            _pistolSlide.localPosition =
+                OriginalClickWeaponShootAnimation
+                    .EvaluatePistolSlide(elapsed);
+        }
+
+        private void ApplyCannonShoot(float elapsed)
+        {
+            _cannonModel.localPosition =
+                OriginalClickWeaponShootAnimation
+                    .EvaluateCannon(elapsed);
+            _cannonModel.localRotation =
+                OriginalClickWeaponShootAnimation.CannonRotation;
+        }
+
+        private void ApplyLauncherShoot(float elapsed)
+        {
+            _launcherModel.localPosition =
+                OriginalClickWeaponShootAnimation
+                    .EvaluateLauncherPosition(elapsed);
+            _launcherModel.localRotation =
+                OriginalClickWeaponShootAnimation
+                    .EvaluateLauncherRotation(elapsed);
         }
 
         private static WeaponHierarchy BuildWeapon(
@@ -191,6 +313,7 @@ namespace TimeCli.UnityRuntime
             return new WeaponHierarchy(
                 pivot,
                 vertical,
+                model,
                 fireSpot);
         }
 
@@ -214,15 +337,18 @@ namespace TimeCli.UnityRuntime
             public WeaponHierarchy(
                 Transform pivot,
                 Transform vertical,
+                Transform model,
                 Transform fireSpot)
             {
                 Pivot = pivot;
                 Vertical = vertical;
+                Model = model;
                 FireSpot = fireSpot;
             }
 
             public Transform Pivot { get; }
             public Transform Vertical { get; }
+            public Transform Model { get; }
             public Transform FireSpot { get; }
         }
     }
@@ -249,6 +375,12 @@ namespace TimeCli.UnityRuntime
 
         public static readonly Vector3 PistolModelScale =
             Vector3.one;
+
+        public static readonly Vector3 PistolTopRestPosition =
+            new(
+                0f,
+                0.14061179757118225f,
+                0.0027837783563882113f);
 
         public static readonly Vector3 PistolFireSpotPosition =
             new(0f, 0.171000004f, 0.449999988f);
