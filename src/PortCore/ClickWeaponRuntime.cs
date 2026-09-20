@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TimeClickers.PortCore;
 
@@ -22,19 +23,47 @@ public sealed record ClickWeaponFirePlan(
         new(null, null);
 }
 
+public sealed record ClickWeaponAutomaticFirePlan(
+    int PistolShots,
+    IReadOnlyList<ClickCannonFirePlan> CannonShots,
+    IReadOnlyList<ClickLauncherFirePlan> LauncherShots)
+{
+    public static readonly ClickWeaponAutomaticFirePlan None =
+        new(
+            0,
+            Array.Empty<ClickCannonFirePlan>(),
+            Array.Empty<ClickLauncherFirePlan>());
+}
+
 /// <summary>
-/// Unity-independent transient state for ClickCannon and ClickLauncher.
+/// Unity-independent transient state for all three ClickerWeapon instances.
 ///
 /// Reconstructed from Time Clickers 1.4.5:
-/// - every manual click charges/fires the Cannon when unlocked;
-/// - Cannon charge starts decaying one second after the last click at 10/s;
-/// - Cannon fires floor(chargeProgress) projectiles per click;
-/// - Launcher counts clicks and fires when its augment-defined threshold is met;
-/// - Spread Shots changes Cannon max charge and Launcher rocket count.
-/// Collision/trajectory remain Unity responsibilities; PortCore owns damage.
+/// - manual input calls Shoot on every active/unlocked click weapon;
+/// - Automatic Fire ability uses the Artifact rapid-fire delay;
+/// - each weapon has its own augment-driven shots/minute timer;
+/// - Cannon charge/decharge and Launcher click threshold are persistent between
+///   all manual/automatic Shoot calls.
 /// </summary>
 public sealed class ClickWeaponRuntime
 {
+    private double _pistolNextRapidFireTime;
+    private double _cannonNextRapidFireTime;
+    private double _launcherNextRapidFireTime;
+
+    private double _pistolNextAugmentFireTime =
+        double.PositiveInfinity;
+    private double _cannonNextAugmentFireTime =
+        double.PositiveInfinity;
+    private double _launcherNextAugmentFireTime =
+        double.PositiveInfinity;
+
+    // -1 means the equivalent of ClickerWeapon.Start has not yet been
+    // observed by this portable runtime.
+    private long _pistolAutoFireLevel = -1;
+    private long _cannonAutoFireLevel = -1;
+    private long _launcherAutoFireLevel = -1;
+
     public double CannonChargeProgress { get; private set; }
     public double CannonStartDechargingTime { get; private set; }
     public int LauncherClicksProgress { get; private set; }
@@ -54,7 +83,7 @@ public sealed class ClickWeaponRuntime
             1,
             game.WeaponAugmentEffects.ClickLauncherClicks);
 
-    public void Update(
+    public ClickWeaponAutomaticFirePlan UpdateAutomaticFire(
         GameState game,
         double nowSeconds,
         double deltaSeconds)
@@ -62,91 +91,149 @@ public sealed class ClickWeaponRuntime
         if (deltaSeconds < 0.0)
             throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
 
-        // Exact ClickCannon.Update: decharge only after
-        // Time.time > startDechargingTime, at deltaTime * 10.
+        int pistolShots = 0;
+        List<ClickCannonFirePlan>? cannonShots = null;
+        List<ClickLauncherFirePlan>? launcherShots = null;
+
+        // ClickerWeapon.Update order:
+        // 1. Automatic Fire ability
+        // 2. augment auto-fire
+        // 3. subclass-specific Update work (Cannon decharge below).
+
+        if (ShouldRapidFire(
+            game,
+            ref _pistolNextRapidFireTime,
+            nowSeconds))
+        {
+            pistolShots++;
+        }
+
+        if (ShouldAugmentAutoFire(
+            game,
+            WeaponAugmentType.ClickPistolAutoFire,
+            ref _pistolAutoFireLevel,
+            ref _pistolNextAugmentFireTime,
+            nowSeconds))
+        {
+            pistolShots++;
+        }
+
+        if (game.WeaponAugmentEffects.ClickCannonUnlocked)
+        {
+            if (ShouldRapidFire(
+                game,
+                ref _cannonNextRapidFireTime,
+                nowSeconds))
+            {
+                (cannonShots ??= new())
+                    .Add(ShootCannon(game, nowSeconds));
+            }
+
+            if (ShouldAugmentAutoFire(
+                game,
+                WeaponAugmentType.ClickCannonAutoFire,
+                ref _cannonAutoFireLevel,
+                ref _cannonNextAugmentFireTime,
+                nowSeconds))
+            {
+                (cannonShots ??= new())
+                    .Add(ShootCannon(game, nowSeconds));
+            }
+        }
+        else
+        {
+            ObserveAugmentWithoutFiring(
+                game,
+                WeaponAugmentType.ClickCannonAutoFire,
+                ref _cannonAutoFireLevel,
+                ref _cannonNextAugmentFireTime,
+                nowSeconds);
+        }
+
+        if (game.WeaponAugmentEffects.ClickLauncherUnlocked)
+        {
+            if (ShouldRapidFire(
+                game,
+                ref _launcherNextRapidFireTime,
+                nowSeconds))
+            {
+                var fire = ShootLauncher(game);
+                if (fire is not null)
+                    (launcherShots ??= new()).Add(fire);
+            }
+
+            if (ShouldAugmentAutoFire(
+                game,
+                WeaponAugmentType.ClickLauncherAutoFire,
+                ref _launcherAutoFireLevel,
+                ref _launcherNextAugmentFireTime,
+                nowSeconds))
+            {
+                var fire = ShootLauncher(game);
+                if (fire is not null)
+                    (launcherShots ??= new()).Add(fire);
+            }
+        }
+        else
+        {
+            ObserveAugmentWithoutFiring(
+                game,
+                WeaponAugmentType.ClickLauncherAutoFire,
+                ref _launcherAutoFireLevel,
+                ref _launcherNextAugmentFireTime,
+                nowSeconds);
+        }
+
+        // ClickCannon.Update runs this after ClickerWeapon.Update.
         if (nowSeconds > CannonStartDechargingTime &&
             CannonChargeProgress > 0.0)
         {
-            CannonChargeProgress -= deltaSeconds * 10.0;
+            CannonChargeProgress -=
+                deltaSeconds * 10.0;
+
             if (CannonChargeProgress < 0.0)
                 CannonChargeProgress = 0.0;
         }
 
-        // Original recomputes maximumCharge every frame. It does not clamp
-        // existing charge when Spread Shots expires; the next Shoot call does.
-        _ = GetCannonMaximumCharge(game);
+        if (pistolShots == 0 &&
+            cannonShots is null &&
+            launcherShots is null)
+        {
+            return ClickWeaponAutomaticFirePlan.None;
+        }
+
+        return new ClickWeaponAutomaticFirePlan(
+            pistolShots,
+            cannonShots ??
+                Array.Empty<ClickCannonFirePlan>(),
+            launcherShots ??
+                Array.Empty<ClickLauncherFirePlan>());
     }
+
+    /// <summary>
+    /// Compatibility wrapper used when a caller only wants state advancement.
+    /// </summary>
+    public void Update(
+        GameState game,
+        double nowSeconds,
+        double deltaSeconds) =>
+        _ = UpdateAutomaticFire(
+            game,
+            nowSeconds,
+            deltaSeconds);
 
     public ClickWeaponFirePlan RegisterManualClick(
         GameState game,
         double nowSeconds)
     {
-        var effects = game.WeaponAugmentEffects;
-
         ClickCannonFirePlan? cannon = null;
         ClickLauncherFirePlan? launcher = null;
 
-        if (effects.ClickCannonUnlocked)
-        {
-            CannonChargeProgress += 1.0;
+        if (game.WeaponAugmentEffects.ClickCannonUnlocked)
+            cannon = ShootCannon(game, nowSeconds);
 
-            double maximumCharge =
-                GetCannonMaximumCharge(game);
-
-            if (CannonChargeProgress > maximumCharge)
-                CannonChargeProgress = maximumCharge;
-
-            CannonStartDechargingTime =
-                nowSeconds + 1.0;
-
-            int projectileCount =
-                (int)Math.Floor(CannonChargeProgress);
-
-            double damage =
-                game.GetClickDamage(isCritical: false) *
-                effects.ClickCannonDamagePerShot *
-                0.01;
-
-            cannon = new ClickCannonFirePlan(
-                ProjectileCount: projectileCount,
-                DamagePerProjectile: damage,
-                FireConeNormalized:
-                    effects.ClickCannonFireCone / 360.0,
-                ChargeProgress: CannonChargeProgress,
-                MaximumCharge: maximumCharge);
-        }
-
-        if (effects.ClickLauncherUnlocked)
-        {
-            LauncherClicksProgress++;
-
-            int clicksRequired =
-                GetLauncherClicksRequired(game);
-
-            if (LauncherClicksProgress >= clicksRequired)
-            {
-                int rocketCount = 1;
-
-                if (game.IsAbilityActive(
-                    AbilityType.SpreadShots))
-                {
-                    rocketCount = Math.Max(
-                        1,
-                        effects.ClickLauncherRockets);
-                }
-
-                launcher = new ClickLauncherFirePlan(
-                    RocketCount: rocketCount,
-                    DamagePerRocket:
-                        game.GetClickDamage(
-                            isCritical: false) * 10.0,
-                    RocketSpeedMultiplier:
-                        effects.ClickLauncherRocketSpeed *
-                        0.01);
-
-                LauncherClicksProgress = 0;
-            }
-        }
+        if (game.WeaponAugmentEffects.ClickLauncherUnlocked)
+            launcher = ShootLauncher(game);
 
         return cannon is null && launcher is null
             ? ClickWeaponFirePlan.None
@@ -160,5 +247,204 @@ public sealed class ClickWeaponRuntime
         CannonChargeProgress = 0.0;
         CannonStartDechargingTime = 0.0;
         LauncherClicksProgress = 0;
+
+        _pistolNextRapidFireTime = 0.0;
+        _cannonNextRapidFireTime = 0.0;
+        _launcherNextRapidFireTime = 0.0;
+
+        // Weapon Augments persist through Time Warp, as do their ClickerWeapon
+        // component instances. Do not erase observed augment levels/timers.
+    }
+
+    private ClickCannonFirePlan ShootCannon(
+        GameState game,
+        double nowSeconds)
+    {
+        var effects = game.WeaponAugmentEffects;
+
+        CannonChargeProgress += 1.0;
+
+        double maximumCharge =
+            GetCannonMaximumCharge(game);
+
+        if (CannonChargeProgress > maximumCharge)
+            CannonChargeProgress = maximumCharge;
+
+        CannonStartDechargingTime =
+            nowSeconds + 1.0;
+
+        return new ClickCannonFirePlan(
+            ProjectileCount:
+                (int)Math.Floor(CannonChargeProgress),
+            DamagePerProjectile:
+                game.GetClickDamage(isCritical: false) *
+                effects.ClickCannonDamagePerShot *
+                0.01,
+            FireConeNormalized:
+                effects.ClickCannonFireCone / 360.0,
+            ChargeProgress:
+                CannonChargeProgress,
+            MaximumCharge:
+                maximumCharge);
+    }
+
+    private ClickLauncherFirePlan? ShootLauncher(
+        GameState game)
+    {
+        var effects = game.WeaponAugmentEffects;
+
+        LauncherClicksProgress++;
+
+        if (LauncherClicksProgress <
+            GetLauncherClicksRequired(game))
+        {
+            return null;
+        }
+
+        int rocketCount = 1;
+
+        if (game.IsAbilityActive(
+            AbilityType.SpreadShots))
+        {
+            rocketCount = Math.Max(
+                1,
+                effects.ClickLauncherRockets);
+        }
+
+        LauncherClicksProgress = 0;
+
+        return new ClickLauncherFirePlan(
+            RocketCount: rocketCount,
+            DamagePerRocket:
+                game.GetClickDamage(
+                    isCritical: false) * 10.0,
+            RocketSpeedMultiplier:
+                effects.ClickLauncherRocketSpeed *
+                0.01);
+    }
+
+    private static bool ShouldRapidFire(
+        GameState game,
+        ref double nextFireTime,
+        double nowSeconds)
+    {
+        if (!game.IsAbilityActive(
+            AbilityType.AutomaticFire))
+        {
+            return false;
+        }
+
+        // Original skips only while nextFireTime > Time.time.
+        if (nextFireTime > nowSeconds)
+            return false;
+
+        nextFireTime =
+            nowSeconds +
+            game.ArtifactEffects.RapidFireDelay;
+
+        return true;
+    }
+
+    private static bool ShouldAugmentAutoFire(
+        GameState game,
+        WeaponAugmentType augmentType,
+        ref long observedLevel,
+        ref double nextFireTime,
+        double nowSeconds)
+    {
+        ulong level =
+            game.WeaponAugments.GetLevel(augmentType);
+
+        if (observedLevel < 0)
+        {
+            observedLevel = (long)level;
+            nextFireTime =
+                GetInitialAugmentFireTime(
+                    game,
+                    augmentType,
+                    level,
+                    nowSeconds);
+
+            return false;
+        }
+
+        if ((ulong)observedLevel != level)
+        {
+            // WeaponAugment.onWeaponAugmentChanged ->
+            // ClickerWeapon.OnAutoFireWeaponAugmentChanged:
+            // nextWeaponAugmentFireTime = Time.time.
+            observedLevel = (long)level;
+            nextFireTime = nowSeconds;
+            return false;
+        }
+
+        if (level == 0)
+            return false;
+
+        // Original uses next >= Time.time as the no-fire branch.
+        if (nextFireTime >= nowSeconds)
+            return false;
+
+        double shotsPerMinute =
+            game.WeaponAugments.GetModValue(
+                augmentType);
+
+        if (shotsPerMinute <= 0.0)
+            return false;
+
+        nextFireTime =
+            nowSeconds +
+            60.0 / shotsPerMinute;
+
+        return true;
+    }
+
+    private static void ObserveAugmentWithoutFiring(
+        GameState game,
+        WeaponAugmentType augmentType,
+        ref long observedLevel,
+        ref double nextFireTime,
+        double nowSeconds)
+    {
+        ulong level =
+            game.WeaponAugments.GetLevel(augmentType);
+
+        if (observedLevel < 0)
+        {
+            observedLevel = (long)level;
+            nextFireTime =
+                GetInitialAugmentFireTime(
+                    game,
+                    augmentType,
+                    level,
+                    nowSeconds);
+
+            return;
+        }
+
+        if ((ulong)observedLevel != level)
+        {
+            observedLevel = (long)level;
+            nextFireTime = nowSeconds;
+        }
+    }
+
+    private static double GetInitialAugmentFireTime(
+        GameState game,
+        WeaponAugmentType augmentType,
+        ulong level,
+        double nowSeconds)
+    {
+        if (level == 0)
+            return double.PositiveInfinity;
+
+        double shotsPerMinute =
+            game.WeaponAugments.GetModValue(
+                augmentType);
+
+        return shotsPerMinute <= 0.0
+            ? double.PositiveInfinity
+            : nowSeconds +
+              60.0 / shotsPerMinute;
     }
 }
