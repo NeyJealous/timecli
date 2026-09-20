@@ -41,6 +41,8 @@ namespace TimeCli.UnityRuntime
         private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
         private Vector3 _crosshairPosition;
+        private float _lastTapScreenY;
+        private OriginalClickWeaponPresentationView _clickWeaponPresentation;
 
         private void Start()
         {
@@ -54,14 +56,20 @@ namespace TimeCli.UnityRuntime
                 return;
             }
 
-            PrivateWeaponHierarchyPresentation.TryBind(this);
-
             EnsureBlockRoot();
+
+            _clickWeaponPresentation =
+                OriginalClickWeaponPresentationView.Create(this);
 
             _crosshairPosition = new Vector3(
                 Screen.width * 0.5f,
                 Screen.height * 0.5f,
                 0f);
+
+            _lastTapScreenY = 0f;
+            _clickWeaponPresentation.UpdateAim(
+                _crosshairPosition,
+                _lastTapScreenY);
 
             SpawnCurrentEnemy();
         }
@@ -70,6 +78,10 @@ namespace TimeCli.UnityRuntime
         {
             if (!bootstrap.IsReady)
                 return;
+
+            _clickWeaponPresentation?.UpdateAim(
+                _crosshairPosition,
+                _lastTapScreenY);
 
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
@@ -156,7 +168,13 @@ namespace TimeCli.UnityRuntime
                         screenPosition.x,
                         screenPosition.y,
                         0f);
+
+                _lastTapScreenY = screenPosition.y;
             }
+
+            _clickWeaponPresentation?.UpdateAim(
+                _crosshairPosition,
+                _lastTapScreenY);
 
             ClickWeaponFirePlan auxiliary =
                 bootstrap.Game.RegisterManualClickWeapons(
