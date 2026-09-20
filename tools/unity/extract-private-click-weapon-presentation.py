@@ -25,6 +25,7 @@ PrivateGenerated/Resources.
 from __future__ import annotations
 
 import argparse
+import io
 import shutil
 import tempfile
 from pathlib import Path
@@ -193,8 +194,10 @@ def write_cubemap_faces(
             True,
         )
 
-        target = output_dir / f"{output_prefix}_{face_name}.png"
-        image.save(target, format="PNG")
+        target = output_dir / f"{output_prefix}_{face_name}.bytes"
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        target.write_bytes(buffer.getvalue())
         print(
             f"{target.name}: cubemap pathID={path_id} "
             f"name={cube.m_Name!r} face={face_name} "
