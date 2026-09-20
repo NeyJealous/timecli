@@ -47,6 +47,7 @@ namespace TimeCli.UnityRuntime
 
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
+            bootstrap.Game.UpdateCubePickups(now);
 
             BossTickResult bossTick = bootstrap.Arena.TickBoss(now);
 
