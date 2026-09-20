@@ -390,9 +390,10 @@ namespace TimeCli.UnityRuntime
                 UnityEngine.Random.value <
                 bootstrap.Game.GetCriticalChance();
 
-            double clickDamage =
-                bootstrap.Game.GetClickDamage(
-                    critical);
+            ClickPistolFirePlan plan =
+                ClickPistolFireMath.Build(
+                    bootstrap.Game,
+                    plan.IsCritical);
 
             Ray baseRay =
                 camera.ScreenPointToRay(
@@ -400,58 +401,35 @@ namespace TimeCli.UnityRuntime
 
             FireClickPistolRay(
                 baseRay,
-                critical,
-                clickDamage,
+                plan,
                 nowSeconds);
 
-            if (!bootstrap.Game.IsAbilityActive(
-                    AbilityType.SpreadShots))
-            {
-                return;
-            }
-
-            int totalProjectiles =
-                Math.Max(
-                    1,
-                    bootstrap.Game.ArtifactEffects
-                        .SpreadShotsProjectiles);
-
             for (int i = 0;
-                 i < totalProjectiles - 1;
+                 i < plan.AdditionalYawAnglesDegrees.Count;
                  i++)
             {
-                int angle =
-                    ((i / 2) + 1) *
-                    3 *
-                    (i % 2 == 0
-                        ? -1
-                        : 1);
-
                 Ray spreadRay = baseRay;
                 spreadRay.direction =
                     Quaternion.AngleAxis(
-                        angle,
+                        plan.AdditionalYawAnglesDegrees[i],
                         Vector3.up) *
                     baseRay.direction;
 
                 FireClickPistolRay(
                     spreadRay,
-                    critical,
-                    clickDamage,
+                    plan,
                     nowSeconds);
             }
         }
 
         private void FireClickPistolRay(
             Ray ray,
-            bool critical,
-            double clickDamage,
+            ClickPistolFirePlan plan,
             double nowSeconds)
         {
             Vector3 tracerEnd;
 
-            if (bootstrap.Game.IsAbilityActive(
-                    AbilityType.PunchThrough))
+            if (plan.PunchThrough)
             {
                 RaycastHit[] hits =
                     Physics.RaycastAll(
@@ -466,7 +444,7 @@ namespace TimeCli.UnityRuntime
 
                     ProcessClickPistolHit(
                         hits[i],
-                        clickDamage,
+                        plan.ClickDamage,
                         nowSeconds);
                 }
 
@@ -485,7 +463,7 @@ namespace TimeCli.UnityRuntime
 
                 ProcessClickPistolHit(
                     hit,
-                    clickDamage,
+                    plan.ClickDamage,
                     nowSeconds);
             }
             else
