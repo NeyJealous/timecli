@@ -4,7 +4,9 @@ using UnityEngine;
 namespace TimeCli.UnityRuntime
 {
     /// <summary>
-    /// Rebuilds an original-derived Unity cubemap from six private PNG faces.
+    /// Rebuilds an original-derived Unity cubemap from six private PNG payloads
+    /// stored as TextAsset .bytes resources so runtime decoding does not depend
+    /// on Unity TextureImporter Read/Write settings.
     ///
     /// Serialized Time Clickers 1.4.5 Cubemap image data stores six complete
     /// ETC_RGB4 mip chains in CubemapFace enum order:
@@ -29,23 +31,29 @@ namespace TimeCli.UnityRuntime
                 return cached;
             }
             Texture2D positiveX =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_PositiveX");
+                LoadFace(
+                    resourcePrefix,
+                    "PositiveX");
             Texture2D negativeX =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_NegativeX");
+                LoadFace(
+                    resourcePrefix,
+                    "NegativeX");
             Texture2D positiveY =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_PositiveY");
+                LoadFace(
+                    resourcePrefix,
+                    "PositiveY");
             Texture2D negativeY =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_NegativeY");
+                LoadFace(
+                    resourcePrefix,
+                    "NegativeY");
             Texture2D positiveZ =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_PositiveZ");
+                LoadFace(
+                    resourcePrefix,
+                    "PositiveZ");
             Texture2D negativeZ =
-                Resources.Load<Texture2D>(
-                    resourcePrefix + "_NegativeZ");
+                LoadFace(
+                    resourcePrefix,
+                    "NegativeZ");
 
             if (positiveX == null ||
                 negativeX == null ||
@@ -106,6 +114,50 @@ namespace TimeCli.UnityRuntime
                 cubemap;
 
             return cubemap;
+        }
+
+        private static Texture2D LoadFace(
+            string resourcePrefix,
+            string faceName)
+        {
+            TextAsset asset =
+                Resources.Load<TextAsset>(
+                    resourcePrefix +
+                    "_" +
+                    faceName);
+
+            if (asset == null ||
+                asset.bytes == null ||
+                asset.bytes.Length == 0)
+            {
+                return null;
+            }
+
+            var texture =
+                new Texture2D(2, 2)
+                {
+                    name =
+                        resourcePrefix +
+                        "_" +
+                        faceName +
+                        "_Decoded",
+                    filterMode =
+                        FilterMode.Bilinear,
+                    wrapMode =
+                        TextureWrapMode.Clamp,
+                    anisoLevel = 1
+                };
+
+            if (!ImageConversion.LoadImage(
+                    texture,
+                    asset.bytes,
+                    false))
+            {
+                Object.Destroy(texture);
+                return null;
+            }
+
+            return texture;
         }
 
         private static void SetFace(
