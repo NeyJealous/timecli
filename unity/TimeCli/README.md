@@ -7,11 +7,11 @@ Pinned editor:
 
 `6000.3.24f1 (4e7b9b5b6244)`
 
+Current PortCore adapter API: **1.2.0**.
+
 ## Fastest first run
 
-With Unity installed, the complete setup is automated.
-
-Windows:
+With Unity installed:
 
 ```powershell
 .\tools\unity\create-arena-prototype.ps1
@@ -27,21 +27,20 @@ If Unity is installed elsewhere:
 macOS/Linux:
 
 ```bash
-UNITY_PATH="/path/to/Unity" bash tools/unity/create-arena-prototype.sh
+UNITY_PATH="/path/to/Unity" \
+bash tools/unity/create-arena-prototype.sh
 ```
 
-The script builds PortCore, launches Unity in batch mode, compiles/imports the
+The script builds PortCore, launches Unity in batch mode, imports/compiles the
 project and creates:
 
 `Assets/TimeCli/Scenes/ArenaPrototype.unity`
 
-The Unity log is written to:
+Unity log:
 
 `out/unity/arena-prototype-batch.log`
 
 ## Private canonical voxel catalog
-
-Optionally provide the locally recovered private JSON before the first run.
 
 Windows:
 
@@ -58,8 +57,68 @@ PRIVATE_VOXEL_JSON="/path/to/voxel_layouts_private.json" \
 bash tools/unity/create-arena-prototype.sh
 ```
 
-The generated binary lives under `Assets/TimeCli/PrivateGenerated/` and is
-ignored by Git.
+## Private original special-cube textures
+
+The setup script can also extract the recovered TimeCube / WeaponCube textures
+from the original APK Data directory or a reassembled `sharedassets1.assets`.
+
+Windows:
+
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -OriginalDataSource "C:\path\to\apk\assets\bin\Data"
+```
+
+Combined:
+
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -PrivateVoxelJson "C:\path\voxel_layouts_private.json" \
+  -OriginalDataSource "C:\path\to\apk\assets\bin\Data"
+```
+
+macOS/Linux:
+
+```bash
+UNITY_PATH="/path/to/Unity" \
+PRIVATE_VOXEL_JSON="/path/to/voxel_layouts_private.json" \
+ORIGINAL_DATA_SOURCE="/path/to/apk/assets/bin/Data" \
+bash tools/unity/create-arena-prototype.sh
+```
+
+All generated original-derived files live under
+`Assets/TimeCli/PrivateGenerated/`, which is ignored by Git.
+
+## Current prototype
+
+The prototype now contains reconstructed behavior/presentation for:
+
+- BoxEnemy Body mesh + health fill;
+- original enemy palette;
+- Arena transform and gameplay camera;
+- canonical/private voxel catalogs;
+- Time/Weapon Cube delayed pickup lifecycle;
+- recovered WidgetGold collection targets;
+- private Time/Weapon Cube textures with clean fallback shaders;
+- Click Pistol critical rolls and original 4-point tracer;
+- ClickCannon charge/fire plans;
+- ClickLauncher click threshold/fire plans;
+- Flak/Rocket trajectory and collision timing;
+- all Hero headless combat through PortCore.
+
+The development HUD still replaces the original UI for now.
+
+## Runtime boundary
+
+```text
+Unity input/presentation/physics contact
+    -> GameState / HeadlessArenaEngine
+    -> PortCore authoritative math/state
+    -> reconstructed view
+```
+
+Unity may report a projectile collision contact. Damage, rewards and Arena
+progression are still calculated in PortCore.
 
 ## Manual workflow
 
@@ -75,44 +134,14 @@ or:
 bash tools/unity/sync-portcore.sh
 ```
 
-Then open `unity/TimeCli` in Unity and run:
+Then open `unity/TimeCli` and run:
 
 `TimeCli -> Setup -> Create Arena Prototype Scene`
 
-## Current prototype
-
-The presentation is no longer arbitrary primitive cubes. It now procedurally
-reconstructs the original BoxEnemy `Body` geometry, health-fill deformation,
-enemy palette, unit collider, Arena root transform and gameplay camera.
-
-Without private canonical voxel data, a synthetic voxel catalog is still used
-for development, but damage/rewards/Hero auto-fire/wave progression all run
-through PortCore.
-
-The development HUD provides:
-
-- wave/max wave and farm navigation;
-- Gold / DPS / Click damage;
-- Hero purchasing;
-- Click Pistol purchasing;
-- Time/Weapon Cube balances;
-- Time Warp.
-
-## Runtime boundary
-
-```text
-Unity presentation/input
-    -> TimeCliBootstrap
-    -> GameState / HeadlessArenaEngine
-    -> PortCore result
-    -> ArenaRuntimeController
-    -> reconstructed block view
-```
-
-Unity presentation code must not duplicate gameplay formulas.
-
-See:
+## Documentation
 
 - `docs/PORTCORE_UNITY_CONTRACT.md`
 - `docs/ARENA_PRESENTATION_RECOVERY.md`
+- `docs/SPECIAL_CUBE_RECOVERY.md`
+- `docs/PROJECTILE_PRESENTATION_RECOVERY.md`
 - `docs/PHASE3_STATUS.md`
