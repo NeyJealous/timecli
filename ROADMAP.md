@@ -35,21 +35,26 @@ Status: **in progress**
 
 Current:
 
-- Unity 6.3 LTS project skeleton;
-- PortCore DLL sync pipeline;
+- Unity 6.3 LTS project skeleton and PortCore DLL sync pipeline;
 - bootstrap + random + voxel-catalog adapters;
-- synthetic development voxel catalog;
-- placeholder voxel rendering;
-- Arena controller wired to tested click/Hero combat.
+- canonical/private voxel catalog import with synthetic fallback;
+- recovered Arena transform, camera, BoxEnemy geometry/health and palette;
+- recovered Arena HUD as the default prototype HUD;
+- Time/Weapon Cube and Gold pickup presentation;
+- Click Pistol tracer, Cannon/Launcher projectile motion and collision;
+- Automatic Fire schedules and reconstructed Rocket tail cadence;
+- exact private click-weapon hierarchy extraction/validation/runtime binding
+  path, pending generation of the canonical transform report.
 
 Next:
 
-- prototype Arena scene and development HUD;
-- canonical private voxel-catalog import;
-- exact voxel transform/centering;
-- original scene/visual/audio reconstruction;
-- Splash / Arena / TimeWarp;
-- Artifacts / WeaponAugments / TimelineSummary additive screens.
+- generate/review the canonical click-weapon hierarchy report and promote
+  confirmed pivot/recoil animation values;
+- exact original Rocket tail particle/material fidelity;
+- original Hero projectile presentation;
+- remaining Splash / Arena / TimeWarp presentation;
+- Artifacts / WeaponAugments / TimelineSummary additive screens;
+- exact audio reconstruction.
 
 **Gate:** Unity Arena runs the tested PortCore loop without gameplay logic
 duplication or missing runtime references.
