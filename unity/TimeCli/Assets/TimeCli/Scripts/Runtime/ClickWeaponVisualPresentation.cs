@@ -31,6 +31,13 @@ namespace TimeCli.UnityRuntime
         public const string LauncherTextureResource =
             "TimeCliClickLauncherTexture";
 
+        public const string PistolCubemapResourcePrefix =
+            "TimeCliChannelCubemap";
+        public const string CannonCubemapResourcePrefix =
+            "TimeCliGreebleBoxCubemap";
+        public const string LauncherCubemapResourcePrefix =
+            "TimeCliGreebleBoxCubemap";
+
         public const int PistolBaseVertexCount = 684;
         public const int PistolChamberOneVertexCount = 287;
         public const int PistolChamberTwoVertexCount = 287;
@@ -270,7 +277,8 @@ namespace TimeCli.UnityRuntime
                     BuildWeaponMaterial(
                         "TimeCli_Reconstructed_PulsePistol",
                         OriginalClickWeaponVisualPresentation.PistolColor,
-                        OriginalClickWeaponVisualPresentation.PistolTextureResource);
+                        OriginalClickWeaponVisualPresentation.PistolTextureResource,
+                        OriginalClickWeaponVisualPresentation.PistolCubemapResourcePrefix);
             }
 
             return _pistolMaterial;
@@ -284,7 +292,8 @@ namespace TimeCli.UnityRuntime
                     BuildWeaponMaterial(
                         "TimeCli_Reconstructed_ClickCannon",
                         OriginalClickWeaponVisualPresentation.CannonColor,
-                        OriginalClickWeaponVisualPresentation.CannonTextureResource);
+                        OriginalClickWeaponVisualPresentation.CannonTextureResource,
+                        OriginalClickWeaponVisualPresentation.CannonCubemapResourcePrefix);
             }
 
             return _cannonMaterial;
@@ -298,7 +307,8 @@ namespace TimeCli.UnityRuntime
                     BuildWeaponMaterial(
                         "TimeCli_Reconstructed_ClickLauncher",
                         OriginalClickWeaponVisualPresentation.LauncherColor,
-                        OriginalClickWeaponVisualPresentation.LauncherTextureResource);
+                        OriginalClickWeaponVisualPresentation.LauncherTextureResource,
+                        OriginalClickWeaponVisualPresentation.LauncherCubemapResourcePrefix);
             }
 
             return _launcherMaterial;
@@ -307,7 +317,8 @@ namespace TimeCli.UnityRuntime
         private static Material BuildWeaponMaterial(
             string name,
             Color color,
-            string textureResource)
+            string textureResource,
+            string cubemapResourcePrefix)
         {
             Shader shader =
                 Shader.Find(
@@ -336,6 +347,17 @@ namespace TimeCli.UnityRuntime
                 texture.anisoLevel = 1;
                 material.mainTexture =
                     texture;
+            }
+
+            Cubemap cubemap =
+                PrivateCubemapLoader.Load(
+                    cubemapResourcePrefix);
+
+            if (cubemap != null)
+            {
+                material.SetTexture(
+                    "_CubeMap",
+                    cubemap);
             }
 
             return material;
