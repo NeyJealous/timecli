@@ -29,6 +29,21 @@ DEFAULT_TARGETS = (
     "HeroWeapons",
 )
 
+EXPECTED_FIRE_SPOTS = {
+    "pistol": (
+        {"ClickerPistol", "ClickPistol"},
+        (0.600000024, 0.301000000, -7.30099994),
+    ),
+    "cannon": (
+        {"ClickCannon"},
+        (0.06999986, 0.31599993, -7.30079996),
+    ),
+    "launcher": (
+        {"ClickLauncher"},
+        (-0.59999985, 0.20599997, -7.49800003),
+    ),
+}
+
 
 def _import_unitypy():
     try:
@@ -146,6 +161,45 @@ def _read_tree(obj: Any) -> dict[str, Any] | None:
     except Exception:
         return None
     return tree if isinstance(tree, dict) else None
+
+
+def _mul_vec3(a, b):
+    return (a[0] * b[0], a[1] * b[1], a[2] * b[2])
+
+
+def _add_vec3(a, b):
+    return (a[0] + b[0], a[1] + b[1], a[2] + b[2])
+
+
+def _quat_mul(a, b):
+    ax, ay, az, aw = a
+    bx, by, bz, bw = b
+    return (
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+        aw * bw - ax * bx - ay * by - az * bz,
+    )
+
+
+def _quat_rotate(q, v):
+    x, y, z, w = q
+    tx = 2.0 * (y * v[2] - z * v[1])
+    ty = 2.0 * (z * v[0] - x * v[2])
+    tz = 2.0 * (x * v[1] - y * v[0])
+    return (
+        v[0] + w * tx + (y * tz - z * ty),
+        v[1] + w * ty + (z * tx - x * tz),
+        v[2] + w * tz + (x * ty - y * tx),
+    )
+
+
+def _distance(a, b):
+    return (
+        (a[0] - b[0]) ** 2
+        + (a[1] - b[1]) ** 2
+        + (a[2] - b[2]) ** 2
+    ) ** 0.5
 
 
 def _extract_scene(
@@ -281,6 +335,49 @@ def _extract_scene(
 
         return "/".join(reversed(names))
 
+    world_cache = {}
+
+    def world_transform(transform_id: int):
+        cached = world_cache.get(transform_id)
+        if cached is not None:
+            return cached
+
+        transform = transforms[transform_id]
+        local_position = tuple(transform["localPosition"])
+        local_rotation = tuple(transform["localRotationQuaternion"])
+        local_scale = tuple(transform["localScale"])
+        parent_id = transform["parentTransformPathId"]
+
+        if parent_id == 0 or parent_id not in transforms:
+            result = (local_position, local_rotation, local_scale)
+        else:
+            parent_position, parent_rotation, parent_scale = world_transform(
+                parent_id
+            )
+            scaled_local = _mul_vec3(parent_scale, local_position)
+            world_position = _add_vec3(
+                parent_position,
+                _quat_rotate(parent_rotation, scaled_local),
+            )
+            world_rotation = _quat_mul(parent_rotation, local_rotation)
+            world_scale = _mul_vec3(parent_scale, local_scale)
+            result = (world_position, world_rotation, world_scale)
+
+        world_cache[transform_id] = result
+        return result
+
+    def is_descendant_or_self(candidate_id: int, target_id: int) -> bool:
+        current = candidate_id
+        seen = set()
+        while current and current not in seen:
+            if current == target_id:
+                return True
+            seen.add(current)
+            current = transforms.get(current, {}).get(
+                "parentTransformPathId", 0
+            )
+        return False
+
     nodes = []
     for transform_id in included:
         transform = transforms.get(transform_id)
@@ -309,6 +406,7 @@ def _extract_scene(
                     "localRotationQuaternion"
                 ],
                 "localScale": transform["localScale"],
+                "worldPosition": list(world_transform(transform_id)[0]),
                 "layer": go["layer"] if go else None,
                 "active": go["active"] if go else None,
                 "componentPathIds": (
@@ -320,6 +418,53 @@ def _extract_scene(
 
     nodes.sort(key=lambda row: row["hierarchyPath"])
 
+    node_by_transform = {
+        int(node["transformPathId"]): node for node in nodes
+    }
+    target_ids_by_name = {}
+    for transform_id in exact_targets:
+        go = go_by_transform.get(transform_id)
+        if go is None:
+            continue
+        target_ids_by_name.setdefault(go["name"], []).append(transform_id)
+
+    fire_spot_matches = {}
+    for weapon_key, (accepted_names, expected_position) in (
+        EXPECTED_FIRE_SPOTS.items()
+    ):
+        weapon_target_ids = [
+            transform_id
+            for target_name in accepted_names
+            for transform_id in target_ids_by_name.get(target_name, [])
+        ]
+        candidates = [
+            transform_id
+            for transform_id in included
+            if any(
+                is_descendant_or_self(transform_id, target_id)
+                for target_id in weapon_target_ids
+            )
+        ]
+        if not candidates:
+            continue
+
+        best_id = min(
+            candidates,
+            key=lambda transform_id: _distance(
+                world_transform(transform_id)[0],
+                expected_position,
+            ),
+        )
+        best_node = node_by_transform[best_id]
+        best_position = world_transform(best_id)[0]
+        fire_spot_matches[weapon_key] = {
+            "transformPathId": best_id,
+            "hierarchyPath": best_node["hierarchyPath"],
+            "worldPosition": list(best_position),
+            "expectedWorldPosition": list(expected_position),
+            "distance": _distance(best_position, expected_position),
+        }
+
     return {
         "scene": scene_name,
         "requestedNames": sorted(target_names),
@@ -328,6 +473,7 @@ def _extract_scene(
             for row in nodes
             if row["isRequestedTarget"]
         ],
+        "fireSpotMatches": fire_spot_matches,
         "nodes": nodes,
     }
 
