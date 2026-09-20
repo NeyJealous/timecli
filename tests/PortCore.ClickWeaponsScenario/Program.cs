@@ -351,6 +351,82 @@ static void AssertTrue(bool value, string name)
         "Augment auto-fire fires once boundary is exceeded");
 }
 
+// UIButtonIdleMode / ClickerWeapon Show-Hide control modes.
+{
+    var game = new GameState();
+
+    AssertTrue(
+        game.ClickWeapons.GetMode(ClickWeaponSlot.Pistol) ==
+            ClickWeaponMode.ManualAim,
+        "Pistol defaults to ManualAim");
+
+    game.ClickWeapons.SetMode(
+        ClickWeaponSlot.Pistol,
+        ClickWeaponMode.Disabled,
+        nowSeconds: 0);
+
+    AssertTrue(
+        !game.ClickWeapons.IsWeaponActive(
+            ClickWeaponSlot.Pistol,
+            0),
+        "Disabled Pistol must reject shots");
+
+    var pistolNext =
+        game.ClickWeapons.CycleMode(
+            ClickWeaponSlot.Pistol,
+            nowSeconds: 1);
+
+    AssertTrue(
+        pistolNext == ClickWeaponMode.ManualAim,
+        "Disabled cycles back to ManualAim");
+
+    AssertTrue(
+        !game.ClickWeapons.IsWeaponActive(
+            ClickWeaponSlot.Pistol,
+            1.049),
+        "Show coroutine keeps weapon inactive for 50 ms");
+
+    AssertTrue(
+        game.ClickWeapons.IsWeaponActive(
+            ClickWeaponSlot.Pistol,
+            1.051),
+        "Show coroutine reactivates after 50 ms");
+
+    game.WeaponAugments.SetLevel(
+        WeaponAugmentType.ClickCannonUnlock,
+        1);
+
+    game.ClickWeapons.SetMode(
+        ClickWeaponSlot.Cannon,
+        ClickWeaponMode.Disabled,
+        nowSeconds: 2);
+
+    var hidden =
+        game.RegisterManualClickWeapons(2.01);
+
+    AssertTrue(
+        hidden.Cannon is null,
+        "Disabled Cannon must not emit a fire plan");
+
+    game.ClickWeapons.CycleMode(
+        ClickWeaponSlot.Cannon,
+        nowSeconds: 2.1);
+
+    var stillAppearing =
+        game.RegisterManualClickWeapons(2.149);
+
+    AssertTrue(
+        stillAppearing.Cannon is null,
+        "Cannon Show waits the recovered 50 ms before activation");
+
+    var shown =
+        game.RegisterManualClickWeapons(2.151);
+
+    AssertTrue(
+        shown.Cannon is not null,
+        "Cannon fires after Show activation delay");
+}
+
 // ClickerPistol fire plan: Spread Shots angles and Punchthrough are
 // gameplay-owned by PortCore; Unity only rotates/raycasts the resulting rays.
 {
