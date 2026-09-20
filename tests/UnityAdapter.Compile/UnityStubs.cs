@@ -134,6 +134,7 @@ namespace UnityEngine
         public Color(float r, float g, float b, float a = 1f) { }
         public static Color gray => new(0.5f, 0.5f, 0.5f, 1f);
         public static Color black => new(0f, 0f, 0f, 1f);
+        public static Color white => new(1f, 1f, 1f, 1f);
     }
 
     public enum PrimitiveType { Cube }
@@ -169,6 +170,17 @@ namespace UnityEngine
     }
 
     public sealed class MeshRenderer : Renderer { }
+
+    public sealed class LineRenderer : Renderer
+    {
+        public int positionCount { get; set; }
+        public bool useWorldSpace { get; set; }
+        public float startWidth { get; set; }
+        public float endWidth { get; set; }
+        public Color startColor { get; set; }
+        public Color endColor { get; set; }
+        public void SetPosition(int index, Vector3 position) { }
+    }
 
     public sealed class MeshFilter : Component
     {
@@ -218,6 +230,9 @@ namespace UnityEngine
     {
         public static float Clamp01(float value) =>
             value < 0f ? 0f : value > 1f ? 1f : value;
+
+        public static float Lerp(float a, float b, float t) =>
+            a + (b - a) * t;
     }
 
     public static class Random
