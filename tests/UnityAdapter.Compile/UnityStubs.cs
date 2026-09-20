@@ -426,6 +426,14 @@ namespace UnityEngine
             bool makeNoLongerReadable = false) { }
     }
 
+    public static class ImageConversion
+    {
+        public static bool LoadImage(
+            Texture2D texture,
+            byte[] data,
+            bool markNonReadable = false) => true;
+    }
+
     public readonly struct Keyframe
     {
         public Keyframe(
