@@ -45,7 +45,9 @@ Implemented under `unity/TimeCli`:
 - ClickLauncher Rocket tail emission at the recovered 0.025 s cadence,
   with a clean procedural fallback particle;
 - Time/Weapon Cube deferred pickups and collection presentation;
-- clean replacements for original special-enemy shaders.
+- clean replacements for original special-enemy shaders;
+- exact Hero impact presentation: canonical weapon colors, persistent
+  Outline, Flak/Rocket-splash FlashOutline, 0.2 s flash throttle/fade.
 
 Gameplay damage/rewards/wave state remain PortCore-owned.
 
@@ -139,7 +141,10 @@ Recovered and implemented:
 - additional-rocket orbital pivot behavior;
 - rocket explosion visual lifetime 0.5 s.
 
-See `docs/PROJECTILE_PRESENTATION_RECOVERY.md`.
+See:
+
+- `docs/PROJECTILE_PRESENTATION_RECOVERY.md`
+- `docs/HERO_PRESENTATION_RECOVERY.md`
 
 ## Batch first-run workflow
 
@@ -194,4 +199,5 @@ Code-side work can continue in parallel. The next reconstruction targets are:
   0.025-second emission cadence is now implemented);
 - remaining click-weapon model/Animator recoil presentation beyond the now
   recovered transform aim/vertical positioning;
-- original Hero projectile presentation.
+- exact Rocket tail particle/material fidelity;
+- remaining VirtualPS death/sparks particle fidelity and combat audio.
