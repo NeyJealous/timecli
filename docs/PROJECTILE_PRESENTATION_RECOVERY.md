@@ -235,6 +235,87 @@ The modern adapter mirrors that division:
 `HeadlessArenaEngine.ClickWeaponDamageBlock`, which sends the damage through
 the same PortCore BoxEnemy click-damage/reward path.
 
+## Rocket impact SmallExplosion
+
+The active 1.4.5 Rocket impact path is `VirtualPS.SmallExplosion(hit.point)`.
+It does **not** instantiate the serialized `RocketExplosion` prefab.
+
+The shared scene object is:
+
+```text
+SmallExplosion
+  -> Fire
+```
+
+`Fire` is a legacy `EllipsoidParticleEmitter + ParticleAnimator +
+ParticleRenderer`. `VirtualPS.SmallExplosion` moves the shared transform to
+the impact point, plays its AudioSource clip through the Explosions one-shot
+queue at volume **0.5**, and calls:
+
+```text
+particleEmitter.Emit((int)particleEmitter.maxEmission)
+```
+
+Recovered emitter values:
+
+| Property | Original value |
+|---|---:|
+| particles per impact | 10 |
+| start size | random 1.5-3.0 |
+| lifetime / energy | random 0.1-0.3 s |
+| local velocity | (0, 6, 0) |
+| random velocity | (+/-6, +/-6, +/-6) |
+| emitter velocity scale | 0.05 |
+| random angular velocity | +/-200 deg/s |
+| random initial rotation | enabled |
+| world-space simulation | enabled |
+| ellipsoid | (0.2, 0, 0.2) |
+| damping | 0.1 |
+| renderer length scale | 2 |
+| renderer velocity scale | 0 |
+
+The legacy five-color ParticleAnimator sequence is also promoted exactly from
+the serialized bytes. Unity's legacy damping semantics treat **1** as unchanged,
+**0** as an immediate stop and **2** as doubling speed per second, so the modern
+adapter uses exponential integration for the recovered **0.1** damping value.
+
+Recovered material chain:
+
+```text
+Fire
+  -> NukeFireB
+  -> Particles/Additive
+  -> FireB (128x128 RGB24, 8 mips)
+```
+
+The clean shader replacement is `TimeCli/ParticleAdditive` and preserves
+`ZWrite Off`, `Cull Off`, `Blend SrcAlpha One` and `ColorMask RGB`.
+
+Recovered impact audio:
+
+```text
+Misc_MechAbstract_Impact_02
+stereo / 48000 Hz / 16-bit / 2.3352709 s
+```
+
+The original `OneShotAudio.Explosions` queue uses six AudioSources, a
+0.1-second queue cooldown, logarithmic rolloff, min distance 15, max distance
+100, and pitch tied to `Time.timeScale`.
+
+Original `FireB` and the impact WAV stay out of the public repository. The
+private extraction path produces:
+
+- `TimeCliSmallExplosionTexture.png`
+- `TimeCliSmallExplosionImpact.wav`
+
+If those resources are absent, the public build uses a clean procedural visual
+fallback and remains silent for the original-derived impact audio.
+
+A separate serialized `RocketExplosion` prefab/script with a 0.5-second
+self-destruct exists in the assets, but the recovered `ProjectileDamager`
+impact code does not instantiate it. It is therefore not used as the canonical
+click-launcher impact effect.
+
 ## Rocket tail presentation
 
 The canonical 1.4.5 Rocket tail is **not** a per-rocket particle prefab.
@@ -303,7 +384,7 @@ Serialized Rocket values:
 ```text
 rotationSpeed = 360 degrees/s
 tail spawn delay = 0.025 s
-explosion lifetime = 0.5 s
+serialized dormant RocketExplosion prefab self-destruct = 0.5 s
 ```
 
 For rocket index 0, the Rocket orbit component is disabled.
