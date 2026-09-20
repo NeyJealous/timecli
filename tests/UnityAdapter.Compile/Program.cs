@@ -217,6 +217,160 @@ if (OriginalClickWeaponShootAnimation.LauncherRotationX.keys.Length != 11 ||
         "Launcher recoil quaternion must retain all 11 recovered 60 Hz keys.");
 }
 
+// Canonical click-weapon Appear/Disappear AnimationClips.
+AssertClose(
+    OriginalClickWeaponVisibilityAnimation.ShowActivationDelay,
+    0.05f,
+    0.000001f,
+    "Weapon show activation delay");
+
+AssertClose(
+    OriginalClickWeaponVisibilityAnimation.PistolAppearDuration,
+    0.5f,
+    0.000001f,
+    "Pistol appear duration");
+AssertClose(
+    OriginalClickWeaponVisibilityAnimation.PistolDisappearDuration,
+    0.5f,
+    0.000001f,
+    "Pistol disappear duration");
+AssertClose(
+    OriginalClickWeaponVisibilityAnimation.CannonAppearDuration,
+    0.333333343f,
+    0.000001f,
+    "Cannon appear duration");
+AssertClose(
+    OriginalClickWeaponVisibilityAnimation.LauncherDisappearDuration,
+    0.333333343f,
+    0.000001f,
+    "Launcher disappear duration");
+
+if (OriginalClickWeaponVisibilityAnimation.PistolAppear.PositionY.keys.Length != 3 ||
+    OriginalClickWeaponVisibilityAnimation.PistolAppear.RotationW.keys.Length != 31 ||
+    OriginalClickWeaponVisibilityAnimation.CannonAppear.PositionY.keys.Length != 3 ||
+    OriginalClickWeaponVisibilityAnimation.CannonAppear.RotationW.keys.Length != 21 ||
+    OriginalClickWeaponVisibilityAnimation.LauncherAppear.PositionZ.keys.Length != 3 ||
+    OriginalClickWeaponVisibilityAnimation.LauncherDisappear.RotationW.keys.Length != 21)
+{
+    throw new Exception(
+        "Recovered visibility clips lost sparse position or 60 Hz quaternion keys.");
+}
+
+var pistolAppearStart =
+    OriginalClickWeaponVisibilityAnimation.PistolAppear.EvaluatePosition(0f);
+var pistolAppearEnd =
+    OriginalClickWeaponVisibilityAnimation.PistolAppear.EvaluatePosition(
+        OriginalClickWeaponVisibilityAnimation.PistolAppearDuration);
+
+AssertClose(
+    pistolAppearStart.y,
+   -0.75f,
+    0.000001f,
+    "Pistol appear start Y");
+AssertClose(
+    pistolAppearStart.z,
+    0.521000028f,
+    0.000001f,
+    "Pistol appear start Z");
+AssertClose(
+    pistolAppearEnd.y,
+    OriginalClickWeaponPresentation.PistolModelPosition.y,
+    0.000001f,
+    "Pistol appear end Y");
+AssertClose(
+    pistolAppearEnd.z,
+    OriginalClickWeaponPresentation.PistolModelPosition.z,
+    0.000001f,
+    "Pistol appear end Z");
+
+var pistolAppearMiddlePositionKey =
+    OriginalClickWeaponVisibilityAnimation.PistolAppear.PositionY.keys[1];
+AssertClose(
+    pistolAppearMiddlePositionKey.time,
+    0.333333343f,
+    0.000001f,
+    "Pistol appear middle position time");
+AssertClose(
+    pistolAppearMiddlePositionKey.value,
+   -0.0125000477f,
+    0.000001f,
+    "Pistol appear middle position Y");
+AssertClose(
+    pistolAppearMiddlePositionKey.inTangent,
+    1.54875076f,
+    0.00001f,
+    "Pistol appear sparse-segment in tangent");
+AssertClose(
+    pistolAppearMiddlePositionKey.outTangent,
+    1.54875016f,
+    0.00001f,
+    "Pistol appear sparse-segment out tangent");
+
+var pistolDisappearEnd =
+    OriginalClickWeaponVisibilityAnimation.PistolDisappear.EvaluatePosition(
+        OriginalClickWeaponVisibilityAnimation.PistolDisappearDuration);
+AssertClose(
+    pistolDisappearEnd.y,
+   -0.75f,
+    0.000001f,
+    "Pistol disappear end Y");
+
+var cannonAppearStart =
+    OriginalClickWeaponVisibilityAnimation.CannonAppear.EvaluatePosition(0f);
+var cannonAppearEnd =
+    OriginalClickWeaponVisibilityAnimation.CannonAppear.EvaluatePosition(
+        OriginalClickWeaponVisibilityAnimation.CannonAppearDuration);
+AssertClose(
+    cannonAppearStart.y,
+   -0.699999988f,
+    0.000001f,
+    "Cannon appear start Y");
+AssertClose(
+    cannonAppearEnd.y,
+    OriginalClickWeaponPresentation.CannonModelPosition.y,
+    0.000001f,
+    "Cannon appear end Y");
+
+var launcherAppearStart =
+    OriginalClickWeaponVisibilityAnimation.LauncherAppear.EvaluatePosition(0f);
+var launcherAppearEnd =
+    OriginalClickWeaponVisibilityAnimation.LauncherAppear.EvaluatePosition(
+        OriginalClickWeaponVisibilityAnimation.LauncherAppearDuration);
+AssertClose(
+    launcherAppearStart.y,
+   -0.419999987f,
+    0.000001f,
+    "Launcher appear start Y");
+AssertClose(
+    launcherAppearStart.z,
+   -0.209999993f,
+    0.000001f,
+    "Launcher appear start Z");
+AssertClose(
+    launcherAppearEnd.y,
+    OriginalClickWeaponPresentation.LauncherModelPosition.y,
+    0.000001f,
+    "Launcher appear end Y");
+AssertClose(
+    launcherAppearEnd.z,
+    OriginalClickWeaponPresentation.LauncherModelPosition.z,
+    0.000001f,
+    "Launcher appear end Z");
+
+var launcherDisappearEnd =
+    OriginalClickWeaponVisibilityAnimation.LauncherDisappear.EvaluatePosition(
+        OriginalClickWeaponVisibilityAnimation.LauncherDisappearDuration);
+AssertClose(
+    launcherDisappearEnd.y,
+   -0.419999987f,
+    0.000001f,
+    "Launcher disappear end Y");
+AssertClose(
+    launcherDisappearEnd.z,
+   -0.209999993f,
+    0.000001f,
+    "Launcher disappear end Z");
+
 // Canonical "Toon Rocket 02 PS": VirtualPS emits 10 particles for
 // each recovered 25 ms tail invocation.
 if (OriginalRocketTailPresentation.ParticlesPerEmission != 10)
