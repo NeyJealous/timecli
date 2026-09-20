@@ -209,9 +209,9 @@ namespace TimeCli.UnityRuntime
             root.transform.SetParent(transform, false);
             root.transform.localPosition = OriginalArenaPresentation.ArenaPosition;
             root.transform.localRotation = Quaternion.Euler(
-                OriginalArenaPresentation.ArenaEuler.X,
-                OriginalArenaPresentation.ArenaEuler.Y,
-                OriginalArenaPresentation.ArenaEuler.Z);
+                OriginalArenaPresentation.ArenaEuler.x,
+                OriginalArenaPresentation.ArenaEuler.y,
+                OriginalArenaPresentation.ArenaEuler.z);
 
             blockRoot = root.transform;
         }
