@@ -1,49 +1,90 @@
 # TimeCli Unity project
 
-This is the modern Unity presentation/runtime project for the reconstructed
-Time Clickers gameplay core.
+Modern Unity presentation/runtime project for the reconstructed Time Clickers
+1.4.5 gameplay core.
 
 Pinned editor:
 
 `6000.3.24f1 (4e7b9b5b6244)`
 
-## Before opening
+## 1. Sync PortCore
 
-Build and copy PortCore into the Unity project:
-
-### Windows
+Windows:
 
 ```powershell
 .\tools\unity\sync-portcore.ps1
 ```
 
-### macOS / Linux
+macOS/Linux:
 
 ```bash
 ./tools/unity/sync-portcore.sh
 ```
 
-The generated `TimeClickers.PortCore.dll` is intentionally not committed.
+This builds the frozen PortCore API for `netstandard2.1` and copies
+`TimeClickers.PortCore.dll` into `Assets/Plugins/TimeCli/`.
 
-## First prototype
+The DLL is generated output and is not committed.
 
-The current adapter layer can run without private original assets. When no
-canonical voxel catalog asset is assigned, it creates a synthetic debug catalog
-that exercises the same PortCore spawning/combat pipeline.
+## 2. Open the project
 
-This is only a development fallback. The canonical voxel coordinates and
-original visual/audio assets remain private reconstruction inputs.
+Open:
 
-## Current runtime path
+`unity/TimeCli`
+
+with the pinned Unity editor.
+
+## 3. Generate the first Arena scene
+
+In the Unity menu:
+
+`TimeCli -> Setup -> Create Arena Prototype Scene`
+
+This creates:
+
+`Assets/TimeCli/Scenes/ArenaPrototype.unity`
+
+with:
+
+- `TimeCliBootstrap`;
+- `ArenaRuntimeController`;
+- `PrototypeHud`;
+- a camera and light.
+
+Press Play.
+
+## Current prototype behavior
+
+The project can run before private original assets are imported.
+
+Without an assigned canonical `UnityVoxelCatalogAsset`, the bootstrap uses a
+synthetic voxel catalog that exercises the real PortCore selection, allocation,
+damage, reward, Hero auto-fire and wave-progression code.
+
+The placeholder view uses primitive cubes. Click a cube to apply Click Pistol
+damage. The development HUD exposes Gold/wave/DPS, Hero purchases, Click Pistol
+purchases, farm navigation and Time Warp when pending Time Cubes exist.
+
+## Runtime path
 
 ```text
-TimeCliBootstrap
+Unity input/frame
+    -> TimeCliBootstrap
     -> GameState
     -> HeadlessArenaEngine
+    -> tested PortCore result
     -> ArenaRuntimeController
     -> VoxelBlockView
 ```
 
-`ArenaRuntimeController` drives the tested PortCore rules and creates simple
-cube placeholders. Visual projectiles, original materials/models, UI and audio
-are presentation work and must not alter PortCore gameplay state.
+## Important boundary
+
+Unity presentation code must not reimplement gameplay formulas.
+
+See:
+
+`docs/PORTCORE_UNITY_CONTRACT.md`
+
+Canonical voxel coordinates and original visual/audio assets remain private
+reconstruction inputs. The synthetic catalog and placeholder colors are
+development-only.
