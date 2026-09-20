@@ -708,6 +708,49 @@ if (OriginalClickWeaponVisualPresentation.PistolBaseVertexCount != 684 ||
         "Canonical click-weapon mesh vertex counts changed.");
 }
 
+// Canonical private cubemap/resource contract and recovered
+// SelfIlluminWeaponColor GLES blend equation.
+if (PrivateCubemapLoader.CanonicalSize != 64 ||
+    OriginalClickWeaponVisualPresentation.PistolCubemapResourcePrefix !=
+        "TimeCliChannelCubemap" ||
+    OriginalClickWeaponVisualPresentation.CannonCubemapResourcePrefix !=
+        "TimeCliGreebleBoxCubemap" ||
+    OriginalClickWeaponVisualPresentation.LauncherCubemapResourcePrefix !=
+        "TimeCliGreebleBoxCubemap" ||
+    OriginalProjectileVisualPresentation.RocketCubemapResourcePrefix !=
+        "TimeCliChannelCubemap")
+{
+    throw new Exception(
+        "Canonical weapon cubemap contract changed.");
+}
+
+// Canonical weapon diffuse shader reference math.
+UnityEngine.Color shaderReference =
+    OriginalWeaponDiffuseShaderMath.Evaluate(
+        new UnityEngine.Color(
+            0.4f,
+            0.5f,
+            0.6f,
+            0.25f),
+        new UnityEngine.Color(
+            0.5f,
+            0.8f,
+            0.2f,
+            1f),
+        new UnityEngine.Color(
+            0.1f,
+            0.2f,
+            0.3f,
+            0.75f));
+
+AssertColor(
+    shaderReference,
+    0.2125f,
+    0.425f,
+    0.1875f,
+    0.421875f,
+    "Weapon diffuse recovered GLES formula");
+
 // Canonical FlakBullet / RocketPrefab presentation.
 AssertClose(
     OriginalProjectileVisualPresentation.FlakRootScale.z,
