@@ -41,6 +41,22 @@ namespace TimeCli.UnityRuntime
             new(-0.59999985f, 0.20599997f, -7.49800003f);
     }
 
+    public static class OriginalProjectilePresentation
+    {
+        public const float BaseVelocity = 40f;
+        public const float FlakLifetime = 1.5f;
+        public const float RocketLifetime = 3f;
+        public const float CollisionCheckInterval =
+            0.0333333313f;
+        public const float ImpactRadius = 1f;
+        public const int HitboxMask = 2560;
+
+        public const float RocketRotationSpeed = 360f;
+        public const float RocketRadialRampSpeed = 5f;
+        public const float RocketTailSpawnDelay = 0.025f;
+        public const float RocketExplosionLifetime = 0.5f;
+    }
+
     /// <summary>
     /// Recovered WidgetGold placement used by TimeCube/WeaponCube collection.
     ///
