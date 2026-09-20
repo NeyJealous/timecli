@@ -51,3 +51,6 @@ tmp/
 out/
 dist/
 *.log
+
+# Private original-derived Unity reconstruction data
+unity/TimeCli/Assets/TimeCli/PrivateGenerated/
