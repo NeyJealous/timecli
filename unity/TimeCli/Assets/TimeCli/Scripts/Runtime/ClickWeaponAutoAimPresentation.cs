@@ -24,6 +24,15 @@ namespace TimeCli.UnityRuntime
         public const int CannonToggleKeyCode = 119;  // W
         public const int LauncherToggleKeyCode = 113;// Q
 
+        // Primary CanvasIdleMode/Toolbar instances. The original scene also
+        // contains a second Cannon toggle under Canvas Screen; the shared
+        // toolbar is the canonical three-weapon cluster reconstructed here.
+        public const float ModeButtonSize = 45f;
+        public const float ModeToolbarBottom = 5f;
+        public const float LauncherButtonOffsetX = -210f;
+        public const float CannonButtonOffsetX = -50f;
+        public const float PistolButtonOffsetX = 210f;
+
         public static readonly Color ButtonOffColor =
             new(0f, 0.40668535232543945f, 1f, 1f);
 
