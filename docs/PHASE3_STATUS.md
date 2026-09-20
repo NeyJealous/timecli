@@ -42,8 +42,10 @@ Implemented under `unity/TimeCli`:
 - ClickCannon transient charge/fire state;
 - ClickLauncher click-progress/fire state;
 - Cannon/Launcher projectile movement and collision reporting;
-- ClickLauncher Rocket tail emission at the recovered 0.025 s cadence,
-  with a clean procedural fallback particle;
+- ClickLauncher Rocket tail: canonical shared ParticleSystem architecture,
+  0.025 s invocation cadence, 10 particles/invocation, exact lifetime/speed/
+  size ranges, cone, size/color curves, world-space randomized force and
+  recovered billboard renderer;
 - Time/Weapon Cube deferred pickups and collection presentation;
 - clean replacements for original special-enemy shaders;
 - exact Hero impact presentation: canonical weapon colors, persistent
@@ -195,9 +197,6 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- exact original Rocket tail particle/material fidelity (the recovered
-  0.025-second emission cadence is now implemented);
 - remaining click-weapon model/Animator recoil presentation beyond the now
   recovered transform aim/vertical positioning;
-- exact Rocket tail particle/material fidelity;
 - remaining VirtualPS death/sparks particle fidelity and combat audio.
