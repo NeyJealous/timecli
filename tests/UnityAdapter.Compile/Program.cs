@@ -984,6 +984,65 @@ if (OriginalClickWeaponAudioPresentation.AppearResource !=
         "Click-weapon appear audio resource contract changed.");
 }
 
+// Canonical independent ClickerWeapon auto-aim semantics.
+if (OriginalClickWeaponAutoAimPresentation.GetTargetHeroId(
+        ClickWeaponSlot.Pistol) != 0 ||
+    OriginalClickWeaponAutoAimPresentation.GetTargetHeroId(
+        ClickWeaponSlot.Launcher) != 3 ||
+    OriginalClickWeaponAutoAimPresentation.GetTargetHeroId(
+        ClickWeaponSlot.Cannon) != 4)
+{
+    throw new Exception(
+        "Click-weapon auto-aim hero mapping changed.");
+}
+
+if (OriginalClickWeaponAutoAimPresentation.GetHeroesRequired(
+        ClickWeaponSlot.Pistol) != 1 ||
+    OriginalClickWeaponAutoAimPresentation.GetHeroesRequired(
+        ClickWeaponSlot.Launcher) != 4 ||
+    OriginalClickWeaponAutoAimPresentation.GetHeroesRequired(
+        ClickWeaponSlot.Cannon) != 5)
+{
+    throw new Exception(
+        "UIButtonIdleMode recovered hero requirements changed.");
+}
+
+if (OriginalClickWeaponAutoAimPresentation.PistolToggleKeyCode != 101 ||
+    OriginalClickWeaponAutoAimPresentation.CannonToggleKeyCode != 119 ||
+    OriginalClickWeaponAutoAimPresentation.LauncherToggleKeyCode != 113)
+{
+    throw new Exception(
+        "UIButtonIdleMode recovered keyboard bindings changed.");
+}
+
+UnityEngine.Vector3 autoAimStep =
+    OriginalClickWeaponAutoAimPresentation.MoveTowards(
+        new UnityEngine.Vector3(0f, 0f, 0f),
+        new UnityEngine.Vector3(300f, 400f, 0f),
+        100f);
+
+AssertClose(
+    autoAimStep.x,
+    60f,
+    0.000001f,
+    "Auto-aim MoveTowards X");
+AssertClose(
+    autoAimStep.y,
+    80f,
+    0.000001f,
+    "Auto-aim MoveTowards Y");
+
+var autoAimGame = new GameState();
+AssertClose(
+    OriginalClickWeaponAutoAimPresentation.GetMoveDistance(
+        autoAimGame,
+        ClickWeaponSlot.Pistol,
+        0.5f,
+        1000f),
+    100f,
+    0.000001f,
+    "Auto-aim base 200 px/s");
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
