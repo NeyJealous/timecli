@@ -196,6 +196,17 @@ namespace TimeCli.UnityRuntime
 
         public void UpdateAim(
             Vector3 crosshairPosition,
+            float lastTapScreenY) =>
+            UpdateAim(
+                crosshairPosition,
+                crosshairPosition,
+                crosshairPosition,
+                lastTapScreenY);
+
+        public void UpdateAim(
+            Vector3 pistolCrosshairPosition,
+            Vector3 cannonCrosshairPosition,
+            Vector3 launcherCrosshairPosition,
             float lastTapScreenY)
         {
             UpdateAnimations(Time.time);
@@ -204,16 +215,23 @@ namespace TimeCli.UnityRuntime
             if (camera == null)
                 return;
 
-            Ray ray = camera.ScreenPointToRay(crosshairPosition);
-            Vector3 target =
-                ray.origin +
-                ray.direction *
-                OriginalProjectilePresentation.ClickWeaponMaxDistance;
+            _pistolPivot.LookAt(
+                GetAimTarget(
+                    camera,
+                    pistolCrosshairPosition));
+            _cannonPivot.LookAt(
+                GetAimTarget(
+                    camera,
+                    cannonCrosshairPosition));
+            _launcherPivot.LookAt(
+                GetAimTarget(
+                    camera,
+                    launcherCrosshairPosition));
 
-            _pistolPivot.LookAt(target);
-            _cannonPivot.LookAt(target);
-            _launcherPivot.LookAt(target);
-
+            // ClickerWeapon.UpdateVerticalPosition is driven by lastTapPos,
+            // not autoAimTargetPosition. Auto-aim therefore rotates the Pivot
+            // independently while all Vertical transforms retain the most
+            // recent real touch/mouse Y exactly as in 1.4.5.
             float normalizedVertical =
                 Screen.height > 0
                     ? 1f - lastTapScreenY / Screen.height
@@ -235,6 +253,20 @@ namespace TimeCli.UnityRuntime
 
             _launcherVertical.localPosition =
                 new Vector3(0f, -heavyVertical, 0f);
+        }
+
+        private static Vector3 GetAimTarget(
+            Camera camera,
+            Vector3 screenPosition)
+        {
+            Ray ray =
+                camera.ScreenPointToRay(
+                    screenPosition);
+
+            return
+                ray.origin +
+                ray.direction *
+                OriginalProjectilePresentation.ClickWeaponMaxDistance;
         }
 
 
