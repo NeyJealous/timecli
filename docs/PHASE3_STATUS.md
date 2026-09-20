@@ -92,6 +92,7 @@ Recovered targets:
 - `TimeCliTimeCubePickupTexture.png`
 - `TimeCliWeaponCubePickupTexture.png`
 - `TimeCliWeaponCubeTexture.png`
+- `TimeCliRocketTailTexture.png`
 
 The public project falls back to procedural clean visuals when those private
 files are absent.
