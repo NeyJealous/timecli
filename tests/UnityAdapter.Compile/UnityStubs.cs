@@ -52,6 +52,7 @@ namespace UnityEngine
 
         public string name { get; set; }
         public string tag { get; set; } = string.Empty;
+        public int layer { get; set; }
         public Transform transform { get; }
 
         public T AddComponent<T>() where T : Component, new()
@@ -103,6 +104,12 @@ namespace UnityEngine
         public static Vector3 operator +(Vector3 a, Vector3 b) =>
             new(a.x + b.x, a.y + b.y, a.z + b.z);
 
+        public static Vector3 operator -(Vector3 a, Vector3 b) =>
+            new(a.x - b.x, a.y - b.y, a.z - b.z);
+
+        public float magnitude =>
+            (float)Math.Sqrt(x * x + y * y + z * z);
+
         public static Vector3 Scale(Vector3 a, Vector3 b) =>
             new(a.x * b.x, a.y * b.y, a.z * b.z);
 
@@ -137,7 +144,7 @@ namespace UnityEngine
         public static Color white => new(1f, 1f, 1f, 1f);
     }
 
-    public enum PrimitiveType { Cube }
+    public enum PrimitiveType { Sphere, Capsule, Cylinder, Cube, Plane, Quad }
     public enum LightType { Directional }
     public enum CameraClearFlags { Skybox = 1, SolidColor = 2, Depth = 3, Nothing = 4 }
 
@@ -187,11 +194,38 @@ namespace UnityEngine
         public Mesh sharedMesh { get; set; } = default!;
     }
 
-    public sealed class BoxCollider : Component
+    public class Collider : Component { }
+
+    public sealed class BoxCollider : Collider
     {
         public bool enabled { get; set; } = true;
         public Vector3 center { get; set; }
         public Vector3 size { get; set; }
+    }
+
+    public readonly struct RaycastHit
+    {
+        public Vector3 point => Vector3.zero;
+    }
+
+    public static class Physics
+    {
+        public static bool Raycast(
+            Vector3 origin,
+            Vector3 direction,
+            out RaycastHit hitInfo,
+            float maxDistance,
+            int layerMask)
+        {
+            hitInfo = new RaycastHit();
+            return false;
+        }
+
+        public static Collider[] OverlapSphere(
+            Vector3 position,
+            float radius,
+            int layerMask) =>
+            Array.Empty<Collider>();
     }
 
     public sealed class Mesh : Object
@@ -241,11 +275,13 @@ namespace UnityEngine
         public static float Range(float minInclusive, float maxInclusive) => minInclusive;
         public static float value => 0.5f;
         public static Vector3 onUnitSphere => new(0f, 0f, 1f);
+        public static Quaternion rotation => new();
     }
 
     public static class Time
     {
         public static double timeAsDouble => 0.0;
+        public static float time => 0f;
         public static float deltaTime => 1f / 60f;
     }
 
