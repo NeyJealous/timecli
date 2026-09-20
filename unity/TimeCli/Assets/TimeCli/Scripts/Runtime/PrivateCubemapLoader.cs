@@ -153,7 +153,7 @@ namespace TimeCli.UnityRuntime
                     asset.bytes,
                     false))
             {
-                Object.Destroy(texture);
+                UnityEngine.Object.Destroy(texture);
                 return null;
             }
 
