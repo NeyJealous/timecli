@@ -38,9 +38,9 @@ namespace TimeCli.UnityRuntime.Editor
             camera.backgroundColor = Color.black;
             camera.transform.position = OriginalArenaPresentation.CameraPosition;
             camera.transform.rotation = Quaternion.Euler(
-                OriginalArenaPresentation.CameraEuler.X,
-                OriginalArenaPresentation.CameraEuler.Y,
-                OriginalArenaPresentation.CameraEuler.Z);
+                OriginalArenaPresentation.CameraEuler.x,
+                OriginalArenaPresentation.CameraEuler.y,
+                OriginalArenaPresentation.CameraEuler.z);
 
             var lightObject = new GameObject("Directional Light");
             var light = lightObject.AddComponent<Light>();
