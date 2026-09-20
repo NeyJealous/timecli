@@ -8,6 +8,7 @@ on:
       - "tests/PortCore.Smoke/**"
       - "tests/PortCore.TimelineScenario/**"
       - "tests/PortCore.HeroCombatScenario/**"
+      - "tests/PortCore.ClickWeaponsScenario/**"
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
       - ".github/workflows/portcore-smoke.yml"
@@ -17,6 +18,7 @@ on:
       - "tests/PortCore.Smoke/**"
       - "tests/PortCore.TimelineScenario/**"
       - "tests/PortCore.HeroCombatScenario/**"
+      - "tests/PortCore.ClickWeaponsScenario/**"
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
 
@@ -65,3 +67,12 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run --project tests/UnityAdapter.Compile/UnityAdapter.Compile.csproj --configuration Release
+
+  click-weapons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run --project tests/PortCore.ClickWeaponsScenario/PortCore.ClickWeaponsScenario.csproj --configuration Release
