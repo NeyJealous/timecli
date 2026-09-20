@@ -129,7 +129,9 @@ The prototype now contains reconstructed behavior/presentation for:
 - ClickCannon charge/fire plans;
 - ClickLauncher click threshold/fire plans;
 - Flak/Rocket trajectory and collision timing;
-- all Hero headless combat through PortCore.
+- all Hero authoritative combat through PortCore;
+- original Hero visual impact rules (no fake travelling Hero bullets):
+  exact weapon colors, Outline/FlashOutline and 0.2 s flash timing.
 
 The reconstructed Arena HUD is now the default prototype presentation.
 Remaining progression/additive screens are still pending reconstruction.
@@ -170,4 +172,5 @@ Then open `unity/TimeCli` and run:
 - `docs/ARENA_PRESENTATION_RECOVERY.md`
 - `docs/SPECIAL_CUBE_RECOVERY.md`
 - `docs/PROJECTILE_PRESENTATION_RECOVERY.md`
+- `docs/HERO_PRESENTATION_RECOVERY.md`
 - `docs/PHASE3_STATUS.md`
