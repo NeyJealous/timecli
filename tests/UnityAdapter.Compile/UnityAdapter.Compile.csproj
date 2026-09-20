@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/PortCore/PortCore.csproj" />
+    <Compile Include="UnityStubs.cs" />
+    <Compile Include="Program.cs" />
+
+    <Compile Include="../../unity/TimeCli/Assets/TimeCli/Scripts/Runtime/*.cs"
+             Link="UnityRuntime/%(Filename)%(Extension)" />
+    <Compile Include="../../unity/TimeCli/Assets/TimeCli/Scripts/Editor/*.cs"
+             Link="UnityEditor/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
