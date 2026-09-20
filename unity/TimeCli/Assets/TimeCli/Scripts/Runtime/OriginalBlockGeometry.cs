@@ -13,6 +13,7 @@ namespace TimeCli.UnityRuntime
         private static Material _normalMaterial;
         private static Material _rainbowMaterial;
         private static Material _timeCubeMaterial;
+        private static Material _weaponCubeMaterial;
 
         private static readonly int[] Triangles =
         {
@@ -159,15 +160,39 @@ namespace TimeCli.UnityRuntime
                     ref _rainbowMaterial,
                     "TimeCli/RainbowEnemy",
                     "TimeCli_Reconstructed_RainbowEnemy"),
-                EnemyType.TimeCube or EnemyType.WeaponCube => GetOrCreateMaterial(
+                EnemyType.TimeCube => GetOrCreateMaterial(
                     ref _timeCubeMaterial,
                     "TimeCli/TimeCubeEnemy",
                     "TimeCli_Reconstructed_TimeCubeEnemy"),
+                EnemyType.WeaponCube => GetWeaponCubeMaterial(),
                 _ => GetOrCreateMaterial(
                     ref _normalMaterial,
                     "TimeCli/BlockVertexColor",
                     "TimeCli_Reconstructed_SimpleEnemy")
             };
+        }
+
+        private static Material GetWeaponCubeMaterial()
+        {
+            if (_weaponCubeMaterial != null)
+                return _weaponCubeMaterial;
+
+            _weaponCubeMaterial = GetOrCreateMaterial(
+                ref _weaponCubeMaterial,
+                "TimeCli/TimeCubeEnemy",
+                "TimeCli_Reconstructed_WeaponCubeEnemy");
+
+            // Original BoxEnemy.SetMaxHP uses the TimeCube shader for
+            // WeaponCube and then overrides material.mainTexture with
+            // BoxEnemy.weaponCubeTex. The old texture remains private
+            // original-derived data; if supplied as a Resources asset, use it.
+            Texture2D texture =
+                Resources.Load<Texture2D>("TimeCliWeaponCubeTexture");
+
+            if (texture != null)
+                _weaponCubeMaterial.mainTexture = texture;
+
+            return _weaponCubeMaterial;
         }
 
         private static Material GetOrCreateMaterial(
