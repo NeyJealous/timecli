@@ -22,7 +22,14 @@ namespace TimeCli.UnityRuntime
         [SerializeField]
         private bool autoFireHeroes = true;
 
+        [SerializeField]
+        private Transform timeCubeCollectionPoint;
+
+        [SerializeField]
+        private Transform weaponCubeCollectionPoint;
+
         private readonly List<VoxelBlockView> _views = new();
+        private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
         private void Start()
         {
@@ -48,6 +55,7 @@ namespace TimeCli.UnityRuntime
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
             bootstrap.Game.UpdateCubePickups(now);
+            SyncPickupViews(now);
 
             BossTickResult bossTick = bootstrap.Arena.TickBoss(now);
 
@@ -82,6 +90,7 @@ namespace TimeCli.UnityRuntime
                     bootstrap.Random);
 
                 ApplyVolleyToViews(execution);
+                SyncPickupViews(now);
 
                 if (bootstrap.Arena.CurrentEnemy == null)
                 {
@@ -96,12 +105,14 @@ namespace TimeCli.UnityRuntime
             if (bootstrap == null || bootstrap.Arena.CurrentEnemy == null)
                 return;
 
+            double now = Time.timeAsDouble;
             var result = bootstrap.Arena.ClickBlock(
                 blockIndex,
                 critical: false,
-                nowSeconds: Time.timeAsDouble);
+                nowSeconds: now);
 
             RefreshView(blockIndex);
+            SyncPickupViews(now);
 
             if (result.ModelCleared)
                 ClearViews();
@@ -165,6 +176,103 @@ namespace TimeCli.UnityRuntime
                     }
                 }
             }
+        }
+
+        public void CollectPickup(long pickupId)
+        {
+            if (bootstrap == null || !bootstrap.IsReady)
+                return;
+
+            bootstrap.Game.TryCollectCubePickup(
+                pickupId,
+                Time.timeAsDouble);
+        }
+
+        public Vector3 GetPickupCollectionPoint(
+            SpecialCubeKind kind,
+            Vector3 fallback)
+        {
+            Transform target = kind == SpecialCubeKind.TimeCube
+                ? timeCubeCollectionPoint
+                : weaponCubeCollectionPoint;
+
+            if (target != null)
+                return target.position;
+
+            // Until the original HUD collection anchors are reconstructed,
+            // keep the pickup tween visible and deterministic in world space.
+            float x = kind == SpecialCubeKind.TimeCube ? -2f : 2f;
+            return fallback + new Vector3(x, 2f, 0f);
+        }
+
+        private void SyncPickupViews(double nowSeconds)
+        {
+            var activeIds = new HashSet<long>();
+
+            foreach (var pickup in bootstrap.Game.CubePickups.Active)
+            {
+                activeIds.Add(pickup.Id);
+
+                if (!_pickupViews.TryGetValue(
+                    pickup.Id,
+                    out SpecialCubePickupView view))
+                {
+                    if (!TryGetSourceWorldPosition(
+                        pickup.SourceBlock,
+                        out Vector3 sourcePosition))
+                    {
+                        continue;
+                    }
+
+                    GameObject instance =
+                        GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    instance.name =
+                        $"Pickup_{pickup.Kind}_{pickup.Id}";
+
+                    view = instance.AddComponent<SpecialCubePickupView>();
+                    view.Bind(this, pickup, sourcePosition);
+                    _pickupViews.Add(pickup.Id, view);
+                }
+
+                view.Refresh(nowSeconds);
+            }
+
+            List<long> remove = null;
+
+            foreach (var pair in _pickupViews)
+            {
+                if (activeIds.Contains(pair.Key))
+                    continue;
+
+                if (pair.Value != null)
+                    Destroy(pair.Value.gameObject);
+
+                remove ??= new List<long>();
+                remove.Add(pair.Key);
+            }
+
+            if (remove == null)
+                return;
+
+            foreach (long id in remove)
+                _pickupViews.Remove(id);
+        }
+
+        private bool TryGetSourceWorldPosition(
+            EnemyBlockState sourceBlock,
+            out Vector3 worldPosition)
+        {
+            for (int i = 0; i < _views.Count; i++)
+            {
+                if (!ReferenceEquals(_views[i].State, sourceBlock))
+                    continue;
+
+                worldPosition = _views[i].transform.position;
+                return true;
+            }
+
+            worldPosition = Vector3.zero;
+            return false;
         }
 
         private void RebuildViews(HeadlessSpawnedEnemy spawned)
