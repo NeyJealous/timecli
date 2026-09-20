@@ -291,7 +291,9 @@ namespace TimeCli.UnityRuntime
                 new ParticleSystem.MinMaxCurve(
                     OriginalRocketTailPresentation.RotationMin,
                     OriginalRocketTailPresentation.RotationMax);
-            main.startColor = Color.white;
+            main.startColor =
+                new ParticleSystem.MinMaxGradient(
+                    Color.white);
             main.gravityModifier = 0f;
             main.maxParticles =
                 OriginalRocketTailPresentation.MaxParticles;
