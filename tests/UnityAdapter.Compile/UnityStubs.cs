@@ -97,6 +97,7 @@ namespace UnityEngine
 
         public static Vector3 zero => new(0f, 0f, 0f);
         public static Vector3 one => new(1f, 1f, 1f);
+        public static Vector3 up => new(0f, 1f, 0f);
 
         public static Vector3 operator *(Vector3 value, float scalar) =>
             new(value.x * scalar, value.y * scalar, value.z * scalar);
@@ -125,6 +126,7 @@ namespace UnityEngine
         public Quaternion(float x, float y, float z, float w) { }
 
         public static Quaternion Euler(float x, float y, float z) => new();
+        public static Quaternion AngleAxis(float angle, Vector3 axis) => new();
         public static Quaternion LookRotation(Vector3 forward) => new();
         public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => new();
 
@@ -172,6 +174,9 @@ namespace UnityEngine
         public Color backgroundColor { get; set; }
 
         public Vector3 ViewportToWorldPoint(Vector3 position) => position;
+        public Vector3 WorldToScreenPoint(Vector3 position) => position;
+        public Ray ScreenPointToRay(Vector3 position) =>
+            new(position, new Vector3(0f, 0f, 1f));
     }
 
     public sealed class Light : Behaviour
@@ -214,9 +219,22 @@ namespace UnityEngine
         public Vector3 size { get; set; }
     }
 
+    public struct Ray
+    {
+        public Ray(Vector3 origin, Vector3 direction)
+        {
+            this.origin = origin;
+            this.direction = direction;
+        }
+
+        public Vector3 origin { get; set; }
+        public Vector3 direction { get; set; }
+    }
+
     public readonly struct RaycastHit
     {
         public Vector3 point => Vector3.zero;
+        public Collider collider => default!;
     }
 
     public static class Physics
@@ -231,6 +249,22 @@ namespace UnityEngine
             hitInfo = new RaycastHit();
             return false;
         }
+
+        public static bool Raycast(
+            Ray ray,
+            out RaycastHit hitInfo,
+            float maxDistance,
+            int layerMask)
+        {
+            hitInfo = new RaycastHit();
+            return false;
+        }
+
+        public static RaycastHit[] RaycastAll(
+            Ray ray,
+            float maxDistance,
+            int layerMask) =>
+            Array.Empty<RaycastHit>();
 
         public static Collider[] OverlapSphere(
             Vector3 position,
