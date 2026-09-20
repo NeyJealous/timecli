@@ -376,6 +376,46 @@ namespace UnityEngine
         }
 
         public Keyframe[] keys { get; }
+
+        public float Evaluate(float time)
+        {
+            if (keys.Length == 0)
+                return 0f;
+            if (time <= keys[0].time)
+                return keys[0].value;
+            if (time >= keys[^1].time)
+                return keys[^1].value;
+
+            for (int i = 0; i < keys.Length - 1; i++)
+            {
+                Keyframe a = keys[i];
+                Keyframe b = keys[i + 1];
+
+                if (time > b.time)
+                    continue;
+
+                float duration = b.time - a.time;
+                if (duration <= 0f)
+                    return b.value;
+
+                float u = (time - a.time) / duration;
+                float u2 = u * u;
+                float u3 = u2 * u;
+
+                float h00 = 2f * u3 - 3f * u2 + 1f;
+                float h10 = u3 - 2f * u2 + u;
+                float h01 = -2f * u3 + 3f * u2;
+                float h11 = u3 - u2;
+
+                return
+                    h00 * a.value +
+                    h10 * duration * a.outTangent +
+                    h01 * b.value +
+                    h11 * duration * b.inTangent;
+            }
+
+            return keys[^1].value;
+        }
     }
 
     public readonly struct GradientColorKey
