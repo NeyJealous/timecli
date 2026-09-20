@@ -4,96 +4,90 @@
 
 Status: **complete**
 
-- identify engine/runtime;
-- recover build scene list;
-- inventory managed types/components;
-- recover core economy/progression formulas;
-- identify platform SDK dependencies;
-- recover save-format cryptography.
+- identified Unity 5.4.2f2 / Mono runtime;
+- recovered scene, managed-code and serialized-data structure;
+- recovered gameplay formulas and save-format behavior;
+- identified legacy platform dependencies.
 
-**Gate passed:** APK is suitable for deterministic reconstruction.
+**Gate passed.**
 
-## Phase 2 — gameplay source recovery
+## Phase 2 — portable gameplay core
 
-Status: **gate candidate**
+Status: **complete**
 
-Completed:
+- canonical economy/progression data;
+- Hero / Click Pistol / Active Ability progression;
+- complete Hero auto-fire targeting and damage distribution;
+- Artifacts / Weapon Augments / currencies / Time Warp;
+- Arena farm/navigation/boss rules;
+- block damage/rewards;
+- Qubicle voxel parsing/selection/allocation;
+- deterministic headless Arena;
+- offline progression;
+- timeline and combat regression scenarios;
+- `netstandard2.1` Unity compatibility.
 
-- portable economy/progression core;
-- all 5 canonical hero trees and purchase modes;
-- infinite Promotion / Training / Spec Ops;
-- Click Pistol and Active Ability progression;
-- Artifact / Weapon Augment canonical data, dependencies and economy;
-- Time Cube / Weapon Cube rules and respec behavior;
-- Arena farm/navigation/boss state;
-- block-level damage/death/rewards;
-- complete 141-model Qubicle corpus extraction locally;
-- VoxelLibrary HP decomposition/model selection;
-- exact block-allocation/fallback rules;
-- headless Arena engine;
-- offline earnings;
-- deterministic CI scenario from new game through wave 100 -> Time Cubes ->
-  Time Warp -> Artifact purchase.
+**Gate passed:** PortCore API frozen at v1.0.0.
 
-Remaining before freeze:
+## Phase 3 — Unity reconstruction
 
-- remaining Hero auto-fire target-selection mechanics;
-- PortCore/Unity adapter contract;
-- rerun real-layout integration once the private originals repository receives
-  the recovered coordinate data.
+Status: **in progress**
 
-**Gate:** freeze the portable API once the remaining Hero attack rules are
-covered by regression tests.
+Current:
 
-## Phase 3 — asset and scene reconstruction
+- Unity 6.3 LTS project skeleton;
+- PortCore DLL sync pipeline;
+- bootstrap + random + voxel-catalog adapters;
+- synthetic development voxel catalog;
+- placeholder voxel rendering;
+- Arena controller wired to tested click/Hero combat.
 
-- create the modern Unity project/adapters;
-- import private reconstructed voxel/model data;
-- rebuild Splash, Arena and TimeWarp;
-- rebuild Artifacts, WeaponAugments and TimelineSummary additive scenes;
-- restore MonoBehaviour fields/references;
-- validate anchors, camera and layout;
-- restore original visual/audio assets from the private originals workspace.
+Next:
 
-**Gate:** Arena opens and completes the tested headless loop without missing
-runtime references.
+- prototype Arena scene and development HUD;
+- canonical private voxel-catalog import;
+- exact voxel transform/centering;
+- original scene/visual/audio reconstruction;
+- Splash / Arena / TimeWarp;
+- Artifacts / WeaponAugments / TimelineSummary additive screens.
 
-## Phase 4 — modern Unity migration / playable prototype
+**Gate:** Unity Arena runs the tested PortCore loop without gameplay logic
+duplication or missing runtime references.
 
-- connect PortCore to Unity presentation;
-- replace obsolete APIs and incompatible shaders;
-- implement touch input and visual projectiles;
-- preserve tested game math/timing.
+## Phase 4 — playable modern prototype
 
-**Gate:** desktop/editor build completes the core loop offline.
+- presentation-quality projectile movement/collisions;
+- complete player input;
+- UI and progression screens;
+- obsolete API/shader replacements;
+- desktop/editor offline gameplay regression.
+
+**Gate:** complete offline core loop in the modern Unity editor/player.
 
 ## Phase 5 — platform abstraction
 
-First prototype:
-
-- Google Play Games -> local/no-op;
-- Steamworks -> disabled;
-- Amazon/Kongregate -> disabled;
+- Google Play Games -> local/no-op/replacement;
+- Steam/Amazon/Kongregate -> disabled or abstracted;
 - ads -> disabled;
-- IAP/store -> disabled;
-- cloud -> local save only.
+- IAP/store -> disabled initially;
+- cloud -> local save first.
 
-**Gate:** launch/save/progression do not depend on legacy SDKs.
+**Gate:** launch/save/progression are independent of legacy SDKs.
 
 ## Phase 6 — save compatibility
 
-- validate encrypt/decrypt against original Android exports;
-- reconstruct JSON model mapping;
-- add regression fixtures;
-- support Android export -> reconstructed build import.
+- validate legacy encrypt/decrypt against original exports;
+- reconstruct complete JSON model mapping;
+- migration/versioning;
+- Android export -> reconstructed build import.
 
-**Gate:** the same progress round-trips correctly.
+**Gate:** original progress round-trips correctly.
 
 ## Phase 7 — iOS adaptation
 
-- touch and multi-touch;
+- touch/multi-touch;
 - safe area / notch / Dynamic Island;
-- lifecycle save on background;
+- lifecycle save/background handling;
 - iOS paths;
 - audio interruptions;
 - memory-pressure handling.
@@ -104,6 +98,6 @@ First prototype:
 - Xcode project;
 - ARM64 device build;
 - signing/provisioning;
-- real-device regression test.
+- real-device regression tests.
 
 Final device build requires macOS + Xcode.
