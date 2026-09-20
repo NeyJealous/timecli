@@ -123,11 +123,14 @@ public static class HeroAutoFirePlanner
             hero.Schedule,
             hero.PurchasedUpgrades);
 
-        double firePeriod = 1.0 / rateOfFire;
+        // Original Hero.ApplyDamage keeps the interval in a float local
+        // (1f / GetRateOfFire()) before converting it to double for DPS math.
+        float firePeriodFloat = 1f / rateOfFire;
+        double firePeriod = firePeriodFloat;
         if (nowSeconds < state.NextFireTime)
             return HeroVolleyPlan.NotFired(firePeriod);
 
-        state.NextFireTime = nowSeconds + firePeriod;
+        state.NextFireTime = (float)nowSeconds + firePeriodFloat;
         state.NumTimesFired++;
 
         double damage = HeroCombatMath.GetDpsForLevel(
