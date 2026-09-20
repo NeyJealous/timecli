@@ -189,17 +189,164 @@ static void AssertTrue(bool value, string name)
         last.Launcher.RocketSpeedMultiplier,
         "Rocket speed augment multiplier");
 
+    // ClickerWeapon MonoBehaviours persist through Time Warp in the original.
+    // Create non-zero launcher progress and verify transient component state
+    // is not invented as a timeline-reset system.
+    game.RegisterManualClickWeapons(0.6);
+    AssertNear(
+        1,
+        game.ClickWeapons.LauncherClicksProgress,
+        "Launcher progress before Time Warp");
+
     game.TimeWarp();
 
     AssertNear(
-        0,
+        8,
         game.ClickWeapons.CannonChargeProgress,
-        "Time Warp resets Cannon charge");
+        "Time Warp preserves Cannon component charge");
+    AssertNear(
+        1,
+        game.ClickWeapons.LauncherClicksProgress,
+        "Time Warp preserves Launcher component click progress");
+}
+
+// Automatic Fire ability: each ClickerWeapon owns an independent rapid timer.
+{
+    var game = new GameState();
+
+    game.WeaponAugments.SetLevel(
+        WeaponAugmentType.ClickCannonUnlock,
+        1);
+    game.WeaponAugments.SetLevel(
+        WeaponAugmentType.ClickLauncherUnlock,
+        1);
+
+    game.Gold.Add(1e9);
+    AssertTrue(
+        game.TryPurchaseNextAbility(),
+        "Purchase Automatic Fire for timer test");
+    AssertTrue(
+        game.ActivateAbility(
+            AbilityType.AutomaticFire,
+            0),
+        "Activate Automatic Fire");
+
+    var atZero =
+        game.UpdateClickWeapons(
+            nowSeconds: 0,
+            deltaSeconds: 0);
+
+    AssertNear(
+        1,
+        atZero.PistolShots,
+        "Automatic Fire Pistol immediate shot");
+    AssertNear(
+        1,
+        atZero.CannonShots.Count,
+        "Automatic Fire Cannon immediate shot");
+    AssertNear(
+        0,
+        atZero.LauncherShots.Count,
+        "Launcher threshold not reached on first automatic shot");
+    AssertNear(
+        1,
+        game.ClickWeapons.LauncherClicksProgress,
+        "Automatic Launcher Shoot increments click progress");
+
+    var early =
+        game.UpdateClickWeapons(
+            nowSeconds: 0.05,
+            deltaSeconds: 0.05);
+
+    AssertNear(
+        0,
+        early.PistolShots,
+        "Automatic Fire waits for rapid-fire delay");
+
+    var atDelay =
+        game.UpdateClickWeapons(
+            nowSeconds: 0.1,
+            deltaSeconds: 0.05);
+
+    AssertNear(
+        1,
+        atDelay.PistolShots,
+        "Automatic Fire fires at exact nextFireTime");
+
+    // Eight additional 0.1-second ticks produce the 10th Launcher Shoot.
+    ClickWeaponAutomaticFirePlan last =
+        ClickWeaponAutomaticFirePlan.None;
+
+    for (int i = 2; i <= 9; i++)
+    {
+        last = game.UpdateClickWeapons(
+            nowSeconds: i * 0.1,
+            deltaSeconds: 0.1);
+    }
+
+    AssertNear(
+        1,
+        last.LauncherShots.Count,
+        "10th Automatic Fire Launcher Shoot emits rocket");
     AssertNear(
         0,
         game.ClickWeapons.LauncherClicksProgress,
-        "Time Warp resets Launcher click progress");
+        "Automatic Launcher threshold resets progress");
+}
+
+// Weapon-Augment auto fire uses strict nextFireTime < Time.time semantics.
+{
+    var game = new GameState();
+
+    // First portable update mirrors ClickerWeapon.Start with level zero.
+    game.UpdateClickWeapons(
+        nowSeconds: 0,
+        deltaSeconds: 0);
+
+    game.WeaponAugments.SetLevel(
+        WeaponAugmentType.ClickPistolAutoFire,
+        1); // 2 shots/min => 30 s
+
+    var changed =
+        game.UpdateClickWeapons(
+            nowSeconds: 1.0,
+            deltaSeconds: 0.01);
+
+    AssertNear(
+        0,
+        changed.PistolShots,
+        "Augment change only resets timer to current time");
+
+    var immediateNextFrame =
+        game.UpdateClickWeapons(
+            nowSeconds: 1.001,
+            deltaSeconds: 0.001);
+
+    AssertNear(
+        1,
+        immediateNextFrame.PistolShots,
+        "Pistol augment auto-fire starts next frame");
+
+    var exactBoundary =
+        game.UpdateClickWeapons(
+            nowSeconds: 31.001,
+            deltaSeconds: 0.1);
+
+    AssertNear(
+        0,
+        exactBoundary.PistolShots,
+        "Augment auto-fire does not fire at exact boundary");
+
+    var afterBoundary =
+        game.UpdateClickWeapons(
+            nowSeconds: 31.002,
+            deltaSeconds: 0.001);
+
+    AssertNear(
+        1,
+        afterBoundary.PistolShots,
+        "Augment auto-fire fires once boundary is exceeded");
 }
 
 Console.WriteLine(
-    "Click weapon scenario passed: Cannon/Launcher state and fire plans.");
+    "Click weapon scenario passed: manual, Automatic Fire and augment timers.");
