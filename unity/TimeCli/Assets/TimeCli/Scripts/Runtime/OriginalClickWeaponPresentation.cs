@@ -19,6 +19,9 @@ namespace TimeCli.UnityRuntime
         private readonly Transform _pistolModel;
         private readonly Transform _cannonModel;
         private readonly Transform _launcherModel;
+        private readonly AudioSource _pistolAudio;
+        private readonly AudioSource _cannonAudio;
+        private readonly AudioSource _launcherAudio;
 
         private float _pistolShootStart = float.NegativeInfinity;
         private float _cannonShootStart = float.NegativeInfinity;
@@ -48,7 +51,10 @@ namespace TimeCli.UnityRuntime
             Transform pistolSlide,
             Transform pistolModel,
             Transform cannonModel,
-            Transform launcherModel)
+            Transform launcherModel,
+            AudioSource pistolAudio,
+            AudioSource cannonAudio,
+            AudioSource launcherAudio)
         {
             _pistolPivot = pistolPivot;
             _pistolVertical = pistolVertical;
@@ -60,6 +66,9 @@ namespace TimeCli.UnityRuntime
             _pistolModel = pistolModel;
             _cannonModel = cannonModel;
             _launcherModel = launcherModel;
+            _pistolAudio = pistolAudio;
+            _cannonAudio = cannonAudio;
+            _launcherAudio = launcherAudio;
         }
 
         public static OriginalClickWeaponPresentationView Create(
@@ -127,6 +136,22 @@ namespace TimeCli.UnityRuntime
                 cannon.Model,
                 launcher.Model);
 
+            AudioSource pistolAudio =
+                ClickWeaponAudioFactory.Attach(
+                    pistol.Root,
+                    OriginalClickWeaponAudioPresentation.PistolFireResource,
+                    "PistolFireAudio");
+            AudioSource cannonAudio =
+                ClickWeaponAudioFactory.Attach(
+                    cannon.Root,
+                    OriginalClickWeaponAudioPresentation.CannonFireResource,
+                    "CannonFireAudio");
+            AudioSource launcherAudio =
+                ClickWeaponAudioFactory.Attach(
+                    launcher.Root,
+                    OriginalClickWeaponAudioPresentation.LauncherFireResource,
+                    "LauncherFireAudio");
+
             arena.BindRecoveredClickWeaponFireSpots(
                 pistol.FireSpot,
                 cannon.FireSpot,
@@ -142,7 +167,10 @@ namespace TimeCli.UnityRuntime
                 pistolSlide,
                 pistol.Model,
                 cannon.Model,
-                launcher.Model);
+                launcher.Model,
+                pistolAudio,
+                cannonAudio,
+                launcherAudio);
         }
 
         public void UpdateAim(
@@ -193,18 +221,21 @@ namespace TimeCli.UnityRuntime
         {
             _pistolShootStart = Time.time;
             ApplyPistolShoot(0f);
+            ClickWeaponAudioFactory.Play(_pistolAudio);
         }
 
         public void PlayCannonShoot()
         {
             _cannonShootStart = Time.time;
             ApplyCannonShoot(0f);
+            ClickWeaponAudioFactory.Play(_cannonAudio);
         }
 
         public void PlayLauncherShoot()
         {
             _launcherShootStart = Time.time;
             ApplyLauncherShoot(0f);
+            ClickWeaponAudioFactory.Play(_launcherAudio);
         }
 
         public void PlayPistolAppear() =>
@@ -456,6 +487,7 @@ namespace TimeCli.UnityRuntime
                 fireSpotScale);
 
             return new WeaponHierarchy(
+                root,
                 pivot,
                 vertical,
                 model,
@@ -480,17 +512,20 @@ namespace TimeCli.UnityRuntime
         private readonly struct WeaponHierarchy
         {
             public WeaponHierarchy(
+                Transform root,
                 Transform pivot,
                 Transform vertical,
                 Transform model,
                 Transform fireSpot)
             {
+                Root = root;
                 Pivot = pivot;
                 Vertical = vertical;
                 Model = model;
                 FireSpot = fireSpot;
             }
 
+            public Transform Root { get; }
             public Transform Pivot { get; }
             public Transform Vertical { get; }
             public Transform Model { get; }
