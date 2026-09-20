@@ -351,5 +351,85 @@ static void AssertTrue(bool value, string name)
         "Augment auto-fire fires once boundary is exceeded");
 }
 
+// ClickerPistol fire plan: Spread Shots angles and Punchthrough are
+// gameplay-owned by PortCore; Unity only rotates/raycasts the resulting rays.
+{
+    var game = new GameState();
+
+    var basePlan =
+        ClickPistolFireMath.Build(
+            game,
+            isCritical: false);
+
+    AssertNear(
+        1,
+        basePlan.ProjectileCount,
+        "Base Click Pistol projectile count");
+    AssertTrue(
+        !basePlan.PunchThrough,
+        "Punchthrough disabled by default");
+    AssertNear(
+        game.GetClickDamage(false),
+        basePlan.ClickDamage,
+        "Base Click Pistol damage plan");
+
+    game.Gold.Add(1e30);
+
+    for (int i = 0;
+         i <= (int)AbilityType.PunchThrough;
+         i++)
+    {
+        AssertTrue(
+            game.TryPurchaseNextAbility(),
+            $"Purchase ability {i} for Click Pistol plan");
+    }
+
+    AssertTrue(
+        game.ActivateAbility(
+            AbilityType.SpreadShots,
+            0),
+        "Activate Spread Shots for Click Pistol plan");
+
+    AssertTrue(
+        game.ActivateAbility(
+            AbilityType.PunchThrough,
+            0),
+        "Activate Punchthrough for Click Pistol plan");
+
+    var spreadPlan =
+        ClickPistolFireMath.Build(
+            game,
+            isCritical: true);
+
+    AssertNear(
+        game.ArtifactEffects.SpreadShotsProjectiles,
+        spreadPlan.ProjectileCount,
+        "Spread Shots total Click Pistol rays");
+
+    AssertNear(
+        2,
+        spreadPlan.AdditionalYawAnglesDegrees.Count,
+        "Default additional Spread Shots rays");
+
+    AssertNear(
+        -3,
+        spreadPlan.AdditionalYawAnglesDegrees[0],
+        "First spread angle");
+
+    AssertNear(
+        3,
+        spreadPlan.AdditionalYawAnglesDegrees[1],
+        "Second spread angle");
+
+    AssertTrue(
+        spreadPlan.PunchThrough,
+        "Punchthrough state included in Click Pistol plan");
+
+    AssertNear(
+        game.GetClickDamage(true),
+        spreadPlan.ClickDamage,
+        "Critical damage reused across all spread rays");
+}
+
 Console.WriteLine(
     "Click weapon scenario passed: manual, Automatic Fire and augment timers.");
