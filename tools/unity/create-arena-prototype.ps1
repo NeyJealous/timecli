@@ -75,6 +75,13 @@ if ($OriginalDataSource) {
         if ($LASTEXITCODE -ne 0) {
             throw "Projectile presentation extraction failed."
         }
+
+        $ClickWeaponPresentationExtractor = Join-Path $PSScriptRoot "extract-private-click-weapon-presentation.py"
+        Write-Host "3/5 Extracting private click-weapon models/textures..."
+        python $ClickWeaponPresentationExtractor $OriginalDataSource $PrivateResources
+        if ($LASTEXITCODE -ne 0) {
+            throw "Click-weapon presentation extraction failed."
+        }
     }
     else {
         Write-Warning "UnityPy is not installed; SmallExplosion original audio extraction was skipped."
