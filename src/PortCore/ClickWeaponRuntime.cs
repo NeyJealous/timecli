@@ -64,6 +64,9 @@ public sealed class ClickWeaponRuntime
     private float _cannonChargeProgress;
     private float _cannonStartDechargingTime;
 
+    private const float CannonUnlockShowDelay = 1.5f;
+    private const float LauncherUnlockShowDelay = 1.0f;
+
     private ClickWeaponMode _pistolMode = ClickWeaponMode.ManualAim;
     private ClickWeaponMode _cannonMode = ClickWeaponMode.ManualAim;
     private ClickWeaponMode _launcherMode = ClickWeaponMode.ManualAim;
@@ -74,6 +77,15 @@ public sealed class ClickWeaponRuntime
     private float _cannonReactivateTime = float.NegativeInfinity;
     private float _launcherReactivateTime = float.NegativeInfinity;
 
+    private bool _cannonUnlockScheduled;
+    private bool _launcherUnlockScheduled;
+    private float _cannonUnlockShowTime = float.PositiveInfinity;
+    private float _launcherUnlockShowTime = float.PositiveInfinity;
+    private bool _cannonUnlocked;
+    private bool _launcherUnlocked;
+    private bool _cannonShowEventPending;
+    private bool _launcherShowEventPending;
+
     // -1 means the equivalent of ClickerWeapon.Start has not yet been
     // observed by this portable runtime.
     private long _pistolAutoFireLevel = -1;
@@ -83,6 +95,31 @@ public sealed class ClickWeaponRuntime
     public double CannonChargeProgress => _cannonChargeProgress;
     public double CannonStartDechargingTime => _cannonStartDechargingTime;
     public int LauncherClicksProgress { get; private set; }
+    public bool CannonUnlocked => _cannonUnlocked;
+    public bool LauncherUnlocked => _launcherUnlocked;
+
+    public bool ConsumeUnlockShowEvent(ClickWeaponSlot slot)
+    {
+        switch (slot)
+        {
+            case ClickWeaponSlot.Cannon:
+            {
+                bool pending = _cannonShowEventPending;
+                _cannonShowEventPending = false;
+                return pending;
+            }
+            case ClickWeaponSlot.Launcher:
+            {
+                bool pending = _launcherShowEventPending;
+                _launcherShowEventPending = false;
+                return pending;
+            }
+            case ClickWeaponSlot.Pistol:
+                return false;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(slot));
+        }
+    }
 
     public ClickWeaponMode GetMode(ClickWeaponSlot slot) =>
         slot switch
@@ -190,6 +227,8 @@ public sealed class ClickWeaponRuntime
         if (deltaSeconds < 0.0)
             throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
 
+        UpdateUnlockState(game, nowSeconds);
+
         int pistolShots = 0;
         List<ClickCannonFirePlan>? cannonShots = null;
         List<ClickLauncherFirePlan>? launcherShots = null;
@@ -223,7 +262,7 @@ public sealed class ClickWeaponRuntime
                 pistolShots++;
         }
 
-        if (game.WeaponAugmentEffects.ClickCannonUnlocked &&
+        if (_cannonUnlocked &&
             IsWeaponActive(ClickWeaponSlot.Cannon, nowSeconds))
         {
             if (ShouldRapidFire(
@@ -256,7 +295,7 @@ public sealed class ClickWeaponRuntime
                 nowSeconds);
         }
 
-        if (game.WeaponAugmentEffects.ClickLauncherUnlocked &&
+        if (_launcherUnlocked &&
             IsWeaponActive(ClickWeaponSlot.Launcher, nowSeconds))
         {
             if (ShouldRapidFire(
@@ -343,16 +382,18 @@ public sealed class ClickWeaponRuntime
         GameState game,
         double nowSeconds)
     {
+        UpdateUnlockState(game, nowSeconds);
+
         ClickCannonFirePlan? cannon = null;
         ClickLauncherFirePlan? launcher = null;
 
-        if (game.WeaponAugmentEffects.ClickCannonUnlocked &&
+        if (_cannonUnlocked &&
             IsWeaponActive(ClickWeaponSlot.Cannon, nowSeconds))
         {
             cannon = ShootCannon(game, nowSeconds);
         }
 
-        if (game.WeaponAugmentEffects.ClickLauncherUnlocked &&
+        if (_launcherUnlocked &&
             IsWeaponActive(ClickWeaponSlot.Launcher, nowSeconds))
         {
             launcher = ShootLauncher(game);
@@ -363,6 +404,54 @@ public sealed class ClickWeaponRuntime
             : new ClickWeaponFirePlan(
                 cannon,
                 launcher);
+    }
+
+    private void UpdateUnlockState(
+        GameState game,
+        double nowSeconds)
+    {
+        float now = (float)nowSeconds;
+        WeaponAugmentEffects effects =
+            game.WeaponAugmentEffects;
+
+        if (!_cannonUnlocked &&
+            !_cannonUnlockScheduled &&
+            effects.ClickCannonUnlocked)
+        {
+            _cannonUnlockScheduled = true;
+            _cannonUnlockShowTime =
+                now + CannonUnlockShowDelay;
+        }
+
+        if (!_launcherUnlocked &&
+            !_launcherUnlockScheduled &&
+            effects.ClickLauncherUnlocked)
+        {
+            _launcherUnlockScheduled = true;
+            _launcherUnlockShowTime =
+                now + LauncherUnlockShowDelay;
+        }
+
+        // DelayedShow is not cancelled if the unlock augment changes again:
+        // the original listener is removed as soon as it schedules the
+        // coroutine, and Show() later latches isUnlocked=true.
+        if (!_cannonUnlocked &&
+            _cannonUnlockScheduled &&
+            now >= _cannonUnlockShowTime)
+        {
+            _cannonUnlocked = true;
+            _cannonUnlockScheduled = false;
+            _cannonShowEventPending = true;
+        }
+
+        if (!_launcherUnlocked &&
+            _launcherUnlockScheduled &&
+            now >= _launcherUnlockShowTime)
+        {
+            _launcherUnlocked = true;
+            _launcherUnlockScheduled = false;
+            _launcherShowEventPending = true;
+        }
     }
 
     public void TimeWarp()
