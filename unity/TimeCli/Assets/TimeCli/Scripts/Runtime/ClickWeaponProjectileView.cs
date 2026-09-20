@@ -19,11 +19,13 @@ namespace TimeCli.UnityRuntime
         private double _damage;
         private float _speed;
         private float _remainingLifetime;
+        private Vector3 _moveDirection;
         private Vector3 _previousCollisionPosition;
         private float _collisionAccumulator;
         private bool _processedHit;
 
         private bool _rocketOrbit;
+        private Transform _rocketPivot;
         private Transform _rocketVisual;
         private float _rocketRotationOffset;
         private float _rocketRadialTimer;
@@ -74,12 +76,19 @@ namespace TimeCli.UnityRuntime
             root.transform.position = start;
             root.transform.LookAt(target);
 
+            var pivot =
+                new GameObject("RocketPivot");
+
+            pivot.transform.SetParent(
+                root.transform,
+                false);
+
             var visual = CreateVisual(
                 "RocketProjectile",
                 new Vector3(0.18f, 0.18f, 0.42f));
 
             visual.transform.SetParent(
-                root.transform,
+                pivot.transform,
                 false);
 
             var view =
@@ -93,6 +102,7 @@ namespace TimeCli.UnityRuntime
                     (float)speedMultiplier,
                 OriginalProjectilePresentation.RocketLifetime);
 
+            view._rocketPivot = pivot.transform;
             view._rocketVisual = visual.transform;
 
             if (rocketIndex > 0 &&
@@ -161,6 +171,10 @@ namespace TimeCli.UnityRuntime
             _damage = damage;
             _speed = speed;
             _remainingLifetime = lifetime;
+
+            // Original Projectile.Start captures transform.forward once into
+            // moveDir. Later Rocket pivot rotation must not bend root motion.
+            _moveDirection = transform.forward;
             _previousCollisionPosition =
                 transform.position;
         }
@@ -170,7 +184,7 @@ namespace TimeCli.UnityRuntime
             float dt = Time.deltaTime;
 
             transform.position +=
-                transform.forward *
+                _moveDirection *
                 _speed *
                 dt;
 
@@ -201,12 +215,13 @@ namespace TimeCli.UnityRuntime
         private void UpdateRocketOrbit(float dt)
         {
             if (!_rocketOrbit ||
+                _rocketPivot == null ||
                 _rocketVisual == null)
             {
                 return;
             }
 
-            transform.localRotation =
+            _rocketPivot.localRotation =
                 Quaternion.Euler(
                     0f,
                     0f,
