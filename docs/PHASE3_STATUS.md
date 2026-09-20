@@ -9,26 +9,43 @@ The modern Unity project is pinned to Unity **6000.3.24f1**.
 PortCore Phase 2 is frozen at adapter API **1.0.0** and builds for
 `netstandard2.1`.
 
-## Added
+## Unity adapter gate
 
-- minimal Unity project under `unity/TimeCli`;
-- PortCore DLL sync scripts for Windows/macOS/Linux;
+A dedicated `UnityAdapter.Compile` preflight now compiles all current Runtime
+and Editor C# scripts against a minimal Unity API surface. This already caught
+and fixed real adapter errors before the first Unity Editor launch.
+
+Current CI gates are green:
+
+- PortCore smoke;
+- deterministic timeline;
+- Hero combat;
+- `netstandard2.1` Unity compatibility;
+- Unity Runtime/Editor adapter compile preflight.
+
+This is not a replacement for a real Unity Editor import: serialization,
+shader import, scene import and native Editor behavior still need the actual
+Unity executable.
+
+## Current runtime
+
+Implemented under `unity/TimeCli`:
+
 - `TimeCliBootstrap`;
-- Unity-to-PortCore random adapter;
-- serializable voxel catalog asset;
-- synthetic fallback voxel catalog;
-- private binary voxel-catalog import path;
-- first `ArenaRuntimeController`;
-- placeholder `VoxelBlockView`;
-- development HUD;
-- one-click Editor command for creating `ArenaPrototype.unity`;
-- direct use of tested `HeadlessArenaEngine` for click and Hero auto-fire;
-- exact original Qubicle -> Arena block centering/inverted-Z transform.
+- `ArenaRuntimeController`;
+- `PrototypeHud`;
+- Unity random adapter;
+- serializable and binary voxel catalog adapters;
+- synthetic development voxel catalog;
+- private canonical voxel-catalog import path;
+- one-click Editor Arena scene generator;
+- click damage and all Hero auto-fire through the tested
+  `HeadlessArenaEngine`.
 
 ## Private canonical voxel import
 
-The locally recovered 141-model coordinate corpus can now be converted without
-committing the original-derived data:
+The locally recovered 141-model coordinate corpus can be converted without
+committing original-derived coordinates:
 
 ```bash
 python tools/unity/build-private-voxel-catalog.py \
@@ -47,24 +64,69 @@ At runtime `TimeCliBootstrap` loads catalogs in this order:
 The converter was locally round-trip validated against all **141 models / 8262
 occupied voxels / 43 boss-key models**.
 
-## Exact model transform recovered
+## Original Arena presentation recovered
 
-For each raw Qubicle block, the original Arena computes:
+The placeholder presentation has now been replaced with a procedural
+reconstruction of the original Arena block geometry.
 
-```text
-center = size / 2
-center.y = 0
-center.x -= 0.5
-center.z -= 0.5
+Recovered and implemented:
 
-local = raw - center
-local.z *= -1
+- original `Arena` root transform:
+  `(0, -3.3399999, 5.3499999)`, Y rotation about `-60°`;
+- original perspective gameplay camera:
+  position `(0, 1, -10)`, X rotation about `-6.469°`, FOV 60,
+  near 0.3, far 1000, depth -2;
+- exact Qubicle model centering and inverted-Z transform;
+- unit voxel spacing;
+- original BoxEnemy unit `BoxCollider`;
+- reconstructed `Body` mesh: 24 vertices / 32 triangles;
+- exact health-fill vertex deformation;
+- original serialized enemy palette;
+- clean modern vertex-color shader for the reconstructed mesh.
+
+Details are recorded in
+`docs/ARENA_PRESENTATION_RECOVERY.md`.
+
+The old Unity 5 compiled `Custom/SimpleEnemy`, Rainbow and TimeCube shader
+binaries are not copied into the modern project. Their visual behavior is being
+reconstructed cleanly.
+
+## Batch first-run workflow
+
+The first real Unity compile + scene generation is now automated.
+
+Windows:
+
+```powershell
+.\tools\unity\create-arena-prototype.ps1
 ```
 
-This is implemented in `VoxelCoordinateMath.ToArenaLocalPosition` and has
-PortCore regression tests.
+Optional private canonical voxels:
 
-## Current playable prototype path
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -PrivateVoxelJson "C:\path\voxel_layouts_private.json"
+```
+
+macOS/Linux:
+
+```bash
+UNITY_PATH="/path/to/Unity" \
+PRIVATE_VOXEL_JSON="/path/to/voxel_layouts_private.json" \
+bash tools/unity/create-arena-prototype.sh
+```
+
+The batch process:
+
+1. builds/syncs PortCore;
+2. optionally builds the private voxel binary;
+3. launches Unity in batch mode;
+4. imports/compiles the project;
+5. invokes the Editor scene generator;
+6. writes `ArenaPrototype.unity`;
+7. stores the Unity log under `out/unity/`.
+
+## Current prototype path
 
 ```text
 Unity input/frame
@@ -73,32 +135,22 @@ Unity input/frame
     -> HeadlessArenaEngine
     -> tested combat/progression result
     -> ArenaRuntimeController
-    -> VoxelBlockView placeholder
+    -> reconstructed BoxEnemy mesh
 ```
 
-The development HUD exposes:
+The development HUD exposes wave/farm navigation, Gold, Team DPS, Click
+damage, Hero and Click Pistol purchasing, cube balances and Time Warp.
 
-- wave/max wave and farm navigation;
-- Gold, Team DPS and Click damage;
-- Hero +1 / next-upgrade purchasing;
-- Click Pistol purchasing;
-- Time/Weapon Cube balances;
-- Time Warp when pending Time Cubes exist.
+## Next gate
 
-## Validation
+The remaining immediate Phase 3 gate is an **actual Unity 6000.3.24f1 batch
+import/run** on a machine with that Editor installed.
 
-Latest PortCore validation is green across:
+After that succeeds:
 
-- smoke;
-- timeline;
-- hero-combat;
-- Unity `netstandard2.1` compatibility.
-
-## Next
-
-- open/generate the Arena prototype in Unity and fix any Editor-only compile or
-  serialization issues;
-- replace synthetic development geometry with the private canonical binary
-  catalog;
-- reconstruct exact Arena camera/model scale/material presentation;
-- begin original UI and visual/audio asset reconstruction.
+- run the prototype against the private 141-model catalog;
+- validate framing/scale against the original Arena;
+- reconstruct Rainbow / TimeCube / WeaponCube presentation;
+- reconstruct visual projectile motion without moving gameplay authority out
+  of PortCore;
+- begin original HUD/UI scene reconstruction.
