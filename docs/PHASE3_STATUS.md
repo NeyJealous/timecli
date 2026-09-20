@@ -46,6 +46,10 @@ Implemented under `unity/TimeCli`:
   0.025 s invocation cadence, 10 particles/invocation, exact lifetime/speed/
   size ranges, cone, size/color curves, world-space randomized force and
   recovered billboard renderer;
+- Rocket impact SmallExplosion: canonical shared legacy-emitter behavior,
+  10 particles/impact, exact size/lifetime/velocity/ellipsoid/color/damping
+  values, additive NukeFireB/FireB presentation, and recovered Explosions
+  one-shot audio queue behavior;
 - Time/Weapon Cube deferred pickups and collection presentation;
 - clean replacements for original special-enemy shaders;
 - exact Hero impact presentation: canonical weapon colors, persistent
@@ -93,6 +97,8 @@ Recovered targets:
 - `TimeCliWeaponCubePickupTexture.png`
 - `TimeCliWeaponCubeTexture.png`
 - `TimeCliRocketTailTexture.png`
+- `TimeCliSmallExplosionTexture.png`
+- `TimeCliSmallExplosionImpact.wav` (requires UnityPy)
 
 The public project falls back to procedural clean visuals when those private
 files are absent.
@@ -146,7 +152,9 @@ Recovered and implemented:
 - overlap impact radius 1;
 - original hitbox mask 2560;
 - additional-rocket orbital pivot behavior;
-- rocket explosion visual lifetime 0.5 s.
+- canonical Rocket impact route through `VirtualPS.SmallExplosion`;
+- dormant serialized `RocketExplosion` prefab identified separately and not
+  used as the active ProjectileDamager impact path.
 
 See:
 
@@ -179,8 +187,9 @@ bash tools/unity/create-arena-prototype.sh
 ```
 
 The batch process builds PortCore, prepares optional private reconstruction
-data, attempts exact click-weapon hierarchy extraction/validation when UnityPy
-is available, launches Unity in batch mode and invokes the Arena scene
+data, extracts canonical private textures, extracts the SmallExplosion impact
+WAV when UnityPy is available, attempts exact click-weapon hierarchy
+extraction/validation, launches Unity in batch mode and invokes the Arena scene
 generator. Strict hierarchy recovery can be required with
 `-RequireWeaponHierarchy` / `REQUIRE_WEAPON_HIERARCHY=1`.
 
