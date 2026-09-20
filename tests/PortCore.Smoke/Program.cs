@@ -941,4 +941,45 @@ AssertEqual(-4.5, centeredCorner.X, "Voxel even-size X offset");
 AssertEqual(0, centeredCorner.Y, "Voxel even-size Y");
 AssertEqual(3.5, centeredCorner.Z, "Voxel even-size Z inversion");
 
+// Original ClickerUtils presentation formatting
+if (DisplayFormatting.FormatValue(999) != "999")
+    throw new Exception("Simplified value below 1000");
+if (DisplayFormatting.FormatValue(1000) != "1.00K")
+    throw new Exception("Simplified 1000");
+if (DisplayFormatting.FormatValue(1234) != "1.23K")
+    throw new Exception("Simplified 1234");
+if (DisplayFormatting.FormatValue(999999) != "999K")
+    throw new Exception("Simplified 999999");
+if (DisplayFormatting.FormatValue(1_000_000) != "1.00M")
+    throw new Exception("Simplified one million");
+
+if (DisplayFormatting.FormatValue(
+        1_234_567,
+        NumberDisplayType.Scientific) != "1.23e⁶")
+    throw new Exception("Engineering scientific formatting");
+
+if (DisplayFormatting.FormatValue(
+        1_999,
+        NumberDisplayType.ScientificNormalized) != "1.99e³")
+    throw new Exception("Normalized scientific truncation");
+
+if (DisplayFormatting.GetSuffix(6) != "a" ||
+    DisplayFormatting.GetSuffix(31) != "z" ||
+    DisplayFormatting.GetSuffix(32) != "a¹")
+    throw new Exception("Suffix rollover formatting");
+
+if (DisplayFormatting.GetSuperscriptNumber(-12) != "⁻¹²")
+    throw new Exception("Superscript formatting");
+
+if (DisplayFormatting.FormatSeconds(3661) != "1:01:01")
+    throw new Exception("Integer duration formatting");
+if (DisplayFormatting.FormatSeconds(60f) != "60.0")
+    throw new Exception("Float duration <= 60");
+if (DisplayFormatting.FormatSeconds(61.29f) != "1:01.2")
+    throw new Exception("Float duration > 60");
+
+if (DisplayFormatting.FormatULong(999_999) != "999,999" ||
+    DisplayFormatting.FormatULong(1_234_567) != "1.234 M")
+    throw new Exception("ULong formatting");
+
 Console.WriteLine("PortCore smoke tests passed.");
