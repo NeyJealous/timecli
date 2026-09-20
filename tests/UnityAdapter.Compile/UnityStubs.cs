@@ -183,11 +183,15 @@ namespace UnityEngine
         public void RecalculateBounds() { }
     }
 
+    public class Texture : Object { }
+    public sealed class Texture2D : Texture { }
+
     public sealed class Material : Object
     {
         public Material(Shader shader) { }
         public string name { get; set; } = string.Empty;
         public Color color { get; set; }
+        public Texture mainTexture { get; set; } = default!;
     }
 
     public sealed class MaterialPropertyBlock
