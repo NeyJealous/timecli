@@ -187,11 +187,111 @@ namespace TimeCli.UnityRuntime
                 auxiliary,
                 GetCrosshairTargetPoint());
 
-            ShootClickPistol(now);
+            if (bootstrap.Game.ClickWeapons.IsWeaponActive(
+                    ClickWeaponSlot.Pistol,
+                    now))
+            {
+                ShootClickPistol(now);
+            }
+
             SyncPickupViews(now);
 
             if (bootstrap.Arena.CurrentEnemy == null)
                 ClearViews();
+        }
+
+        public ClickWeaponMode CycleClickWeaponMode(
+            ClickWeaponSlot slot)
+        {
+            if (bootstrap == null || !bootstrap.IsReady)
+                return ClickWeaponMode.ManualAim;
+
+            double now = Time.timeAsDouble;
+            ClickWeaponMode previous =
+                bootstrap.Game.ClickWeapons.GetMode(slot);
+            ClickWeaponMode next =
+                bootstrap.Game.ClickWeapons.CycleMode(
+                    slot,
+                    now);
+
+            ApplyClickWeaponModePresentation(
+                slot,
+                previous,
+                next);
+
+            return next;
+        }
+
+        public ClickWeaponMode SetClickWeaponMode(
+            ClickWeaponSlot slot,
+            ClickWeaponMode mode)
+        {
+            if (bootstrap == null || !bootstrap.IsReady)
+                return mode;
+
+            double now = Time.timeAsDouble;
+            ClickWeaponMode previous =
+                bootstrap.Game.ClickWeapons.GetMode(slot);
+            ClickWeaponMode next =
+                bootstrap.Game.ClickWeapons.SetMode(
+                    slot,
+                    mode,
+                    now);
+
+            ApplyClickWeaponModePresentation(
+                slot,
+                previous,
+                next);
+
+            return next;
+        }
+
+        private void ApplyClickWeaponModePresentation(
+            ClickWeaponSlot slot,
+            ClickWeaponMode previous,
+            ClickWeaponMode next)
+        {
+            if (_clickWeaponPresentation == null ||
+                previous == next)
+            {
+                return;
+            }
+
+            if (next == ClickWeaponMode.Disabled)
+            {
+                switch (slot)
+                {
+                    case ClickWeaponSlot.Pistol:
+                        _clickWeaponPresentation.PlayPistolDisappear();
+                        break;
+                    case ClickWeaponSlot.Cannon:
+                        _clickWeaponPresentation.PlayCannonDisappear();
+                        break;
+                    case ClickWeaponSlot.Launcher:
+                        _clickWeaponPresentation.PlayLauncherDisappear();
+                        break;
+                }
+
+                return;
+            }
+
+            // UIButtonIdleMode only calls Show when cycling
+            // Disabled -> ManualAim. AutoAim changes do not animate.
+            if (previous != ClickWeaponMode.Disabled)
+                return;
+
+            switch (slot)
+            {
+                case ClickWeaponSlot.Pistol:
+                    _clickWeaponPresentation.PlayPistolAppear();
+                    break;
+                case ClickWeaponSlot.Cannon:
+                    _clickWeaponPresentation.PlayCannonAppear();
+                    break;
+                case ClickWeaponSlot.Launcher:
+                    _clickWeaponPresentation.PlayLauncherAppear();
+                    break;
+            }
         }
 
         public void SpawnCurrentEnemy()
