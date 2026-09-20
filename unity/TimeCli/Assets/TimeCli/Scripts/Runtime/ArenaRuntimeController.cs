@@ -144,10 +144,15 @@ namespace TimeCli.UnityRuntime
             Camera camera = Camera.main;
             if (camera != null)
             {
-                _crosshairPosition =
+                Vector3 screenPosition =
                     camera.WorldToScreenPoint(
                         targetPosition);
-                _crosshairPosition.z = 0f;
+
+                _crosshairPosition =
+                    new Vector3(
+                        screenPosition.x,
+                        screenPosition.y,
+                        0f);
             }
 
             ClickWeaponFirePlan auxiliary =
