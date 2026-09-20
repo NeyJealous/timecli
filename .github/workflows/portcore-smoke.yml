@@ -11,6 +11,7 @@ on:
       - "tests/PortCore.ClickWeaponsScenario/**"
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
+      - "tools/unity/**"
       - ".github/workflows/portcore-smoke.yml"
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - "tests/PortCore.ClickWeaponsScenario/**"
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
+      - "tools/unity/**"
 
 jobs:
   smoke:
@@ -76,3 +78,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run --project tests/PortCore.ClickWeaponsScenario/PortCore.ClickWeaponsScenario.csproj --configuration Release
+
+
+  tooling-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile public Unity tooling
+        run: python -m py_compile tools/unity/*.py

@@ -46,6 +46,42 @@ inputs. When one of the target GameObjects is found it records:
 The output is marked `originalDerived: true` and belongs only in the ignored
 private workspace. It must not be committed to the public repository.
 
+Validate it with:
+
+```bash
+python tools/unity/validate-private-weapon-hierarchy.py \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+```
+
+The validator rejects malformed vectors/quaternions, missing parent nodes,
+transform cycles and reports that do not contain Pistol, Cannon and Launcher.
+It also prints likely fire/muzzle/barrel descendants for manual review.
+
+## Batch integration
+
+When `ORIGINAL_DATA_SOURCE` / `-OriginalDataSource` is supplied, the Arena
+setup scripts now attempt hierarchy extraction automatically when UnityPy is
+installed.
+
+To make exact hierarchy recovery mandatory:
+
+Windows:
+
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -OriginalDataSource "C:\path\to\apk\assets\bin\Data" \
+  -RequireWeaponHierarchy
+```
+
+macOS/Linux:
+
+```bash
+UNITY_PATH="/path/to/Unity" \
+ORIGINAL_DATA_SOURCE="/path/to/apk/assets/bin/Data" \
+REQUIRE_WEAPON_HIERARCHY=1 \
+bash tools/unity/create-arena-prototype.sh
+```
+
 ## Promotion gate
 
 The hierarchy/pivot reconstruction can be promoted into public clean-room

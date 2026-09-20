@@ -99,7 +99,16 @@ python -m pip install UnityPy
 python tools/unity/extract-private-weapon-hierarchy.py \
   /path/to/apk/assets/bin/Data \
   unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+
+python tools/unity/validate-private-weapon-hierarchy.py \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
 ```
+
+The normal Arena setup scripts perform both steps automatically when
+`OriginalDataSource` is supplied and UnityPy is installed. Use
+`-RequireWeaponHierarchy` on Windows or
+`REQUIRE_WEAPON_HIERARCHY=1` on macOS/Linux to fail setup instead of falling
+back when UnityPy is unavailable.
 
 See `docs/CLICK_WEAPON_HIERARCHY_RECOVERY.md`.
 

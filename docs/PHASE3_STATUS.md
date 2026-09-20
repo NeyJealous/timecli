@@ -162,7 +162,10 @@ bash tools/unity/create-arena-prototype.sh
 ```
 
 The batch process builds PortCore, prepares optional private reconstruction
-data, launches Unity in batch mode and invokes the Arena scene generator.
+data, attempts exact click-weapon hierarchy extraction/validation when UnityPy
+is available, launches Unity in batch mode and invokes the Arena scene
+generator. Strict hierarchy recovery can be required with
+`-RequireWeaponHierarchy` / `REQUIRE_WEAPON_HIERARCHY=1`.
 
 ## Current prototype path
 
@@ -184,6 +187,7 @@ Code-side work can continue in parallel. The next reconstruction targets are:
 
 - exact original Rocket tail particle/material fidelity (the recovered
   0.025-second emission cadence is now implemented);
-- exact click-weapon hierarchy/pivot animation (public forensic extractor is
-  now ready; original-derived transform report still needs to be generated);
+- exact click-weapon hierarchy/pivot animation (extractor + structural
+  validator + batch integration are ready; the canonical original-derived
+  transform report still needs to be generated and reviewed);
 - original Hero projectile presentation.
