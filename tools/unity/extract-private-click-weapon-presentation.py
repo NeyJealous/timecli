@@ -30,6 +30,7 @@ import tempfile
 from pathlib import Path
 
 import UnityPy
+from UnityPy.export.Texture2DConverter import parse_image_data
 
 MESHES = {
     242: ("base_and_grip", "TimeCliPistolBaseAndGripMesh.txt"),
@@ -46,6 +47,15 @@ TEXTURES = {
     20: ("s20_dwith spec for unity MOD 2", "TimeCliClickCannonTexture.png"),
     16: ("tgalauncher MOD", "TimeCliClickLauncherTexture.png"),
 }
+
+CUBEMAP_FACE_NAMES = (
+    "PositiveX",
+    "NegativeX",
+    "PositiveY",
+    "NegativeY",
+    "PositiveZ",
+    "NegativeZ",
+)
 
 def gather_split_parts(data_dir: Path, base: str) -> list[Path]:
     prefix = base + ".split"
@@ -142,6 +152,56 @@ def write_texture(env, path_id: int, expected_name: str, target: Path) -> None:
         f"size={image.width}x{image.height}"
     )
 
+def write_cubemap_faces(
+    env,
+    path_id: int,
+    expected_name: str,
+    output_prefix: str,
+    output_dir: Path,
+) -> None:
+    obj = find_object(env, "Cubemap", path_id)
+    cube = obj.parse_as_object()
+
+    if cube.m_Name != expected_name:
+        raise RuntimeError(
+            f"Cubemap pathID {path_id}: expected {expected_name!r}, "
+            f"got {cube.m_Name!r}"
+        )
+
+    data = bytes(cube.image_data)
+    face_bytes = int(cube.m_CompleteImageSize)
+    expected_bytes = face_bytes * 6
+
+    if len(data) != expected_bytes:
+        raise RuntimeError(
+            f"Cubemap {expected_name!r}: expected {expected_bytes} bytes "
+            f"(6 x {face_bytes}), got {len(data)}"
+        )
+
+    for index, face_name in enumerate(CUBEMAP_FACE_NAMES):
+        start = index * face_bytes
+        face_data = data[start:start + face_bytes]
+
+        image = parse_image_data(
+            face_data,
+            int(cube.m_Width),
+            int(cube.m_Height),
+            cube.m_TextureFormat,
+            getattr(cube.object_reader, "version", (0, 0, 0, 0)),
+            getattr(cube.object_reader, "platform", 0),
+            getattr(cube, "m_PlatformBlob", None),
+            True,
+        )
+
+        target = output_dir / f"{output_prefix}_{face_name}.png"
+        image.save(target, format="PNG")
+        print(
+            f"{target.name}: cubemap pathID={path_id} "
+            f"name={cube.m_Name!r} face={face_name} "
+            f"size={image.width}x{image.height}"
+        )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -169,6 +229,17 @@ def main() -> int:
             staging,
             required=False,
         )
+        shared0 = materialize(
+            data_dir,
+            "sharedassets0.assets",
+            staging,
+        )
+        materialize(
+            data_dir,
+            "sharedassets0.resource",
+            staging,
+            required=False,
+        )
         globals_file = materialize(
             data_dir,
             "globalgamemanagers.assets",
@@ -182,6 +253,7 @@ def main() -> int:
         )
 
         shared_env = UnityPy.load(str(shared))
+        shared0_env = UnityPy.load(str(shared0))
         global_env = UnityPy.load(str(globals_file))
 
         for path_id, (name, filename) in MESHES.items():
@@ -199,6 +271,21 @@ def main() -> int:
                 name,
                 args.output_dir / filename,
             )
+
+        write_cubemap_faces(
+            shared_env,
+            427,
+            "Channel_Cubemap",
+            "TimeCliChannelCubemap",
+            args.output_dir,
+        )
+        write_cubemap_faces(
+            shared0_env,
+            61,
+            "GreebleBox_Cubemap",
+            "TimeCliGreebleBoxCubemap",
+            args.output_dir,
+        )
 
     return 0
 
