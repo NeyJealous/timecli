@@ -261,12 +261,48 @@ logarithmic rolloff, minDistance 10 and maxDistance 100. The modern runtime
 explicitly starts the private clip because runtime-created AudioSource
 properties are assigned after `AddComponent`.
 
-The original Rocket shader also references `Channel_Cubemap`. Its Unity 5.4
-compiled subprogram blob is not yet promoted as exact shader math: UnityPy
-1.25.3 fails while decoding this specific 5.4 blob. The current public
-`TimeCli/WeaponDiffuseColor` therefore reproduces the confirmed
-`_MainTex * _Color` presentation as a clean fallback and does not claim exact
-cubemap/reflection equivalence.
+The original Rocket shader also references `Channel_Cubemap`. UnityPy's
+high-level Unity 5.4 Shader converter cannot parse this old compiled program,
+so the canonical `m_SubProgramBlob` was decompressed directly as LZ4. Both
+GLES and GLES3 programs were recovered and agree.
+
+The canonical vertex program transforms the local normal by the upper-left
+3x3 of `unity_ObjectToWorld` and uses that vector directly as the cubemap
+lookup direction; it does **not** construct a reflection vector.
+
+The canonical fragment program is equivalent to:
+
+```text
+texcol  = sample(_MainTex, uv)
+cubeCol = sample(_CubeMap, worldNormal)
+
+base.rgb = texcol.rgb * cubeCol.rgb
+base.a   = texcol.a
+
+base = lerp(base, base * _Color.aaaa, texcol.aaaa)
+output = base + texcol.a * _Color
+```
+
+Thus the MainTex alpha channel is the illumination/color mask. The public
+`TimeCli/WeaponDiffuseColor` is now a clean-room translation of this recovered
+GLES equation.
+
+`Channel_Cubemap` is a 64x64 ETC_RGB4 cubemap with six faces and seven mip
+levels. The private extractor slices the canonical serialized image payload into
+six complete face chains and exports the decoded 64x64 base faces as
+runtime-readable `.bytes` PNG payloads:
+
+- `TimeCliChannelCubemap_PositiveX.bytes`
+- `TimeCliChannelCubemap_NegativeX.bytes`
+- `TimeCliChannelCubemap_PositiveY.bytes`
+- `TimeCliChannelCubemap_NegativeY.bytes`
+- `TimeCliChannelCubemap_PositiveZ.bytes`
+- `TimeCliChannelCubemap_NegativeZ.bytes`
+
+`PrivateCubemapLoader` reconstructs the modern Unity Cubemap and regenerates
+its mip chain. The six-slice decoder was validated against the canonical
+serialized assets; all faces decode to 64x64 and the first sliced face matches
+UnityPy's independent Cubemap decode byte-for-byte.
 
 ## ProjectileDamager
 
