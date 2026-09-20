@@ -71,6 +71,8 @@ namespace UnityEngine
     {
         public Vector3 position { get; set; }
         public Vector3 localPosition { get; set; }
+        public Vector3 localScale { get; set; }
+        public Vector3 forward { get; set; }
         public Quaternion rotation { get; set; }
         public Quaternion localRotation { get; set; }
 
@@ -97,11 +99,22 @@ namespace UnityEngine
 
         public static Vector3 operator *(Vector3 value, float scalar) =>
             new(value.x * scalar, value.y * scalar, value.z * scalar);
+
+        public static Vector3 operator +(Vector3 a, Vector3 b) =>
+            new(a.x + b.x, a.y + b.y, a.z + b.z);
+
+        public static Vector3 Lerp(Vector3 a, Vector3 b, float t) =>
+            new(
+                a.x + (b.x - a.x) * t,
+                a.y + (b.y - a.y) * t,
+                a.z + (b.z - a.z) * t);
     }
 
     public readonly struct Quaternion
     {
         public static Quaternion Euler(float x, float y, float z) => new();
+        public static Quaternion LookRotation(Vector3 forward) => new();
+        public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => new();
     }
 
     public readonly struct Rect
@@ -122,6 +135,7 @@ namespace UnityEngine
 
     public sealed class Camera : Behaviour
     {
+        public static Camera main => default!;
         public bool orthographic { get; set; }
         public float orthographicSize { get; set; }
         public float fieldOfView { get; set; }
@@ -154,6 +168,7 @@ namespace UnityEngine
 
     public sealed class BoxCollider : Component
     {
+        public bool enabled { get; set; } = true;
         public Vector3 center { get; set; }
         public Vector3 size { get; set; }
     }
@@ -172,6 +187,7 @@ namespace UnityEngine
     {
         public Material(Shader shader) { }
         public string name { get; set; } = string.Empty;
+        public Color color { get; set; }
     }
 
     public sealed class MaterialPropertyBlock
@@ -194,12 +210,15 @@ namespace UnityEngine
     public static class Random
     {
         public static int Range(int minInclusive, int maxExclusive) => minInclusive;
+        public static float Range(float minInclusive, float maxInclusive) => minInclusive;
         public static float value => 0.5f;
+        public static Vector3 onUnitSphere => new(0f, 0f, 1f);
     }
 
     public static class Time
     {
         public static double timeAsDouble => 0.0;
+        public static float deltaTime => 1f / 60f;
     }
 
     public static class Debug
