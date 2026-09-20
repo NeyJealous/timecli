@@ -117,6 +117,33 @@ namespace TimeCli.UnityRuntime
             RebuildViews(spawned.Model);
         }
 
+        public bool RequestPreviousWave()
+        {
+            if (!bootstrap.Game.Arena.RequestPreviousArena())
+                return false;
+
+            RebuildAfterExternalStateChange();
+            return true;
+        }
+
+        public bool RequestNextWave()
+        {
+            if (!bootstrap.Game.Arena.RequestNextArena())
+                return false;
+
+            RebuildAfterExternalStateChange();
+            return true;
+        }
+
+        public void RebuildAfterExternalStateChange()
+        {
+            bootstrap.Arena.ClearActiveEnemyWithoutProgression();
+            ClearViews();
+
+            if (!bootstrap.Game.Arena.BossRestartPending)
+                SpawnCurrentEnemy();
+        }
+
         private void ApplyVolleyToViews(HeroVolleyExecutionResult execution)
         {
             int count = Math.Min(
