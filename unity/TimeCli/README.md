@@ -98,14 +98,16 @@ not guessed. A forensic extractor is available:
 python -m pip install UnityPy
 python tools/unity/extract-private-weapon-hierarchy.py \
   /path/to/apk/assets/bin/Data \
-  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json
 
 python tools/unity/validate-private-weapon-hierarchy.py \
-  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json
 ```
 
 The normal Arena setup scripts perform both steps automatically when
-`OriginalDataSource` is supplied and UnityPy is installed. Use
+`OriginalDataSource` is supplied and UnityPy is installed. The resulting
+private JSON becomes a Unity `TextAsset`; runtime rebuilds only the transform
+hierarchy and binds its verified fire spots over the public fallback. Use
 `-RequireWeaponHierarchy` on Windows or
 `REQUIRE_WEAPON_HIERARCHY=1` on macOS/Linux to fail setup instead of falling
 back when UnityPy is unavailable.
