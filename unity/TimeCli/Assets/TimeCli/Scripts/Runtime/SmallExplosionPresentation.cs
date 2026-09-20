@@ -345,7 +345,7 @@ namespace TimeCli.UnityRuntime
                  i++)
             {
                 Vector3 unit =
-                    UnityEngine.UnityEngine.Random.insideUnitSphere;
+                    UnityEngine.Random.insideUnitSphere;
 
                 Vector3 spawnOffset =
                     new(
@@ -359,9 +359,9 @@ namespace TimeCli.UnityRuntime
 
                 Vector3 randomVelocity =
                     new(
-                        UnityEngine.UnityEngine.Random.Range(-6f, 6f),
-                        UnityEngine.UnityEngine.Random.Range(-6f, 6f),
-                        UnityEngine.UnityEngine.Random.Range(-6f, 6f));
+                        UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.Random.Range(-6f, 6f),
+                        UnityEngine.Random.Range(-6f, 6f));
 
                 var emit =
                     new ParticleSystem.EmitParams
@@ -374,23 +374,23 @@ namespace TimeCli.UnityRuntime
                                 .LocalVelocity +
                             randomVelocity,
                         startLifetime =
-                            UnityEngine.UnityEngine.Random.Range(
+                            UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMin,
                                 OriginalSmallExplosionPresentation
                                     .LifetimeMax),
                         startSize =
-                            UnityEngine.UnityEngine.Random.Range(
+                            UnityEngine.Random.Range(
                                 OriginalSmallExplosionPresentation
                                     .SizeMin,
                                 OriginalSmallExplosionPresentation
                                     .SizeMax),
                         rotation =
-                            UnityEngine.UnityEngine.Random.Range(
+                            UnityEngine.Random.Range(
                                 0f,
                                 2f * Mathf.PI),
                         angularVelocity =
-                            UnityEngine.UnityEngine.Random.Range(
+                            UnityEngine.Random.Range(
                                -OriginalSmallExplosionPresentation
                                     .RandomAngularVelocity,
                                 OriginalSmallExplosionPresentation
