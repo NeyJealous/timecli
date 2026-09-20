@@ -221,7 +221,10 @@ namespace TimeCli.UnityRuntime
             if (blockPrefab != null)
                 return Instantiate(blockPrefab);
 
-            return GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var instance = new GameObject("Voxel");
+            instance.AddComponent<OriginalBlockGeometry>();
+            instance.AddComponent<VoxelBlockView>();
+            return instance;
         }
 
         private void RefreshView(int index)
