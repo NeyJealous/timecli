@@ -3,6 +3,7 @@ Shader "TimeCli/TimeCubeEnemy"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
+        _MainTex ("Texture", 2D) = "white" {}
         _PulseAmount ("Pulse Amount", Range(0,0.25)) = 0.08
         _PulseSpeed ("Pulse Speed", Float) = 3.0
         _StripeScale ("Stripe Scale", Float) = 8.0
@@ -28,6 +29,7 @@ Shader "TimeCli/TimeCubeEnemy"
             {
                 float4 vertex : POSITION;
                 fixed4 color : COLOR;
+                float2 uv : TEXCOORD0;
             };
 
             struct v2f
@@ -35,8 +37,11 @@ Shader "TimeCli/TimeCubeEnemy"
                 float4 vertex : SV_POSITION;
                 fixed4 color : COLOR0;
                 float2 patternUv : TEXCOORD0;
+                float2 uv : TEXCOORD1;
             };
 
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
             fixed4 _Color;
             float _PulseAmount;
             float _PulseSpeed;
@@ -50,6 +55,7 @@ Shader "TimeCli/TimeCubeEnemy"
                 // The recovered GLES program derives the TimeCube coordinates
                 // from vertex Z/Y and applies a sinusoidal body animation.
                 o.patternUv = p.zy * 1.1 + 0.5;
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
                 if (v.color.a >= 0.999)
                 {
@@ -75,7 +81,14 @@ Shader "TimeCli/TimeCubeEnemy"
                     (i.patternUv.x + i.patternUv.y) * _StripeScale +
                     _Time.y * 4.0);
 
-                fixed3 rgb = lerp(i.color.rgb, fixed3(1,1,1), stripe * 0.45);
+                fixed4 texel = tex2D(_MainTex, i.uv);
+                fixed mask = max(max(texel.r, texel.g), max(texel.b, texel.a));
+
+                fixed3 rgb = lerp(
+                    i.color.rgb,
+                    fixed3(1,1,1),
+                    saturate(stripe * 0.25 + mask * 0.75));
+
                 return fixed4(rgb, 1.0);
             }
             ENDCG
