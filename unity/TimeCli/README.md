@@ -131,7 +131,8 @@ The prototype now contains reconstructed behavior/presentation for:
 - Flak/Rocket trajectory and collision timing;
 - all Hero headless combat through PortCore.
 
-The development HUD still replaces the original UI for now.
+The reconstructed Arena HUD is now the default prototype presentation.
+Remaining progression/additive screens are still pending reconstruction.
 
 ## Runtime boundary
 
