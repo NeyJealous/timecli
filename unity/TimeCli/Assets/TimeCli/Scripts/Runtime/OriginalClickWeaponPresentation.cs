@@ -149,6 +149,11 @@ namespace TimeCli.UnityRuntime
                 cannon.Model,
                 launcher.Model);
 
+            // ClickCannon/ClickLauncher.Awake disable animator.gameObject until
+            // their delayed Show coroutine runs. Pistol is active from start.
+            cannon.Model.gameObject.SetActive(false);
+            launcher.Model.gameObject.SetActive(false);
+
             AudioSource pistolAudio =
                 ClickWeaponAudioFactory.Attach(
                     pistol.Root,
@@ -256,6 +261,7 @@ namespace TimeCli.UnityRuntime
 
         public void PlayPistolAppear()
         {
+            _pistolModel.gameObject.SetActive(true);
             StartPistolVisibility(
                 OriginalClickWeaponVisibilityAnimation.PistolAppear,
                 OriginalClickWeaponVisibilityAnimation.PistolAppearDuration);
@@ -271,6 +277,7 @@ namespace TimeCli.UnityRuntime
 
         public void PlayCannonAppear()
         {
+            _cannonModel.gameObject.SetActive(true);
             StartCannonVisibility(
                 OriginalClickWeaponVisibilityAnimation.CannonAppear,
                 OriginalClickWeaponVisibilityAnimation.CannonAppearDuration);
@@ -286,6 +293,7 @@ namespace TimeCli.UnityRuntime
 
         public void PlayLauncherAppear()
         {
+            _launcherModel.gameObject.SetActive(true);
             StartLauncherVisibility(
                 OriginalClickWeaponVisibilityAnimation.LauncherAppear,
                 OriginalClickWeaponVisibilityAnimation.LauncherAppearDuration);
