@@ -759,6 +759,78 @@ AssertClose(
     0.000001f,
     "Projectile OBJ restores normal X");
 
+// Canonical click-weapon model presentation.
+if (OriginalClickWeaponVisualPresentation.PistolBaseVertexCount != 684 ||
+    OriginalClickWeaponVisualPresentation.PistolChamberOneVertexCount != 287 ||
+    OriginalClickWeaponVisualPresentation.PistolChamberTwoVertexCount != 287 ||
+    OriginalClickWeaponVisualPresentation.PistolTopVertexCount != 484 ||
+    OriginalClickWeaponVisualPresentation.PistolTriggerVertexCount != 60 ||
+    OriginalClickWeaponVisualPresentation.CannonVertexCount != 864 ||
+    OriginalClickWeaponVisualPresentation.LauncherVertexCount != 836)
+{
+    throw new Exception(
+        "Click-weapon recovered mesh vertex counts changed.");
+}
+
+AssertClose(
+    OriginalClickWeaponVisualPresentation.PistolBasePosition.y,
+   -0.04195035249f,
+    0.000001f,
+    "Pistol base local Y");
+AssertClose(
+    OriginalClickWeaponVisualPresentation.PistolBasePosition.z,
+   -0.08007901162f,
+    0.000001f,
+    "Pistol base local Z");
+AssertClose(
+    OriginalClickWeaponVisualPresentation.PistolChamberOnePosition.y,
+    0.1756424606f,
+    0.000001f,
+    "Pistol chamber one local Y");
+AssertClose(
+    OriginalClickWeaponVisualPresentation.PistolChamberTwoPosition.y,
+    0.09706403315f,
+    0.000001f,
+    "Pistol chamber two local Y");
+AssertClose(
+    OriginalClickWeaponVisualPresentation.PistolTriggerPosition.z,
+    0.02273671329f,
+    0.000001f,
+    "Pistol trigger local Z");
+
+AssertColor(
+    OriginalClickWeaponVisualPresentation.PistolColor,
+    0f,
+    0.4066853523f,
+    1f,
+    1f,
+    "Pistol material color");
+AssertColor(
+    OriginalClickWeaponVisualPresentation.CannonColor,
+    1f,
+    0.8503905535f,
+    0.4980391860f,
+    1f,
+    "Cannon material color");
+AssertColor(
+    OriginalClickWeaponVisualPresentation.LauncherColor,
+    0.3286908865f,
+    1f,
+    0f,
+    1f,
+    "Launcher material color");
+
+if (OriginalClickWeaponVisualPresentation.PistolTopMeshResource !=
+        "TimeCliPistolTop1Mesh" ||
+    OriginalClickWeaponVisualPresentation.CannonMeshResource !=
+        "TimeCliClickCannonMesh" ||
+    OriginalClickWeaponVisualPresentation.LauncherMeshResource !=
+        "TimeCliClickLauncherMesh")
+{
+    throw new Exception(
+        "Click-weapon private resource contract changed.");
+}
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
