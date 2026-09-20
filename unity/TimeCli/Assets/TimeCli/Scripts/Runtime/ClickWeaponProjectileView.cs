@@ -27,6 +27,7 @@ namespace TimeCli.UnityRuntime
         private bool _rocketOrbit;
         private Transform _rocketPivot;
         private Transform _rocketVisual;
+        private Transform _rocketTailAnchor;
         private float _rocketRotationOffset;
         private float _rocketRadialTimer;
         private float _rocketTailAccumulator;
@@ -38,9 +39,8 @@ namespace TimeCli.UnityRuntime
             double damage,
             double fireConeNormalized)
         {
-            GameObject go = CreateVisual(
-                "ClickCannon_FlakBullet",
-                new Vector3(0.12f, 0.12f, 0.24f));
+            GameObject go =
+                ProjectileVisualFactory.CreateFlak();
 
             go.transform.position = start;
             go.transform.LookAt(target);
@@ -84,13 +84,16 @@ namespace TimeCli.UnityRuntime
                 root.transform,
                 false);
 
-            var visual = CreateVisual(
-                "RocketProjectile",
-                new Vector3(0.18f, 0.18f, 0.42f));
+            GameObject visual =
+                ProjectileVisualFactory.CreateRocketProjectile(
+                    out Transform tailAnchor);
 
             visual.transform.SetParent(
                 pivot.transform,
                 false);
+
+            ProjectileVisualFactory.AttachRocketAudio(
+                pivot.transform);
 
             var view =
                 root.AddComponent<ClickWeaponProjectileView>();
@@ -105,6 +108,7 @@ namespace TimeCli.UnityRuntime
 
             view._rocketPivot = pivot.transform;
             view._rocketVisual = visual.transform;
+            view._rocketTailAnchor = tailAnchor;
 
             if (rocketIndex > 0 &&
                 rocketCount > 1)
@@ -117,47 +121,6 @@ namespace TimeCli.UnityRuntime
             }
 
             return view;
-        }
-
-        private static GameObject CreateVisual(
-            string name,
-            Vector3 scale)
-        {
-            GameObject go =
-                GameObject.CreatePrimitive(
-                    PrimitiveType.Sphere);
-
-            go.name = name;
-            go.transform.localScale = scale;
-
-            Collider collider =
-                go.GetComponent<Collider>();
-
-            if (collider != null)
-                Destroy(collider);
-
-            Renderer renderer =
-                go.GetComponent<Renderer>();
-
-            if (renderer != null)
-            {
-                Shader shader =
-                    Shader.Find("TimeCli/BlockVertexColor");
-
-                renderer.sharedMaterial =
-                    new Material(shader)
-                    {
-                        name =
-                            "TimeCli_Reconstructed_ClickProjectile",
-                        color = new Color(
-                            1f,
-                            0.75f,
-                            0.2f,
-                            1f)
-                    };
-            }
-
-            return go;
         }
 
         private void Initialize(
@@ -237,23 +200,17 @@ namespace TimeCli.UnityRuntime
                     dt *
                     OriginalProjectilePresentation.RocketRadialRampSpeed;
 
-                if (_rocketRadialTimer < 1f)
-                {
-                    _rocketVisual.localPosition =
-                        new Vector3(
+                _rocketVisual.localPosition =
+                    new Vector3(
+                        Mathf.Lerp(
                             0f,
-                            Mathf.Lerp(
-                                0f,
-                                1f,
-                                _rocketRadialTimer),
-                            0f);
+                            1f,
+                            _rocketRadialTimer),
+                        0f,
+                        0f);
 
-                    return;
-                }
+                return;
             }
-
-            _rocketVisual.localPosition =
-                new Vector3(1f, 0f, 0f);
         }
 
         private void UpdateRocketTail(float dt)
@@ -270,14 +227,18 @@ namespace TimeCli.UnityRuntime
                 return;
 
             Vector3 position =
-                _rocketVisual != null
-                    ? _rocketVisual.position
-                    : transform.position;
+                _rocketTailAnchor != null
+                    ? _rocketTailAnchor.position
+                    : (_rocketVisual != null
+                        ? _rocketVisual.position
+                        : transform.position);
 
             Quaternion rotation =
-                _rocketVisual != null
-                    ? _rocketVisual.rotation
-                    : transform.rotation;
+                _rocketTailAnchor != null
+                    ? _rocketTailAnchor.rotation
+                    : (_rocketVisual != null
+                        ? _rocketVisual.rotation
+                        : transform.rotation);
 
             for (int i = 0; i < emissionCount; i++)
             {
