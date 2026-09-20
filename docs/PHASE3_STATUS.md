@@ -6,42 +6,99 @@ Status: **in progress**
 
 The modern Unity project is pinned to Unity **6000.3.24f1**.
 
-PortCore Phase 2 is frozen at adapter API **1.0.0** and now builds for
+PortCore Phase 2 is frozen at adapter API **1.0.0** and builds for
 `netstandard2.1`.
 
 ## Added
 
-- minimal Unity project skeleton under `unity/TimeCli`;
-- generated PortCore DLL sync scripts for Windows/macOS/Linux;
+- minimal Unity project under `unity/TimeCli`;
+- PortCore DLL sync scripts for Windows/macOS/Linux;
 - `TimeCliBootstrap`;
 - Unity-to-PortCore random adapter;
 - serializable voxel catalog asset;
 - synthetic fallback voxel catalog;
+- private binary voxel-catalog import path;
 - first `ArenaRuntimeController`;
 - placeholder `VoxelBlockView`;
-- direct use of the tested `HeadlessArenaEngine` for click and Hero auto-fire.
+- development HUD;
+- one-click Editor command for creating `ArenaPrototype.unity`;
+- direct use of tested `HeadlessArenaEngine` for click and Hero auto-fire;
+- exact original Qubicle -> Arena block centering/inverted-Z transform.
 
-The fallback catalog exists only so the modern project can be brought up before
-private original-derived voxel layouts are imported.
+## Private canonical voxel import
 
-## First visual milestone
+The locally recovered 141-model coordinate corpus can now be converted without
+committing the original-derived data:
 
-The initial Arena prototype should prove this pipeline:
-
-```text
-Unity frame/input
-    -> PortCore command
-    -> tested combat/progression result
-    -> placeholder cube view refresh
-    -> next enemy / next wave
+```bash
+python tools/unity/build-private-voxel-catalog.py \
+  /path/to/voxel_layouts_private.json \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources/TimeCliVoxelCatalog.bytes
 ```
 
-No gameplay formula should be reimplemented in MonoBehaviours.
+`PrivateGenerated/` is ignored by Git.
+
+At runtime `TimeCliBootstrap` loads catalogs in this order:
+
+1. explicitly assigned `UnityVoxelCatalogAsset`;
+2. private `Resources/TimeCliVoxelCatalog.bytes`;
+3. generated synthetic debug catalog.
+
+The converter was locally round-trip validated against all **141 models / 8262
+occupied voxels / 43 boss-key models**.
+
+## Exact model transform recovered
+
+For each raw Qubicle block, the original Arena computes:
+
+```text
+center = size / 2
+center.y = 0
+center.x -= 0.5
+center.z -= 0.5
+
+local = raw - center
+local.z *= -1
+```
+
+This is implemented in `VoxelCoordinateMath.ToArenaLocalPosition` and has
+PortCore regression tests.
+
+## Current playable prototype path
+
+```text
+Unity input/frame
+    -> TimeCliBootstrap
+    -> GameState
+    -> HeadlessArenaEngine
+    -> tested combat/progression result
+    -> ArenaRuntimeController
+    -> VoxelBlockView placeholder
+```
+
+The development HUD exposes:
+
+- wave/max wave and farm navigation;
+- Gold, Team DPS and Click damage;
+- Hero +1 / next-upgrade purchasing;
+- Click Pistol purchasing;
+- Time/Weapon Cube balances;
+- Time Warp when pending Time Cubes exist.
+
+## Validation
+
+Latest PortCore validation is green across:
+
+- smoke;
+- timeline;
+- hero-combat;
+- Unity `netstandard2.1` compatibility.
 
 ## Next
 
-- generate/open the Arena prototype scene;
-- add development HUD for Gold, wave, DPS, purchase actions and farm navigation;
-- import canonical private voxel catalog into a ScriptableObject;
-- restore exact original model centering/scaling;
-- begin replacement of placeholder cubes with reconstructed original visuals.
+- open/generate the Arena prototype in Unity and fix any Editor-only compile or
+  serialization issues;
+- replace synthetic development geometry with the private canonical binary
+  catalog;
+- reconstruct exact Arena camera/model scale/material presentation;
+- begin original UI and visual/audio asset reconstruction.
