@@ -3,6 +3,7 @@ Shader "TimeCli/RainbowEnemy"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
+        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         _Speed ("Speed", Float) = 0.18
     }
 
@@ -36,6 +37,7 @@ Shader "TimeCli/RainbowEnemy"
             };
 
             fixed4 _Color;
+            fixed4 _OutlineColor;
             float _Speed;
 
             fixed3 HueToRgb(float h)
@@ -48,7 +50,9 @@ Shader "TimeCli/RainbowEnemy"
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.color = v.color * _Color;
+                o.color = v.color.a <= 0.001
+                    ? fixed4(_OutlineColor.rgb, 0)
+                    : v.color * _Color;
 
                 // The original RainbowEnemy vertex program uses both _Time and
                 // local vertex Y. Keep that spatial/time relationship here.
@@ -61,6 +65,9 @@ Shader "TimeCli/RainbowEnemy"
                 // GeometryHealth uses alpha < 1 for the health indicator and
                 // zero-alpha outline shell. The original special shaders keep
                 // those sections separate from the animated body.
+                if (i.color.a <= 0.001)
+                    return fixed4(i.color.rgb, 1);
+
                 if (i.color.a < 0.999)
                     return i.color;
 
