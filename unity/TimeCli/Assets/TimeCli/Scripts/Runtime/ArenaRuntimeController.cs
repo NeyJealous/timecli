@@ -478,6 +478,8 @@ namespace TimeCli.UnityRuntime
                     plan,
                     nowSeconds);
             }
+
+            _clickWeaponPresentation?.PlayPistolShoot();
         }
 
         private void FireClickPistolRay(
@@ -582,6 +584,8 @@ namespace TimeCli.UnityRuntime
         {
             if (plan.Cannon is not null)
             {
+                _clickWeaponPresentation?.PlayCannonShoot();
+
                 for (int i = 0;
                      i < plan.Cannon.ProjectileCount;
                      i++)
@@ -597,6 +601,8 @@ namespace TimeCli.UnityRuntime
 
             if (plan.Launcher is not null)
             {
+                _clickWeaponPresentation?.PlayLauncherShoot();
+
                 for (int i = 0;
                      i < plan.Launcher.RocketCount;
                      i++)
