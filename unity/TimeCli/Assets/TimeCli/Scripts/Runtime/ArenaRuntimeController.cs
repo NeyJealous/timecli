@@ -114,7 +114,7 @@ namespace TimeCli.UnityRuntime
                 UnityRandomSource.NextSpawnRolls(),
                 Time.timeAsDouble);
 
-            RebuildViews(spawned.Model);
+            RebuildViews(spawned);
         }
 
         public bool RequestPreviousWave()
@@ -165,24 +165,31 @@ namespace TimeCli.UnityRuntime
             }
         }
 
-        private void RebuildViews(EnemyModelState model)
+        private void RebuildViews(HeadlessSpawnedEnemy spawned)
         {
             ClearViews();
 
             if (blockRoot == null)
                 blockRoot = transform;
 
-            for (int i = 0; i < model.BlockCount; i++)
+            for (int i = 0; i < spawned.Model.BlockCount; i++)
             {
-                EnemyBlockState state = model.GetBlock(i);
+                EnemyBlockState state = spawned.Model.GetBlock(i);
                 GameObject instance = CreateBlockObject();
 
                 instance.name = $"Voxel_{i}_{state.EnemyType}";
                 instance.transform.SetParent(blockRoot, false);
+
+                VoxelPoint position = spawned.IsVeryFirstEnemy
+                    ? state.Position
+                    : VoxelCoordinateMath.ToArenaLocalPosition(
+                        state.Position,
+                        spawned.Layout.Size);
+
                 instance.transform.localPosition = new Vector3(
-                    state.Position.X,
-                    state.Position.Y,
-                    -state.Position.Z) * blockSpacing;
+                    position.X,
+                    position.Y,
+                    position.Z) * blockSpacing;
 
                 var view = instance.GetComponent<VoxelBlockView>();
                 if (view == null)
