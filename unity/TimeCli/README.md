@@ -7,84 +7,112 @@ Pinned editor:
 
 `6000.3.24f1 (4e7b9b5b6244)`
 
-## 1. Sync PortCore
+## Fastest first run
+
+With Unity installed, the complete setup is automated.
 
 Windows:
 
 ```powershell
-.\tools\unity\sync-portcore.ps1
+.\tools\unity\create-arena-prototype.ps1
+```
+
+If Unity is installed elsewhere:
+
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -UnityPath "D:\Unity\6000.3.24f1\Editor\Unity.exe"
 ```
 
 macOS/Linux:
 
 ```bash
-./tools/unity/sync-portcore.sh
+UNITY_PATH="/path/to/Unity" bash tools/unity/create-arena-prototype.sh
 ```
 
-This builds the frozen PortCore API for `netstandard2.1` and copies
-`TimeClickers.PortCore.dll` into `Assets/Plugins/TimeCli/`.
-
-The DLL is generated output and is not committed.
-
-## 2. Open the project
-
-Open:
-
-`unity/TimeCli`
-
-with the pinned Unity editor.
-
-## 3. Generate the first Arena scene
-
-In the Unity menu:
-
-`TimeCli -> Setup -> Create Arena Prototype Scene`
-
-This creates:
+The script builds PortCore, launches Unity in batch mode, compiles/imports the
+project and creates:
 
 `Assets/TimeCli/Scenes/ArenaPrototype.unity`
 
-with:
+The Unity log is written to:
 
-- `TimeCliBootstrap`;
-- `ArenaRuntimeController`;
-- `PrototypeHud`;
-- a camera and light.
+`out/unity/arena-prototype-batch.log`
 
-Press Play.
+## Private canonical voxel catalog
 
-## Current prototype behavior
+Optionally provide the locally recovered private JSON before the first run.
 
-The project can run before private original assets are imported.
+Windows:
 
-Without an assigned canonical `UnityVoxelCatalogAsset`, the bootstrap uses a
-synthetic voxel catalog that exercises the real PortCore selection, allocation,
-damage, reward, Hero auto-fire and wave-progression code.
-
-The placeholder view uses primitive cubes. Click a cube to apply Click Pistol
-damage. The development HUD exposes Gold/wave/DPS, Hero purchases, Click Pistol
-purchases, farm navigation and Time Warp when pending Time Cubes exist.
-
-## Runtime path
-
-```text
-Unity input/frame
-    -> TimeCliBootstrap
-    -> GameState
-    -> HeadlessArenaEngine
-    -> tested PortCore result
-    -> ArenaRuntimeController
-    -> VoxelBlockView
+```powershell
+.\tools\unity\create-arena-prototype.ps1 \
+  -PrivateVoxelJson "C:\path\voxel_layouts_private.json"
 ```
 
-## Important boundary
+macOS/Linux:
 
-Unity presentation code must not reimplement gameplay formulas.
+```bash
+UNITY_PATH="/path/to/Unity" \
+PRIVATE_VOXEL_JSON="/path/to/voxel_layouts_private.json" \
+bash tools/unity/create-arena-prototype.sh
+```
+
+The generated binary lives under `Assets/TimeCli/PrivateGenerated/` and is
+ignored by Git.
+
+## Manual workflow
+
+Build/sync PortCore:
+
+```powershell
+.\tools\unity\sync-portcore.ps1
+```
+
+or:
+
+```bash
+bash tools/unity/sync-portcore.sh
+```
+
+Then open `unity/TimeCli` in Unity and run:
+
+`TimeCli -> Setup -> Create Arena Prototype Scene`
+
+## Current prototype
+
+The presentation is no longer arbitrary primitive cubes. It now procedurally
+reconstructs the original BoxEnemy `Body` geometry, health-fill deformation,
+enemy palette, unit collider, Arena root transform and gameplay camera.
+
+Without private canonical voxel data, a synthetic voxel catalog is still used
+for development, but damage/rewards/Hero auto-fire/wave progression all run
+through PortCore.
+
+The development HUD provides:
+
+- wave/max wave and farm navigation;
+- Gold / DPS / Click damage;
+- Hero purchasing;
+- Click Pistol purchasing;
+- Time/Weapon Cube balances;
+- Time Warp.
+
+## Runtime boundary
+
+```text
+Unity presentation/input
+    -> TimeCliBootstrap
+    -> GameState / HeadlessArenaEngine
+    -> PortCore result
+    -> ArenaRuntimeController
+    -> reconstructed block view
+```
+
+Unity presentation code must not duplicate gameplay formulas.
 
 See:
 
-`docs/PORTCORE_UNITY_CONTRACT.md`
-
-Canonical voxel coordinates and original visual/audio assets remain private
-reconstruction inputs. The synthetic catalog and placeholder colors are
-development-only.
+- `docs/PORTCORE_UNITY_CONTRACT.md`
+- `docs/ARENA_PRESENTATION_RECOVERY.md`
+- `docs/PHASE3_STATUS.md`
