@@ -535,6 +535,13 @@ namespace UnityEngine
                 gradientMax = null;
             }
 
+            public MinMaxGradient(Gradient gradient)
+            {
+                color = Color.white;
+                gradientMin = gradient;
+                gradientMax = gradient;
+            }
+
             public MinMaxGradient(
                 Gradient min,
                 Gradient max)
