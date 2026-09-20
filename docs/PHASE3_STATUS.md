@@ -132,6 +132,10 @@ Recovered and implemented:
 - exact shared Pivot and per-weapon Vertical/model/Firespot transforms;
 - ClickerWeapon IL-compatible aim: Pivot.LookAt(screen ray at distance 100);
 - exact two-key vertical AnimationCurves for Pistol and Cannon/Launcher;
+- exact Shoot recoil clips decoded from the original AnimatorControllers:
+  Pistol top1 slide (0.08333 s @ 120 Hz), Cannon root recoil
+  (0.08333 s @ 60 Hz), Launcher root position/quaternion recoil
+  (0.16667 s @ 60 Hz);
 - Cannon charge + 1-second grace + 10 charge/s decay;
 - Cannon damage-per-projectile and fire cone;
 - Launcher click threshold, rocket count and rocket-speed augment;
@@ -198,6 +202,6 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- remaining click-weapon model/Animator recoil presentation beyond the now
-  recovered transform aim/vertical positioning;
+- click-weapon model geometry/material presentation and the remaining
+  Appear/Disappear Animator clips (Shoot recoil is now recovered);
 - remaining VirtualPS death/sparks particle fidelity and combat audio.
