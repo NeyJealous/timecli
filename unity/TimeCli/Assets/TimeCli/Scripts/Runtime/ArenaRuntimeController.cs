@@ -40,6 +40,8 @@ namespace TimeCli.UnityRuntime
         private readonly List<VoxelBlockView> _views = new();
         private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
+        private Vector3 _crosshairPosition;
+
         private void Start()
         {
             if (bootstrap == null)
@@ -53,6 +55,12 @@ namespace TimeCli.UnityRuntime
             }
 
             EnsureBlockRoot();
+
+            _crosshairPosition = new Vector3(
+                Screen.width * 0.5f,
+                Screen.height * 0.5f,
+                0f);
+
             SpawnCurrentEnemy();
         }
 
@@ -64,9 +72,16 @@ namespace TimeCli.UnityRuntime
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
             bootstrap.Game.UpdateCubePickups(now);
-            bootstrap.Game.UpdateClickWeapons(
-                now,
-                Time.deltaTime);
+
+            ClickWeaponAutomaticFirePlan automaticClickWeapons =
+                bootstrap.Game.UpdateClickWeapons(
+                    now,
+                    Time.deltaTime);
+
+            ProcessAutomaticClickWeapons(
+                automaticClickWeapons,
+                now);
+
             SyncPickupViews(now);
 
             BossTickResult bossTick = bootstrap.Arena.TickBoss(now);
@@ -126,34 +141,27 @@ namespace TimeCli.UnityRuntime
             Vector3 targetPosition =
                 _views[blockIndex].transform.position;
 
+            Camera camera = Camera.main;
+            if (camera != null)
+            {
+                _crosshairPosition =
+                    camera.WorldToScreenPoint(
+                        targetPosition);
+                _crosshairPosition.z = 0f;
+            }
+
             ClickWeaponFirePlan auxiliary =
                 bootstrap.Game.RegisterManualClickWeapons(
                     now);
 
             SpawnClickWeaponProjectiles(
                 auxiliary,
-                targetPosition);
+                GetCrosshairTargetPoint());
 
-            // Original Skills.GetIsCritical:
-            // UnityEngine.Random.value < Skills.GetCriticalChance().
-            bool critical =
-                UnityEngine.Random.value <
-                bootstrap.Game.GetCriticalChance();
-
-            ClickTracerView.Spawn(
-                GetClickPistolFireSpot(),
-                targetPosition,
-                critical);
-
-            var result = bootstrap.Arena.ClickBlock(
-                blockIndex,
-                critical,
-                nowSeconds: now);
-
-            RefreshView(blockIndex);
+            ShootClickPistol(now);
             SyncPickupViews(now);
 
-            if (result.ModelCleared)
+            if (bootstrap.Arena.CurrentEnemy == null)
                 ClearViews();
         }
 
@@ -305,6 +313,221 @@ namespace TimeCli.UnityRuntime
             // math is identical after the precomputed click damage reaches it.
             if (weaponType == WeaponType.RocketLauncher)
                 SpawnRocketExplosion(impactPoint);
+        }
+
+        private void ProcessAutomaticClickWeapons(
+            ClickWeaponAutomaticFirePlan plan,
+            double nowSeconds)
+        {
+            for (int i = 0; i < plan.PistolShots; i++)
+                ShootClickPistol(nowSeconds);
+
+            Vector3 targetPosition =
+                GetCrosshairTargetPoint();
+
+            for (int i = 0;
+                 i < plan.CannonShots.Count;
+                 i++)
+            {
+                SpawnClickWeaponProjectiles(
+                    new ClickWeaponFirePlan(
+                        plan.CannonShots[i],
+                        null),
+                    targetPosition);
+            }
+
+            for (int i = 0;
+                 i < plan.LauncherShots.Count;
+                 i++)
+            {
+                SpawnClickWeaponProjectiles(
+                    new ClickWeaponFirePlan(
+                        null,
+                        plan.LauncherShots[i]),
+                    targetPosition);
+            }
+        }
+
+        private Vector3 GetCrosshairTargetPoint()
+        {
+            Camera camera = Camera.main;
+            if (camera == null)
+                return Vector3.zero;
+
+            Ray ray =
+                camera.ScreenPointToRay(
+                    _crosshairPosition);
+
+            if (Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                OriginalProjectilePresentation.ClickWeaponMaxDistance,
+                OriginalProjectilePresentation.HitboxMask))
+            {
+                return hit.point;
+            }
+
+            return ray.origin +
+                   ray.direction *
+                   OriginalProjectilePresentation.ClickWeaponMaxDistance;
+        }
+
+        private void ShootClickPistol(
+            double nowSeconds)
+        {
+            Camera camera = Camera.main;
+            if (camera == null)
+                return;
+
+            // ClickerPistol.Shoot evaluates critical state once, then reuses
+            // that critical/damage value for every Spread Shots ray.
+            bool critical =
+                UnityEngine.Random.value <
+                bootstrap.Game.GetCriticalChance();
+
+            double clickDamage =
+                bootstrap.Game.GetClickDamage(
+                    critical);
+
+            Ray baseRay =
+                camera.ScreenPointToRay(
+                    _crosshairPosition);
+
+            FireClickPistolRay(
+                baseRay,
+                critical,
+                clickDamage,
+                nowSeconds);
+
+            if (!bootstrap.Game.IsAbilityActive(
+                    AbilityType.SpreadShots))
+            {
+                return;
+            }
+
+            int totalProjectiles =
+                Math.Max(
+                    1,
+                    bootstrap.Game.ArtifactEffects
+                        .SpreadShotsProjectiles);
+
+            for (int i = 0;
+                 i < totalProjectiles - 1;
+                 i++)
+            {
+                int angle =
+                    ((i / 2) + 1) *
+                    3 *
+                    (i % 2 == 0
+                        ? -1
+                        : 1);
+
+                Ray spreadRay = baseRay;
+                spreadRay.direction =
+                    Quaternion.AngleAxis(
+                        angle,
+                        Vector3.up) *
+                    baseRay.direction;
+
+                FireClickPistolRay(
+                    spreadRay,
+                    critical,
+                    clickDamage,
+                    nowSeconds);
+            }
+        }
+
+        private void FireClickPistolRay(
+            Ray ray,
+            bool critical,
+            double clickDamage,
+            double nowSeconds)
+        {
+            Vector3 tracerEnd;
+
+            if (bootstrap.Game.IsAbilityActive(
+                    AbilityType.PunchThrough))
+            {
+                RaycastHit[] hits =
+                    Physics.RaycastAll(
+                        ray,
+                        OriginalProjectilePresentation.ClickWeaponMaxDistance,
+                        OriginalProjectilePresentation.HitboxMask);
+
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    if (bootstrap.Arena.CurrentEnemy == null)
+                        break;
+
+                    ProcessClickPistolHit(
+                        hits[i],
+                        clickDamage,
+                        nowSeconds);
+                }
+
+                tracerEnd =
+                    ray.origin +
+                    ray.direction *
+                    OriginalProjectilePresentation.ClickWeaponMaxDistance;
+            }
+            else if (Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                OriginalProjectilePresentation.ClickWeaponMaxDistance,
+                OriginalProjectilePresentation.HitboxMask))
+            {
+                tracerEnd = hit.point;
+
+                ProcessClickPistolHit(
+                    hit,
+                    clickDamage,
+                    nowSeconds);
+            }
+            else
+            {
+                tracerEnd =
+                    ray.origin +
+                    ray.direction *
+                    OriginalProjectilePresentation.ClickWeaponMaxDistance;
+            }
+
+            ClickTracerView.Spawn(
+                GetClickPistolFireSpot(),
+                tracerEnd,
+                critical);
+        }
+
+        private void ProcessClickPistolHit(
+            RaycastHit hit,
+            double clickDamage,
+            double nowSeconds)
+        {
+            if (hit.collider == null ||
+                bootstrap.Arena.CurrentEnemy == null)
+            {
+                return;
+            }
+
+            VoxelBlockView view =
+                hit.collider.GetComponent<VoxelBlockView>();
+
+            if (view == null ||
+                view.State == null ||
+                !view.State.IsAlive)
+            {
+                return;
+            }
+
+            ArenaBlockAttackResult result =
+                bootstrap.Arena.ClickWeaponDamageBlock(
+                    view.BlockIndex,
+                    clickDamage,
+                    nowSeconds);
+
+            view.Refresh();
+
+            if (result.ModelCleared)
+                ClearViews();
         }
 
         private void SpawnClickWeaponProjectiles(
