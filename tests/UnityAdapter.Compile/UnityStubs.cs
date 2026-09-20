@@ -860,6 +860,10 @@ namespace UnityEngine
         public static void DrawTexture(
             Rect position,
             Texture image) { }
+
+        public static bool Button(
+            Rect position,
+            string text) => false;
     }
 
     public static class GUILayout
