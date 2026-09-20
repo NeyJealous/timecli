@@ -887,6 +887,11 @@ AssertClose(
     500f,
     0.000001f,
     "Click-weapon firing max distance");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.SpatialBlend,
+    0f,
+    0.000001f,
+    "Click-weapon firing spatial blend");
 
 if (OriginalClickWeaponAudioPresentation.Priority != 128 ||
     OriginalClickWeaponAudioPresentation.PistolFireResource !=
