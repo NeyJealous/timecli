@@ -42,6 +42,10 @@ Implemented under `unity/TimeCli`:
 - ClickCannon transient charge/fire state;
 - ClickLauncher click-progress/fire state;
 - Cannon/Launcher projectile movement and collision reporting;
+- canonical Flak/Rocket projectile mesh path with private original-derived
+  resources: Flak 30-vertex mesh and exact unlit color; Rocket 257-vertex mesh,
+  confirmed material color/MainTex, ParticleTail z=-0.242 and play-on-awake
+  Rocket audio;
 - ClickLauncher Rocket tail: canonical shared ParticleSystem architecture,
   0.025 s invocation cadence, 10 particles/invocation, exact lifetime/speed/
   size ranges, cone, size/color curves, world-space randomized force and
@@ -99,6 +103,10 @@ Recovered targets:
 - `TimeCliRocketTailTexture.png`
 - `TimeCliSmallExplosionTexture.png`
 - `TimeCliSmallExplosionImpact.wav` (requires UnityPy)
+- `TimeCliFlakBulletMesh.txt` (requires UnityPy)
+- `TimeCliRocketProjectileMesh.txt` (requires UnityPy)
+- `TimeCliRocketProjectileTexture.png` (requires UnityPy)
+- `TimeCliRocketProjectileAudio.wav` (requires UnityPy)
 
 The public project falls back to procedural clean visuals when those private
 files are absent.
@@ -187,10 +195,10 @@ bash tools/unity/create-arena-prototype.sh
 ```
 
 The batch process builds PortCore, prepares optional private reconstruction
-data, extracts canonical private textures, extracts the SmallExplosion impact
-WAV when UnityPy is available, attempts exact click-weapon hierarchy
-extraction/validation, launches Unity in batch mode and invokes the Arena scene
-generator. Strict hierarchy recovery can be required with
+data, extracts canonical private textures, SmallExplosion impact WAV and
+Flak/Rocket mesh/texture/audio resources when UnityPy is available, attempts
+exact click-weapon hierarchy extraction/validation, launches Unity in batch
+mode and invokes the Arena scene generator. Strict hierarchy recovery can be required with
 `-RequireWeaponHierarchy` / `REQUIRE_WEAPON_HIERARCHY=1`.
 
 ## Current prototype path
@@ -211,6 +219,8 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- click-weapon model geometry/material presentation and the remaining
-  Appear/Disappear Animator clips (Shoot recoil is now recovered);
-- remaining VirtualPS death/sparks particle fidelity and combat audio.
+- exact Rocket `Custom/Weapon Diffuse Color` cubemap/reflection math; the
+  confirmed mesh, color, MainTex and audio are already reconstructed;
+- remaining click-weapon Appear/Disappear Animator clips (Shoot recoil is
+  already recovered);
+- remaining combat audio/presentation fidelity.
