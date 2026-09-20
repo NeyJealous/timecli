@@ -22,6 +22,9 @@ namespace TimeCli.UnityRuntime
         public const float MinDistance = 1f;
         public const float MaxDistance = 500f;
         public const float DopplerLevel = 1f;
+        // Unity 5.4 panLevelCustomCurve is constant 0 for all three
+        // root AudioSources, i.e. fully 2D in modern spatialBlend terms.
+        public const float SpatialBlend = 0f;
         public const int Priority = 128;
     }
 
@@ -75,7 +78,8 @@ namespace TimeCli.UnityRuntime
                 OriginalClickWeaponAudioPresentation.MinDistance;
             source.maxDistance =
                 OriginalClickWeaponAudioPresentation.MaxDistance;
-            source.spatialBlend = 1f;
+            source.spatialBlend =
+                OriginalClickWeaponAudioPresentation.SpatialBlend;
 
             return source;
         }
