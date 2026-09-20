@@ -529,6 +529,82 @@ AssertClose(
     0.000001f,
     "Sparks alpha hold time");
 
+// Canonical FlakBullet / RocketPrefab presentation.
+AssertClose(
+    OriginalProjectileVisualPresentation.FlakRootScale.z,
+    2f,
+    0.000001f,
+    "Flak root Z scale");
+
+AssertColor(
+    OriginalProjectileVisualPresentation.FlakColor,
+    1f,
+    0.8503905535f,
+    0.4980391860f,
+    1f,
+    "Flak Plasma Beam color");
+
+AssertColor(
+    OriginalProjectileVisualPresentation.RocketColor,
+    0.3286908865f,
+    1f,
+    0f,
+    1f,
+    "Rocket material color");
+
+AssertClose(
+    OriginalProjectileVisualPresentation
+        .RocketTailLocalPosition.z,
+   -0.2419999987f,
+    0.000001f,
+    "Rocket ParticleTail local Z");
+
+const string unityPyObj =
+    "g fixture\n" +
+    "v -1 2 3\n" +
+    "v -4 5 6\n" +
+    "v -7 8 9\n" +
+    "vt 0 0\n" +
+    "vt 1 0\n" +
+    "vt 0 1\n" +
+    "vn -0.1 0.2 0.3\n" +
+    "vn -0.4 0.5 0.6\n" +
+    "vn -0.7 0.8 0.9\n" +
+    // UnityPy writes original triangle A,B,C as C,B,A after X negation.
+    "f 3/3/3 2/2/2 1/1/1\n";
+
+UnityEngine.Mesh restoredObj =
+    PrivateProjectileObjMeshLoader.Parse(
+        unityPyObj,
+        "fixture");
+
+if (restoredObj.vertices.Length != 3 ||
+    restoredObj.triangles.Length != 3)
+{
+    throw new Exception(
+        "Projectile OBJ loader geometry counts changed.");
+}
+
+AssertClose(
+    restoredObj.vertices[0].x,
+    1f,
+    0.000001f,
+    "Projectile OBJ restores Unity X");
+
+if (restoredObj.triangles[0] != 0 ||
+    restoredObj.triangles[1] != 1 ||
+    restoredObj.triangles[2] != 2)
+{
+    throw new Exception(
+        "Projectile OBJ loader did not restore original triangle winding.");
+}
+
+AssertClose(
+    restoredObj.normals[0].x,
+    0.1f,
+    0.000001f,
+    "Projectile OBJ restores normal X");
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
