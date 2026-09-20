@@ -178,6 +178,28 @@ namespace UnityEngine
 
     public enum PrimitiveType { Sphere, Capsule, Cylinder, Cube, Plane, Quad }
     public enum LightType { Directional }
+    public enum FilterMode { Point, Bilinear, Trilinear }
+    public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
+    public enum ParticleSystemSimulationSpace { Local, World, Custom }
+    public enum ParticleSystemScalingMode { Hierarchy, Local, Shape }
+    public enum ParticleSystemShapeType { Cone = 4 }
+    public enum ParticleSystemRenderMode { Billboard = 0 }
+    public enum ParticleSystemSortMode
+    {
+        None = 0,
+        Distance = 1,
+        OldestInFront = 2,
+        YoungestInFront = 3,
+        Depth = 4
+    }
+    public enum ParticleSystemRenderSpace
+    {
+        View = 0,
+        World = 1,
+        Local = 2,
+        Facing = 3,
+        Velocity = 4
+    }
     public enum CameraClearFlags { Skybox = 1, SolidColor = 2, Depth = 3, Nothing = 4 }
 
     public sealed class Camera : Behaviour
@@ -212,6 +234,18 @@ namespace UnityEngine
     }
 
     public sealed class MeshRenderer : Renderer { }
+
+    public sealed class ParticleSystemRenderer : Renderer
+    {
+        public ParticleSystemRenderMode renderMode { get; set; }
+        public ParticleSystemSortMode sortMode { get; set; }
+        public float minParticleSize { get; set; }
+        public float maxParticleSize { get; set; }
+        public float cameraVelocityScale { get; set; }
+        public float velocityScale { get; set; }
+        public float lengthScale { get; set; }
+        public ParticleSystemRenderSpace alignment { get; set; }
+    }
 
     public sealed class LineRenderer : Renderer
     {
@@ -306,8 +340,209 @@ namespace UnityEngine
     public sealed class Texture2D : Texture
     {
         public Texture2D(int width, int height) { }
+        public string name { get; set; } = string.Empty;
+        public FilterMode filterMode { get; set; }
+        public TextureWrapMode wrapMode { get; set; }
+        public int anisoLevel { get; set; }
         public void SetPixel(int x, int y, Color color) { }
         public void Apply() { }
+    }
+
+    public readonly struct Keyframe
+    {
+        public Keyframe(
+            float time,
+            float value,
+            float inTangent,
+            float outTangent)
+        {
+            this.time = time;
+            this.value = value;
+            this.inTangent = inTangent;
+            this.outTangent = outTangent;
+        }
+
+        public float time { get; }
+        public float value { get; }
+        public float inTangent { get; }
+        public float outTangent { get; }
+    }
+
+    public sealed class AnimationCurve
+    {
+        public AnimationCurve(params Keyframe[] keys)
+        {
+            this.keys = keys;
+        }
+
+        public Keyframe[] keys { get; }
+    }
+
+    public readonly struct GradientColorKey
+    {
+        public GradientColorKey(Color color, float time)
+        {
+            this.color = color;
+            this.time = time;
+        }
+
+        public Color color { get; }
+        public float time { get; }
+    }
+
+    public readonly struct GradientAlphaKey
+    {
+        public GradientAlphaKey(float alpha, float time)
+        {
+            this.alpha = alpha;
+            this.time = time;
+        }
+
+        public float alpha { get; }
+        public float time { get; }
+    }
+
+    public sealed class Gradient
+    {
+        public GradientColorKey[] colorKeys { get; private set; } =
+            Array.Empty<GradientColorKey>();
+        public GradientAlphaKey[] alphaKeys { get; private set; } =
+            Array.Empty<GradientAlphaKey>();
+
+        public void SetKeys(
+            GradientColorKey[] colorKeys,
+            GradientAlphaKey[] alphaKeys)
+        {
+            this.colorKeys = colorKeys;
+            this.alphaKeys = alphaKeys;
+        }
+    }
+
+    public sealed class ParticleSystem : Component
+    {
+        public readonly struct MinMaxCurve
+        {
+            public MinMaxCurve(float constant)
+            {
+                constantMin = constant;
+                constantMax = constant;
+                multiplier = 1f;
+                curve = null;
+            }
+
+            public MinMaxCurve(float min, float max)
+            {
+                constantMin = min;
+                constantMax = max;
+                multiplier = 1f;
+                curve = null;
+            }
+
+            public MinMaxCurve(
+                float multiplier,
+                AnimationCurve curve)
+            {
+                constantMin = 0f;
+                constantMax = 0f;
+                this.multiplier = multiplier;
+                this.curve = curve;
+            }
+
+            public float constantMin { get; }
+            public float constantMax { get; }
+            public float multiplier { get; }
+            public AnimationCurve? curve { get; }
+        }
+
+        public readonly struct MinMaxGradient
+        {
+            public MinMaxGradient(Color color)
+            {
+                this.color = color;
+                gradientMin = null;
+                gradientMax = null;
+            }
+
+            public MinMaxGradient(
+                Gradient min,
+                Gradient max)
+            {
+                color = Color.white;
+                gradientMin = min;
+                gradientMax = max;
+            }
+
+            public Color color { get; }
+            public Gradient? gradientMin { get; }
+            public Gradient? gradientMax { get; }
+        }
+
+        public struct MainModule
+        {
+            public float duration { get; set; }
+            public bool loop { get; set; }
+            public bool prewarm { get; set; }
+            public bool playOnAwake { get; set; }
+            public ParticleSystemSimulationSpace simulationSpace { get; set; }
+            public ParticleSystemScalingMode scalingMode { get; set; }
+            public MinMaxCurve startLifetime { get; set; }
+            public MinMaxCurve startSpeed { get; set; }
+            public MinMaxCurve startSize { get; set; }
+            public MinMaxCurve startRotation { get; set; }
+            public MinMaxGradient startColor { get; set; }
+            public float gravityModifier { get; set; }
+            public int maxParticles { get; set; }
+        }
+
+        public struct ShapeModule
+        {
+            public bool enabled { get; set; }
+            public ParticleSystemShapeType shapeType { get; set; }
+            public float radius { get; set; }
+            public float angle { get; set; }
+            public float length { get; set; }
+            public float arc { get; set; }
+            public float randomDirectionAmount { get; set; }
+        }
+
+        public struct EmissionModule
+        {
+            public bool enabled { get; set; }
+            public MinMaxCurve rateOverTime { get; set; }
+        }
+
+        public struct SizeOverLifetimeModule
+        {
+            public bool enabled { get; set; }
+            public bool separateAxes { get; set; }
+            public MinMaxCurve size { get; set; }
+        }
+
+        public struct ColorOverLifetimeModule
+        {
+            public bool enabled { get; set; }
+            public MinMaxGradient color { get; set; }
+        }
+
+        public struct ForceOverLifetimeModule
+        {
+            public bool enabled { get; set; }
+            public ParticleSystemSimulationSpace space { get; set; }
+            public bool randomized { get; set; }
+            public MinMaxCurve x { get; set; }
+            public MinMaxCurve y { get; set; }
+            public MinMaxCurve z { get; set; }
+        }
+
+        public MainModule main => new();
+        public ShapeModule shape => new();
+        public EmissionModule emission => new();
+        public SizeOverLifetimeModule sizeOverLifetime => new();
+        public ColorOverLifetimeModule colorOverLifetime => new();
+        public ForceOverLifetimeModule forceOverLifetime => new();
+
+        public void Emit(int count) { }
+        public void Play() { }
     }
 
     public sealed class Material : Object
@@ -336,6 +571,9 @@ namespace UnityEngine
 
         public static float Lerp(float a, float b, float t) =>
             a + (b - a) * t;
+
+        public static float Sqrt(float value) =>
+            (float)Math.Sqrt(value);
 
         public static float Min(float a, float b) =>
             a < b ? a : b;
