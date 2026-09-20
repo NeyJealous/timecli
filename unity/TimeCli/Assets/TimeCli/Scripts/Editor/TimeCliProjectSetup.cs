@@ -26,13 +26,21 @@ namespace TimeCli.UnityRuntime.Editor
             root.AddComponent<ArenaRuntimeController>();
             root.AddComponent<PrototypeHud>();
 
-            var cameraObject = new GameObject("Main Camera");
+            var cameraObject = new GameObject("Game Camera");
             var camera = cameraObject.AddComponent<Camera>();
             cameraObject.tag = "MainCamera";
-            camera.orthographic = true;
-            camera.orthographicSize = 8f;
-            camera.transform.position = new Vector3(8f, 8f, -15f);
-            camera.transform.LookAt(new Vector3(8f, 0f, 0f));
+            camera.orthographic = false;
+            camera.fieldOfView = OriginalArenaPresentation.CameraFieldOfView;
+            camera.nearClipPlane = OriginalArenaPresentation.CameraNearClip;
+            camera.farClipPlane = OriginalArenaPresentation.CameraFarClip;
+            camera.depth = OriginalArenaPresentation.CameraDepth;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.transform.position = OriginalArenaPresentation.CameraPosition;
+            camera.transform.rotation = Quaternion.Euler(
+                OriginalArenaPresentation.CameraEuler.X,
+                OriginalArenaPresentation.CameraEuler.Y,
+                OriginalArenaPresentation.CameraEuler.Z);
 
             var lightObject = new GameObject("Directional Light");
             var light = lightObject.AddComponent<Light>();
