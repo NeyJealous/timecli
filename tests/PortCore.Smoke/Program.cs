@@ -982,4 +982,66 @@ if (DisplayFormatting.FormatULong(999_999) != "999,999" ||
     DisplayFormatting.FormatULong(1_234_567) != "1.234 M")
     throw new Exception("ULong formatting");
 
+// Original ArenaDisplay / UIWaveHP / WidgetGold snapshot
+var hudGame = new GameState();
+hudGame.Gold.Add(12_000);
+
+var hudBlock = new EnemyBlockState(
+    100,
+    EnemyType.Red);
+hudBlock.ApplyDamage(
+    25,
+    hudGame.ArtifactEffects,
+    heroesGoldFindMultiplier: 1,
+    goldRushActive: false);
+var hudModel = new EnemyModelState(
+    new[] { hudBlock });
+
+var hud = ArenaHudMath.Build(
+    hudGame,
+    hudModel,
+    nowSeconds: 0);
+
+AssertEqual(75, hud.RemainingHp, "HUD remaining HP");
+AssertEqual(100, hud.TotalHp, "HUD total HP");
+AssertEqual(0.75, hud.HpNormalized, "HUD normalized HP");
+if (hud.WaveHpText != "75 HP")
+    throw new Exception("HUD wave HP text");
+if (hud.ArenaRemainingText != "10" || hud.ShowInfinity)
+    throw new Exception("Highest-wave ArenaDisplay remaining state");
+if (hud.GoldText != "13.0K")
+    throw new Exception($"HUD gold formatting: {hud.GoldText}");
+
+hudGame.Arena.TimeWarpTo(5);
+hudGame.Arena.StartArena(
+    nowSeconds: 100,
+    hudGame.ArtifactEffects.BossTime);
+
+var bossHud = ArenaHudMath.Build(
+    hudGame,
+    hudModel,
+    nowSeconds: 110);
+
+if (!bossHud.IsBossWave)
+    throw new Exception("Boss HUD visibility");
+AssertEqual(20, bossHud.BossTimeRemaining, "Boss HUD time remaining");
+AssertEqual(2.0 / 3.0, bossHud.BossTimeNormalized, "Boss HUD timer normalized", 1e-6);
+if (bossHud.BossTimeText != "20.0")
+    throw new Exception($"Boss HUD formatted time: {bossHud.BossTimeText}");
+
+hudGame.Arena.TimeWarpTo(2);
+hudGame.Arena.RequestPreviousArena();
+
+var farmHud = ArenaHudMath.Build(
+    hudGame,
+    hudModel,
+    nowSeconds: 0);
+
+if (!farmHud.ShowInfinity ||
+    !farmHud.IsFarmingLowerWave ||
+    farmHud.ArenaRemainingText != string.Empty)
+{
+    throw new Exception("Lower-wave ArenaDisplay infinity state");
+}
+
 Console.WriteLine("PortCore smoke tests passed.");
