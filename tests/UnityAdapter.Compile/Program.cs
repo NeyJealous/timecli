@@ -424,6 +424,111 @@ if (OriginalSmallExplosionPresentation.AudioSourcesPerQueue != 6 ||
         "SmallExplosion recovered audio metadata changed.");
 }
 
+// Canonical VirtualPS.Sparks shared modern ParticleSystem.
+if (OriginalSparksPresentation.GetParticleCount(
+        SparksKind.Small,
+        1f) != 20)
+{
+    throw new Exception(
+        "Small Sparks must always emit 20 particles.");
+}
+
+if (OriginalSparksPresentation.GetParticleCount(
+        SparksKind.Large,
+        0f) != 40 ||
+    OriginalSparksPresentation.GetParticleCount(
+        SparksKind.Large,
+        1f) != 60)
+{
+    throw new Exception(
+        "Large Sparks count must scale from 40 to 60.");
+}
+
+AssertClose(
+    OriginalSparksPresentation.SpeedMin,
+    15f,
+    0.000001f,
+    "Sparks speed min");
+AssertClose(
+    OriginalSparksPresentation.SpeedMax,
+    25f,
+    0.000001f,
+    "Sparks speed max");
+AssertClose(
+    OriginalSparksPresentation.StartSize,
+    0.2f,
+    0.000001f,
+    "Sparks start size");
+AssertClose(
+    OriginalSparksPresentation.ConeAngle,
+    45f,
+    0.000001f,
+    "Sparks cone angle");
+AssertClose(
+    OriginalSparksPresentation.ConeRadius,
+    0.01f,
+    0.000001f,
+    "Sparks cone radius");
+
+var sparksSizeCurve =
+    OriginalSparksPresentation
+        .BuildSizeOverLifetimeCurve();
+
+if (sparksSizeCurve.keys.Length != 2)
+    throw new Exception(
+        "Sparks size curve must retain 2 recovered keys.");
+
+AssertClose(
+    sparksSizeCurve.keys[0].time,
+    0.0824053362f,
+    0.000001f,
+    "Sparks size curve first time");
+AssertClose(
+    sparksSizeCurve.keys[1].value,
+    0f,
+    0.000001f,
+    "Sparks size curve final value");
+
+var sparksForceMin =
+    OriginalSparksPresentation.BuildForceMinCurve();
+var sparksForceMax =
+    OriginalSparksPresentation.BuildForceMaxCurve();
+
+AssertClose(
+    sparksForceMin.keys[1].time,
+    0.9955455065f,
+    0.000001f,
+    "Sparks force min final time");
+AssertClose(
+    sparksForceMax.keys[1].value,
+    -1f,
+    0.000001f,
+    "Sparks force max final value");
+
+var sparksGradient =
+    OriginalSparksPresentation
+        .BuildColorOverLifetime();
+
+if (sparksGradient.colorKeys.Length != 3 ||
+    sparksGradient.alphaKeys.Length != 3)
+{
+    throw new Exception(
+        "Sparks gradient key counts do not match 1.4.5.");
+}
+
+AssertColor(
+    sparksGradient.colorKeys[0].color,
+    1f,
+    234f / 255f,
+    127f / 255f,
+    1f,
+    "Sparks initial color");
+AssertClose(
+    sparksGradient.alphaKeys[1].time,
+    39514f / 65535f,
+    0.000001f,
+    "Sparks alpha hold time");
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
