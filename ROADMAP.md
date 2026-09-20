@@ -46,12 +46,17 @@ Current:
 - exact click-weapon hierarchy, aim/vertical curves, Shoot recoil and
   Appear/Disappear visibility curves promoted from canonical 1.4.5 data;
 - canonical SmallExplosion, RocketTail and Sparks presentation paths;
-- canonical Flak/Rocket projectile visual binding with private mesh import.
+- canonical Flak/Rocket projectile visual binding with private mesh import;
+- canonical click-weapon private meshes/MainTex/cubemaps, reconstructed
+  WeaponDiffuseColor shader math, firing audio and shared delayed PistolWield
+  appear audio.
 
 Next:
 
-- click-weapon model geometry/material presentation and appear audio;
-- remaining combat audio and VirtualPS presentation;
+- remaining actively-called VirtualPS progression presentation:
+  LevelUp / Upgrade / ArtifactBuy/Sell / Promote / Training / SpecOps /
+  DimensionShift;
+- remaining combat/UI audio fidelity;
 - remaining Splash / Arena / TimeWarp presentation;
 - Artifacts / WeaponAugments / TimelineSummary additive screens;
 - exact audio reconstruction.
