@@ -149,5 +149,37 @@ The compressed AnimationClip streams were decoded into exact Unity
 curves directly, avoiding any dependency on the old Unity 5.4
 AnimatorController.
 
-The original Appear/Disappear clips are identified and timed but are not yet
-promoted; model meshes/materials are also a separate reconstruction target.
+## Appear / Disappear Animator recovery
+
+The original visibility clips are now decoded and promoted as direct modern
+AnimationCurves as well. They animate the model-root position and quaternion;
+the Unity 5.4 AnimatorControllers are no longer required for this behavior.
+
+Canonical durations:
+
+- Pistol `ClickerPistolAppear` / `ClickerPistolDisappear`: **0.5 s @ 60 Hz**;
+- Cannon `ClickCannonAppear` / `ClickCannonDisappear`:
+  **0.333333343 s @ 60 Hz**;
+- Launcher `RocketLauncherAppear` / `RocketLauncherDisappear`:
+  **0.333333343 s @ 60 Hz**.
+
+The streamed curves are sparse. Position channels retain three recovered cubic
+keys while quaternion channels retain the original sampled key cadence
+(31 keys for Pistol, 21 for Cannon/Launcher). The decoder reconstructs each
+incoming tangent from the previous cubic segment rather than assuming one key
+per frame.
+
+Recovered hidden/off-screen endpoints include:
+
+- Pistol position `(0, -0.75, 0.521000028)`;
+- Cannon position approximately `(0, -0.7, 0)`;
+- Launcher position approximately `(0, -0.42, -0.21)`.
+
+`ClickerWeapon.Show()` in 1.4.5 unlocks the weapon, activates its model,
+starts `Appear`, waits **0.05 s**, plays the pickup-queue appear sound and
+then marks the weapon active. `Hide()` starts `Disappear` and clears the
+active flag immediately. The exact transform curves and the 0.05-second
+activation delay are now regression-tested.
+
+Model meshes/materials and the original appear audio remain separate
+reconstruction targets.
