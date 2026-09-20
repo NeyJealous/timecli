@@ -43,3 +43,12 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet run --project tests/PortCore.HeroCombatScenario/PortCore.HeroCombatScenario.csproj --configuration Release
+
+  unity-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet build src/PortCore/PortCore.csproj -f netstandard2.1 --configuration Release
