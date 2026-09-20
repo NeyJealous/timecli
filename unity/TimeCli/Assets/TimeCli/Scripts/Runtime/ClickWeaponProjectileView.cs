@@ -274,8 +274,17 @@ namespace TimeCli.UnityRuntime
                     ? _rocketVisual.position
                     : transform.position;
 
+            Quaternion rotation =
+                _rocketVisual != null
+                    ? _rocketVisual.rotation
+                    : transform.rotation;
+
             for (int i = 0; i < emissionCount; i++)
-                RocketTailParticleView.Spawn(position);
+            {
+                RocketTailParticleView.Emit(
+                    position,
+                    rotation);
+            }
         }
 
         private void CheckForCollision()
