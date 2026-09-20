@@ -79,7 +79,6 @@ public sealed class GameState
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
-        ClickWeapons.TimeWarp();
 
         return earnedTimeCubes;
     }
@@ -157,7 +156,6 @@ public sealed class GameState
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
-        ClickWeapons.TimeWarp();
         RecalculateAbilities(0);
 
         return pendingAdded;
@@ -349,10 +347,10 @@ public sealed class GameState
             this,
             nowSeconds);
 
-    public void UpdateClickWeapons(
+    public ClickWeaponAutomaticFirePlan UpdateClickWeapons(
         double nowSeconds,
         double deltaSeconds) =>
-        ClickWeapons.Update(
+        ClickWeapons.UpdateAutomaticFire(
             this,
             nowSeconds,
             deltaSeconds);
