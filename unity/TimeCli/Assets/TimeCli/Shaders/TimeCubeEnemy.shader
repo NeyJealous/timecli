@@ -3,6 +3,7 @@ Shader "TimeCli/TimeCubeEnemy"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
+        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         _MainTex ("Texture", 2D) = "white" {}
         _PulseAmount ("Pulse Amount", Range(0,0.25)) = 0.08
         _PulseSpeed ("Pulse Speed", Float) = 3.0
@@ -43,6 +44,7 @@ Shader "TimeCli/TimeCubeEnemy"
             sampler2D _MainTex;
             float4 _MainTex_ST;
             fixed4 _Color;
+            fixed4 _OutlineColor;
             float _PulseAmount;
             float _PulseSpeed;
             float _StripeScale;
@@ -64,12 +66,17 @@ Shader "TimeCli/TimeCubeEnemy"
                 }
 
                 o.vertex = UnityObjectToClipPos(p);
-                o.color = v.color * _Color;
+                o.color = v.color.a <= 0.001
+                    ? fixed4(_OutlineColor.rgb, 0)
+                    : v.color * _Color;
                 return o;
             }
 
             fixed4 frag(v2f i) : SV_Target
             {
+                if (i.color.a <= 0.001)
+                    return fixed4(i.color.rgb, 1);
+
                 if (i.color.a < 0.999)
                     return i.color;
 
