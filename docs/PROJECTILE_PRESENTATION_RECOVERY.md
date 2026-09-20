@@ -189,6 +189,85 @@ Serialized values:
 | FlakBullet | 40 | 1.5 s |
 | RocketPrefab | 40 | 3.0 s |
 
+## Projectile prefab presentation
+
+The remaining primitive-sphere placeholders have been replaced by an optional
+private-resource path backed by the canonical 1.4.5 projectile meshes. If the
+private resources are absent, the public project still creates clean procedural
+fallback geometry.
+
+### FlakBullet
+
+Recovered prefab presentation:
+
+```text
+FlakBullet
+  root scale = (1, 1, 2)
+  Mesh       = "Flak Bullet" (30 vertices / 20 triangles)
+  Material   = "Plasma Beam"
+  Shader     = "Unlit/Color"
+  _Color     = (1, 0.8503905535, 0.4980391860, 1)
+```
+
+The original material has no active texture dependency for the recovered
+`Unlit/Color` shader. The public clean equivalent is
+`TimeCli/ProjectileUnlitColor`.
+
+### RocketPrefab
+
+Recovered hierarchy:
+
+```text
+RocketPrefab
+  RocketPivot
+    RocketProjectile
+      ParticleTail  localPosition=(0,0,-0.2419999987)
+    RocketAudio
+```
+
+`RocketProjectile` uses the canonical 257-vertex / 204-triangle Mesh and the
+`Rocket` material:
+
+```text
+shader   = Custom/Weapon Diffuse Color
+_Color   = (0.3286908865, 1, 0, 1)
+_MainTex = tgarocket MOD ACID (128x128)
+_CubeMap = Channel_Cubemap
+```
+
+The private extraction path produces:
+
+- `TimeCliFlakBulletMesh.txt`
+- `TimeCliRocketProjectileMesh.txt`
+- `TimeCliRocketProjectileTexture.png`
+- `TimeCliRocketProjectileAudio.wav`
+
+The mesh files are UnityPy OBJ text. UnityPy intentionally converts Unity's
+left-handed mesh to right-handed OBJ by negating X and reversing triangle
+winding; `PrivateProjectileObjMeshLoader` reverses both operations before
+constructing the runtime Unity Mesh. Regression tests lock this conversion.
+
+The extractor was validated against the canonical archive:
+
+```text
+Flak:   30 vertices / 30 UV / 30 normals / 20 triangles
+Rocket: 257 vertices / 257 UV / 257 normals / 204 triangles
+Rocket texture: 128x128 PNG
+Rocket audio: mono / 32000 Hz / 4.64978125 s
+```
+
+The original Rocket AudioSource is `playOnAwake=true`, volume/pitch 1,
+logarithmic rolloff, minDistance 10 and maxDistance 100. The modern runtime
+explicitly starts the private clip because runtime-created AudioSource
+properties are assigned after `AddComponent`.
+
+The original Rocket shader also references `Channel_Cubemap`. Its Unity 5.4
+compiled subprogram blob is not yet promoted as exact shader math: UnityPy
+1.25.3 fails while decoding this specific 5.4 blob. The current public
+`TimeCli/WeaponDiffuseColor` therefore reproduces the confirmed
+`_MainTex * _Color` presentation as a clean fallback and does not claim exact
+cubemap/reflection equivalence.
+
 ## ProjectileDamager
 
 Recovered collision loop:
@@ -401,16 +480,17 @@ pivot.localRotation =
 while timer < 1:
     timer += deltaTime * 5
     projectile.localPosition =
-        (0, Lerp(0,1,timer), 0)
+        (Lerp(0,1,timer), 0, 0)
 
-after ramp:
-    projectile.localPosition = (1,0,0)
+Mathf.Lerp clamps at 1, so the projectile remains at (1,0,0)
+after the radial ramp completes.
 ```
 
-The current clean Unity reconstruction implements the root movement, orbital
-pivot, 0.025-second tail emission cadence and collision timing. Original
-mesh/particle/audio assets remain private inputs and are not committed
-publicly.
+The current reconstruction implements root movement, the exact X-axis orbital
+ramp, the canonical `ParticleTail` child offset, 0.025-second tail emission
+cadence, collision timing, private canonical projectile meshes and optional
+private Rocket texture/audio. Original-derived assets remain private inputs and
+are not committed publicly.
 
 ## Recovered click-weapon fire spots
 
