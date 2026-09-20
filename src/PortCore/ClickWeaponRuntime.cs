@@ -47,16 +47,22 @@ public sealed record ClickWeaponAutomaticFirePlan(
 /// </summary>
 public sealed class ClickWeaponRuntime
 {
-    private double _pistolNextRapidFireTime;
-    private double _cannonNextRapidFireTime;
-    private double _launcherNextRapidFireTime;
+    // The original fields are System.Single and are compared against
+    // UnityEngine.Time.time (also Single). Keep those float semantics here:
+    // using double would shift exact boundary frames such as 0.1 seconds.
+    private float _pistolNextRapidFireTime;
+    private float _cannonNextRapidFireTime;
+    private float _launcherNextRapidFireTime;
 
-    private double _pistolNextAugmentFireTime =
-        double.PositiveInfinity;
-    private double _cannonNextAugmentFireTime =
-        double.PositiveInfinity;
-    private double _launcherNextAugmentFireTime =
-        double.PositiveInfinity;
+    private float _pistolNextAugmentFireTime =
+        float.PositiveInfinity;
+    private float _cannonNextAugmentFireTime =
+        float.PositiveInfinity;
+    private float _launcherNextAugmentFireTime =
+        float.PositiveInfinity;
+
+    private float _cannonChargeProgress;
+    private float _cannonStartDechargingTime;
 
     // -1 means the equivalent of ClickerWeapon.Start has not yet been
     // observed by this portable runtime.
@@ -64,8 +70,8 @@ public sealed class ClickWeaponRuntime
     private long _cannonAutoFireLevel = -1;
     private long _launcherAutoFireLevel = -1;
 
-    public double CannonChargeProgress { get; private set; }
-    public double CannonStartDechargingTime { get; private set; }
+    public double CannonChargeProgress => _cannonChargeProgress;
+    public double CannonStartDechargingTime => _cannonStartDechargingTime;
     public int LauncherClicksProgress { get; private set; }
 
     public double GetCannonMaximumCharge(GameState game)
@@ -185,14 +191,16 @@ public sealed class ClickWeaponRuntime
         }
 
         // ClickCannon.Update runs this after ClickerWeapon.Update.
-        if (nowSeconds > CannonStartDechargingTime &&
-            CannonChargeProgress > 0.0)
-        {
-            CannonChargeProgress -=
-                deltaSeconds * 10.0;
+        float now = (float)nowSeconds;
 
-            if (CannonChargeProgress < 0.0)
-                CannonChargeProgress = 0.0;
+        if (now > _cannonStartDechargingTime &&
+            _cannonChargeProgress > 0f)
+        {
+            _cannonChargeProgress -=
+                (float)deltaSeconds * 10f;
+
+            if (_cannonChargeProgress < 0f)
+                _cannonChargeProgress = 0f;
         }
 
         if (pistolShots == 0 &&
@@ -252,13 +260,13 @@ public sealed class ClickWeaponRuntime
 
     public void TimeWarp()
     {
-        CannonChargeProgress = 0.0;
-        CannonStartDechargingTime = 0.0;
+        _cannonChargeProgress = 0f;
+        _cannonStartDechargingTime = 0f;
         LauncherClicksProgress = 0;
 
-        _pistolNextRapidFireTime = 0.0;
-        _cannonNextRapidFireTime = 0.0;
-        _launcherNextRapidFireTime = 0.0;
+        _pistolNextRapidFireTime = 0f;
+        _cannonNextRapidFireTime = 0f;
+        _launcherNextRapidFireTime = 0f;
 
         // Weapon Augments persist through Time Warp, as do their ClickerWeapon
         // component instances. Do not erase observed augment levels/timers.
@@ -270,20 +278,20 @@ public sealed class ClickWeaponRuntime
     {
         var effects = game.WeaponAugmentEffects;
 
-        CannonChargeProgress += 1.0;
+        _cannonChargeProgress += 1f;
 
-        double maximumCharge =
-            GetCannonMaximumCharge(game);
+        float maximumCharge =
+            (float)GetCannonMaximumCharge(game);
 
-        if (CannonChargeProgress > maximumCharge)
-            CannonChargeProgress = maximumCharge;
+        if (_cannonChargeProgress > maximumCharge)
+            _cannonChargeProgress = maximumCharge;
 
-        CannonStartDechargingTime =
-            nowSeconds + 1.0;
+        _cannonStartDechargingTime =
+            (float)nowSeconds + 1f;
 
         return new ClickCannonFirePlan(
             ProjectileCount:
-                (int)Math.Floor(CannonChargeProgress),
+                (int)Math.Floor(_cannonChargeProgress),
             DamagePerProjectile:
                 game.GetClickDamage(isCritical: false) *
                 effects.ClickCannonDamagePerShot *
@@ -291,7 +299,7 @@ public sealed class ClickWeaponRuntime
             FireConeNormalized:
                 effects.ClickCannonFireCone / 360.0,
             ChargeProgress:
-                CannonChargeProgress,
+                _cannonChargeProgress,
             MaximumCharge:
                 maximumCharge);
     }
@@ -333,7 +341,7 @@ public sealed class ClickWeaponRuntime
 
     private static bool ShouldRapidFire(
         GameState game,
-        ref double nextFireTime,
+        ref float nextFireTime,
         double nowSeconds)
     {
         if (!game.IsAbilityActive(
@@ -342,13 +350,15 @@ public sealed class ClickWeaponRuntime
             return false;
         }
 
+        float now = (float)nowSeconds;
+
         // Original skips only while nextFireTime > Time.time.
-        if (nextFireTime > nowSeconds)
+        if (nextFireTime > now)
             return false;
 
         nextFireTime =
-            nowSeconds +
-            game.ArtifactEffects.RapidFireDelay;
+            now +
+            (float)game.ArtifactEffects.RapidFireDelay;
 
         return true;
     }
@@ -357,9 +367,10 @@ public sealed class ClickWeaponRuntime
         GameState game,
         WeaponAugmentType augmentType,
         ref long observedLevel,
-        ref double nextFireTime,
+        ref float nextFireTime,
         double nowSeconds)
     {
+        float now = (float)nowSeconds;
         ulong level =
             game.WeaponAugments.GetLevel(augmentType);
 
@@ -371,7 +382,7 @@ public sealed class ClickWeaponRuntime
                     game,
                     augmentType,
                     level,
-                    nowSeconds);
+                    now);
 
             return false;
         }
@@ -382,7 +393,7 @@ public sealed class ClickWeaponRuntime
             // ClickerWeapon.OnAutoFireWeaponAugmentChanged:
             // nextWeaponAugmentFireTime = Time.time.
             observedLevel = (long)level;
-            nextFireTime = nowSeconds;
+            nextFireTime = now;
             return false;
         }
 
@@ -390,7 +401,7 @@ public sealed class ClickWeaponRuntime
             return false;
 
         // Original uses next >= Time.time as the no-fire branch.
-        if (nextFireTime >= nowSeconds)
+        if (nextFireTime >= now)
             return false;
 
         double shotsPerMinute =
@@ -401,8 +412,8 @@ public sealed class ClickWeaponRuntime
             return false;
 
         nextFireTime =
-            nowSeconds +
-            60.0 / shotsPerMinute;
+            now +
+            60f / (float)shotsPerMinute;
 
         return true;
     }
@@ -411,9 +422,10 @@ public sealed class ClickWeaponRuntime
         GameState game,
         WeaponAugmentType augmentType,
         ref long observedLevel,
-        ref double nextFireTime,
+        ref float nextFireTime,
         double nowSeconds)
     {
+        float now = (float)nowSeconds;
         ulong level =
             game.WeaponAugments.GetLevel(augmentType);
 
@@ -433,26 +445,26 @@ public sealed class ClickWeaponRuntime
         if ((ulong)observedLevel != level)
         {
             observedLevel = (long)level;
-            nextFireTime = nowSeconds;
+            nextFireTime = now;
         }
     }
 
-    private static double GetInitialAugmentFireTime(
+    private static float GetInitialAugmentFireTime(
         GameState game,
         WeaponAugmentType augmentType,
         ulong level,
-        double nowSeconds)
+        float nowSeconds)
     {
         if (level == 0)
-            return double.PositiveInfinity;
+            return float.PositiveInfinity;
 
         double shotsPerMinute =
             game.WeaponAugments.GetModValue(
                 augmentType);
 
         return shotsPerMinute <= 0.0
-            ? double.PositiveInfinity
+            ? float.PositiveInfinity
             : nowSeconds +
-              60.0 / shotsPerMinute;
+              60f / (float)shotsPerMinute;
     }
 }
