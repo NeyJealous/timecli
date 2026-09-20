@@ -329,6 +329,7 @@ namespace TimeCli.UnityRuntime
 
         public void ProcessClickWeaponProjectileImpact(
             Vector3 impactPoint,
+            Vector3 projectilePosition,
             double damage,
             WeaponType weaponType,
             double nowSeconds)
@@ -401,7 +402,7 @@ namespace TimeCli.UnityRuntime
             // ProjectileDamager emits one additional small spark burst at the
             // projectile root after processing the overlap and Rocket impact.
             SparksParticleView.Emit(
-                impactPoint,
+                projectilePosition,
                 weaponType,
                 SparksKind.Small,
                 0f);
