@@ -2,7 +2,7 @@
 
 Status: **frozen for Phase 3**
 
-PortCore API version: **1.0.0**
+PortCore API version: **1.1.0**
 
 The purpose of this boundary is to prevent Unity presentation work from
 silently changing recovered Time Clickers 1.4.5 gameplay behavior.
@@ -90,7 +90,7 @@ state directly.
 
 ## Main command surface
 
-Current v1 integration surface includes:
+Current v1.1 integration surface includes:
 
 - `GameState.TryPurchaseHero`
 - `GameState.TryPurchaseClickPistol`
@@ -100,7 +100,7 @@ Current v1 integration surface includes:
 - `GameState.ActivateAbility`
 - `GameState.TimeWarp`
 - `GameState.RespecArtifacts`
-- `GameState.ApplyOfflineEarnings`
+- `GameState.ApplyOfflineEarnings`\n- `GameState.TryCollectCubePickup`\n- `GameState.UpdateCubePickups`
 - `HeadlessArenaEngine.SpawnCurrentEnemy`
 - `HeadlessArenaEngine.ClickBlock`
 - `HeadlessArenaEngine.FireHero`
@@ -130,3 +130,24 @@ During Phase 3, a change to recovered gameplay behavior requires:
 4. adapter change only if the v1 command/query surface must change.
 
 Presentation-only changes do not require PortCore modifications.
+
+
+## v1.1 compatibility correction — collectible cubes
+
+For Time Clickers 1.4.5 fidelity, Time/Weapon Cube rewards are no longer
+credited at special-block death.
+
+PortCore now models the original pickup lifecycle:
+
+```text
+block death
+  -> one pickup object per cube
+  -> 2.0 s: collider expands x10
+  -> 5.0 s: auto-collection begins if not clicked
+  -> 0.5 s TweenPosition
+  -> bank credit
+```
+
+Manual collection starts the same 0.5-second completion path immediately.
+The Unity presentation reads this state from `SpecialCubePickupQueue`; bank
+credit remains PortCore-owned.
