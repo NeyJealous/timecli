@@ -869,4 +869,19 @@ AssertEqual(6, endToEndGame.Arena.Wave, "Headless boss clear reaches wave 6");
 if (arenaEngine.CurrentEnemy is not null)
     throw new Exception("Cleared model should be released by headless engine");
 
+// Exact Qubicle -> Arena local coordinate transform
+var centered = VoxelCoordinateMath.ToArenaLocalPosition(
+    new VoxelPoint(6, 3, 2),
+    new VoxelPoint(13, 13, 13));
+AssertEqual(0, centered.X, "Voxel centered X");
+AssertEqual(3, centered.Y, "Voxel preserves Y");
+AssertEqual(4, centered.Z, "Voxel centered/inverted Z");
+
+var centeredCorner = VoxelCoordinateMath.ToArenaLocalPosition(
+    new VoxelPoint(0, 0, 0),
+    new VoxelPoint(10, 5, 8));
+AssertEqual(-4.5, centeredCorner.X, "Voxel even-size X offset");
+AssertEqual(0, centeredCorner.Y, "Voxel even-size Y");
+AssertEqual(3.5, centeredCorner.Z, "Voxel even-size Z inversion");
+
 Console.WriteLine("PortCore smoke tests passed.");
