@@ -683,6 +683,31 @@ AssertClose(
     0.000001f,
     "Sparks alpha hold time");
 
+// Private click-weapon Resources names must stay aligned with the extractor.
+if (OriginalClickWeaponVisualPresentation.PistolTopMeshResource !=
+        "TimeCliPistolTop1Mesh" ||
+    OriginalClickWeaponVisualPresentation.CannonMeshResource !=
+        "TimeCliClickCannonMesh" ||
+    OriginalClickWeaponVisualPresentation.LauncherMeshResource !=
+        "TimeCliClickLauncherMesh" ||
+    OriginalClickWeaponVisualPresentation.CannonTextureResource !=
+        "TimeCliClickCannonTexture" ||
+    OriginalClickWeaponVisualPresentation.LauncherTextureResource !=
+        "TimeCliClickLauncherTexture")
+{
+    throw new Exception(
+        "Click-weapon runtime Resources names drifted from private extractor output.");
+}
+
+if (OriginalClickWeaponVisualPresentation.PistolBaseVertexCount != 684 ||
+    OriginalClickWeaponVisualPresentation.PistolTopVertexCount != 484 ||
+    OriginalClickWeaponVisualPresentation.CannonVertexCount != 864 ||
+    OriginalClickWeaponVisualPresentation.LauncherVertexCount != 836)
+{
+    throw new Exception(
+        "Canonical click-weapon mesh vertex counts changed.");
+}
+
 // Canonical FlakBullet / RocketPrefab presentation.
 AssertClose(
     OriginalProjectileVisualPresentation.FlakRootScale.z,
