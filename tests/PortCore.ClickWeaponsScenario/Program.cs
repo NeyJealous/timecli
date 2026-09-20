@@ -34,6 +34,7 @@ static void AssertTrue(bool value, string name)
     game.WeaponAugments.SetLevel(
         WeaponAugmentType.ClickCannonUnlock,
         1);
+    MatureClickWeaponUnlocks(game);
 
     for (int click = 1; click <= 6; click++)
     {
@@ -87,6 +88,7 @@ static void AssertTrue(bool value, string name)
     game.WeaponAugments.SetLevel(
         WeaponAugmentType.ClickLauncherUnlock,
         1);
+    MatureClickWeaponUnlocks(game);
 
     for (int click = 1; click <= 9; click++)
     {
@@ -146,6 +148,8 @@ static void AssertTrue(bool value, string name)
     game.WeaponAugments.SetLevel(
         WeaponAugmentType.ClickLauncherRocketSpeed,
         2); // 120%
+
+    MatureClickWeaponUnlocks(game);
 
     game.Gold.Add(1e9);
     AssertTrue(
@@ -220,6 +224,8 @@ static void AssertTrue(bool value, string name)
     game.WeaponAugments.SetLevel(
         WeaponAugmentType.ClickLauncherUnlock,
         1);
+
+    MatureClickWeaponUnlocks(game);
 
     game.Gold.Add(1e9);
     AssertTrue(
@@ -396,13 +402,28 @@ static void AssertTrue(bool value, string name)
         WeaponAugmentType.ClickCannonUnlock,
         1);
 
+    // ClickCannon.DelayedShow waits 1.5 seconds before Show/UnlockWeapon.
+    game.UpdateClickWeapons(
+        nowSeconds: 2.0,
+        deltaSeconds: 0);
+    AssertTrue(
+        !game.ClickWeapons.CannonUnlocked,
+        "Cannon unlock is delayed");
+
+    game.UpdateClickWeapons(
+        nowSeconds: 3.5,
+        deltaSeconds: 0);
+    AssertTrue(
+        game.ClickWeapons.CannonUnlocked,
+        "Cannon latches unlocked after 1.5 seconds");
+
     game.ClickWeapons.SetMode(
         ClickWeaponSlot.Cannon,
         ClickWeaponMode.Disabled,
-        nowSeconds: 2);
+        nowSeconds: 4.0);
 
     var hidden =
-        game.RegisterManualClickWeapons(2.01);
+        game.RegisterManualClickWeapons(4.01);
 
     AssertTrue(
         hidden.Cannon is null,
@@ -410,17 +431,17 @@ static void AssertTrue(bool value, string name)
 
     game.ClickWeapons.CycleMode(
         ClickWeaponSlot.Cannon,
-        nowSeconds: 2.1);
+        nowSeconds: 4.1);
 
     var stillAppearing =
-        game.RegisterManualClickWeapons(2.149);
+        game.RegisterManualClickWeapons(4.149);
 
     AssertTrue(
         stillAppearing.Cannon is null,
         "Cannon Show waits the recovered 50 ms before activation");
 
     var shown =
-        game.RegisterManualClickWeapons(2.151);
+        game.RegisterManualClickWeapons(4.151);
 
     AssertTrue(
         shown.Cannon is not null,
@@ -505,6 +526,19 @@ static void AssertTrue(bool value, string name)
         game.GetClickDamage(true),
         spreadPlan.ClickDamage,
         "Critical damage reused across all spread rays");
+}
+
+static void MatureClickWeaponUnlocks(GameState game)
+{
+    // Treat -2s..0s as a pre-scenario startup window so the exact
+    // ClickCannon (1.5s) and ClickLauncher (1.0s) DelayedShow coroutines can
+    // mature without shifting the timing assertions in each independent case.
+    game.UpdateClickWeapons(
+        nowSeconds: -2.0,
+        deltaSeconds: 0);
+    game.UpdateClickWeapons(
+        nowSeconds: 0.0,
+        deltaSeconds: 0);
 }
 
 Console.WriteLine(
