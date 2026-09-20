@@ -95,7 +95,10 @@ namespace TimeCli.UnityRuntime
                         transform.position);
 
                     if (_collider != null)
-                        _collider.enabled = false;
+                    {
+                        Destroy(_collider);
+                        _collider = null;
+                    }
                 }
 
                 float t = (float)_state.CollectionProgress(nowSeconds);
