@@ -10,7 +10,9 @@ namespace TimeCli.UnityRuntime
     /// </summary>
     public sealed class OriginalBlockGeometry : MonoBehaviour
     {
-        private static Material _sharedMaterial;
+        private static Material _normalMaterial;
+        private static Material _rainbowMaterial;
+        private static Material _timeCubeMaterial;
 
         private static readonly int[] Triangles =
         {
@@ -58,6 +60,7 @@ namespace TimeCli.UnityRuntime
         private static readonly Vector2[] Uv = BuildUv();
 
         private Mesh _mesh;
+        private MeshRenderer _renderer;
         private Vector3[] _vertices;
         private Color[] _colors;
 
@@ -116,10 +119,10 @@ namespace TimeCli.UnityRuntime
                 filter = gameObject.AddComponent<MeshFilter>();
             filter.sharedMesh = _mesh;
 
-            var renderer = GetComponent<MeshRenderer>();
-            if (renderer == null)
-                renderer = gameObject.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = GetSharedMaterial();
+            _renderer = GetComponent<MeshRenderer>();
+            if (_renderer == null)
+                _renderer = gameObject.AddComponent<MeshRenderer>();
+            _renderer.sharedMaterial = GetMaterial(EnemyType.Red);
 
             var collider = GetComponent<BoxCollider>();
             if (collider == null)
@@ -143,23 +146,50 @@ namespace TimeCli.UnityRuntime
                 _colors[i] = new Color(0f, 0f, 0f, 0f);
 
             _mesh.colors = _colors;
+
+            if (_renderer != null)
+                _renderer.sharedMaterial = GetMaterial(type);
         }
 
-        private static Material GetSharedMaterial()
+        private static Material GetMaterial(EnemyType type)
         {
-            if (_sharedMaterial != null)
-                return _sharedMaterial;
+            return type switch
+            {
+                EnemyType.Rainbow => GetOrCreateMaterial(
+                    ref _rainbowMaterial,
+                    "TimeCli/RainbowEnemy",
+                    "TimeCli_Reconstructed_RainbowEnemy"),
+                EnemyType.TimeCube or EnemyType.WeaponCube => GetOrCreateMaterial(
+                    ref _timeCubeMaterial,
+                    "TimeCli/TimeCubeEnemy",
+                    "TimeCli_Reconstructed_TimeCubeEnemy"),
+                _ => GetOrCreateMaterial(
+                    ref _normalMaterial,
+                    "TimeCli/BlockVertexColor",
+                    "TimeCli_Reconstructed_SimpleEnemy")
+            };
+        }
 
-            Shader shader = Shader.Find("TimeCli/BlockVertexColor");
+        private static Material GetOrCreateMaterial(
+            ref Material cache,
+            string shaderName,
+            string materialName)
+        {
+            if (cache != null)
+                return cache;
+
+            Shader shader = Shader.Find(shaderName);
+            if (shader == null)
+                shader = Shader.Find("TimeCli/BlockVertexColor");
             if (shader == null)
                 shader = Shader.Find("Unlit/Color");
 
-            _sharedMaterial = new Material(shader)
+            cache = new Material(shader)
             {
-                name = "TimeCli_Reconstructed_Block_Material"
+                name = materialName
             };
 
-            return _sharedMaterial;
+            return cache;
         }
 
         private static Vector2[] BuildUv()
