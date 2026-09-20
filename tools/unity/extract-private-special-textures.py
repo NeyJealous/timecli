@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Extract the three private original-derived special-cube textures used by the
-modern TimeCli reconstruction.
+Extract private original-derived textures used by the modern TimeCli
+reconstruction, including the special cubes and Rocket tail particle.
 
 Input may be either:
   - a reassembled sharedassets1.assets file, or
@@ -143,6 +143,10 @@ def decode_level0(tex: dict) -> tuple[int, bytes]:
         size = width * height * 3
         return 2, raw[:size]  # PNG RGB
 
+    if fmt == 4:  # RGBA32
+        size = width * height * 4
+        return 6, raw[:size]  # PNG RGBA
+
     if fmt == 7:  # RGB565
         size = width * height
         out = bytearray(size * 3)
@@ -228,7 +232,11 @@ def main() -> None:
             continue
 
         tex = parse_texture2d(data[start:start + size])
-        if tex["name"] in {"TimeCube", "WeaponCube"}:
+        if tex["name"] in {
+            "TimeCube",
+            "WeaponCube",
+            "Smoke Toon PRT TEX MOD",
+        }:
             tex["path_id"] = path_id
             candidates.append(tex)
 
@@ -248,6 +256,11 @@ def main() -> None:
         "TimeCliWeaponCubeTexture.png": next(
             t for t in candidates
             if t["name"] == "WeaponCube" and t["format"] == 1
+        ),
+        "TimeCliRocketTailTexture.png": next(
+            t for t in candidates
+            if t["name"] == "Smoke Toon PRT TEX MOD"
+            and t["format"] == 4
         ),
     }
 
