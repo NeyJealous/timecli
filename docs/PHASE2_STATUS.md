@@ -2,85 +2,60 @@
 
 ## Status
 
-**Late-stage / gate candidate.** The economy, progression, Arena state,
-voxel selection/allocation, block damage/rewards and full timeline orchestration
-now run without Unity.
+**COMPLETE. Gate passed.**
 
-## Implemented
+The Unity-independent gameplay core now reproduces the recovered Time Clickers
+1.4.5 progression/combat rules needed by the modern port.
 
-The portable core contains compatibility implementations for:
+PortCore integration API is frozen as **v1.0.0** for Phase 3.
 
-- Arena HP, wave progression, cube spawn rules and per-timeline reward history;
-- lower-wave farming plus previous/next/direct unlocked-wave navigation;
-- boss timer, timeout, 0.5 s same-wave retry and successful boss completion;
-- Artifact / Weapon Augment canonical balance, exact prerequisite graphs,
-  buy/sell/refund and Artifact respec;
-- all 5 heroes, their 35-upgrade trees, infinite Promotion/Training/Spec Ops
-  progression and x1/next-upgrade/next-rank/max purchasing;
-- hero DPS, rate-of-fire, projectile-count, United Front, critical,
-  gold-find and click-contribution math;
-- Click Pistol progression and purchasing;
-- all 10 Active Abilities, sequential purchasing, Cooldown and Dimension Shift;
+## Covered systems
+
+- Arena HP, wave/max-wave/farm navigation and boss retry behavior;
+- exact Time/Weapon Cube spawn/reward rules;
+- Artifact / Weapon Augment balance, dependency graphs, buy/sell/refund/respec;
+- all 5 canonical Heroes and all base upgrade trees;
+- Promotion / Training / infinite Spec Ops;
+- Hero x1 / next-upgrade / next-rank / MAX purchasing;
+- Click Pistol progression;
+- all 10 Active Abilities, Cooldown and Dimension Shift;
 - Gold / Time Cube / Weapon Cube banks;
-- BoxEnemy-style block HP, targeting mask, click/normal damage, overkill and
-  gold/cube rewards;
-- Qubicle/Unity TextAsset voxel extraction tooling;
-- VoxelLibrary HP decomposition, model filtering and exact boss override;
-- Artifact enemy-count transformations;
-- Arena voxel block-allocation/fallback logic, special cube replacement,
-  Rainbow conversion and first-enemy path;
-- headless Arena orchestration joining spawn -> block destruction -> model
-  completion -> wave progression;
-- offline earnings with the original 172800-second cap and fallback formula;
-- aggregate GameState;
-- legacy save-format codec reference.
+- BoxEnemy-style block damage/death/rewards;
+- Hero auto-fire targeting for Pulse Pistol, Flak Cannon, Spread Rifle,
+  Rocket Launcher and Particle Ball;
+- Flak/Spread Never Miss behavior;
+- Rocket splash targeting;
+- Particle fifth-shot Collider behavior;
+- Qubicle voxel extraction, HP decomposition, model selection and block
+  allocation;
+- 141-model local voxel corpus validation through wave 5000;
+- deterministic headless Arena orchestration;
+- offline earnings;
+- Time Warp;
+- legacy save compatibility reference.
 
-## Voxel corpus recovery
+## Gate tests
 
-The complete Android 1.4.5 corpus has been parsed locally:
+GitHub Actions validates four independent gates:
 
-- 141 voxel models;
-- 43 numeric boss-key models;
-- exact private block coordinates recovered;
-- four expected colors only;
-- model selection validated for every wave 1..5000;
-- zero waves without an eligible model;
-- all Time Cube candidate models have the required White replacement slot;
-- all Weapon Cube candidate models from wave 1000 have the required
-  Black/Yellow replacement slot.
+- formula/state smoke regression;
+- deterministic timeline: new game -> wave 100 -> Time Cubes -> Time Warp ->
+  first Artifact;
+- all-Hero auto-fire/targeting scenario;
+- `netstandard2.1` build for Unity consumption.
 
-The public repository intentionally stores the parser/logic but not the
-original-derived coordinate corpus.
+All four gates pass.
 
-## Confirmed Arena behavior
+## Deferred to Unity/platform phases
 
-Boss failure does **not** move the player to the previous wave:
+These do not change the recovered portable game rules:
 
-`timer expires -> clear current boss -> 0.5 s delay -> restart same boss wave`.
+- private canonical voxel coordinate import into Unity;
+- visual projectile flight/collisions/VFX;
+- original scene/UI reconstruction;
+- original graphics/audio;
+- achievements/stat presentation side effects;
+- platform SDK replacements;
+- iOS lifecycle/signing.
 
-Lower regular waves are true farm mode. Once the player selects a wave below
-`MaxWave`, only the first completed model sets the kill counter to one;
-subsequent clears do not increment it, so the game does not automatically
-return to the highest unlocked wave.
-
-## CI validation
-
-GitHub Actions now runs two independent jobs:
-
-1. `PortCore.Smoke` — formula/state regression suite.
-2. `PortCore.TimelineScenario` — deterministic new-game simulation through
-   wave 100, guaranteed Time Cube reward, Time Warp and first Artifact purchase.
-
-Both jobs pass on the current gate candidate.
-
-## Remaining before Phase 2 is frozen
-
-- reconstruct/validate the remaining Hero auto-fire target-selection behavior
-  for Flak Cannon, Spread Rifle, Rocket Launcher and Particle Ball;
-- define the stable PortCore <-> Unity adapter contract;
-- import the private canonical voxel layouts when `timecli-originals` is
-  populated, then run the same headless scenario against the real layout catalog.
-
-Achievement/stat side effects, VFX, audio, UI, physical projectile visuals,
-scene serialization and legacy platform SDKs remain Unity/platform work rather
-than blockers for the portable progression core.
+See `docs/PORTCORE_UNITY_CONTRACT.md` for the frozen Phase 3 boundary.
