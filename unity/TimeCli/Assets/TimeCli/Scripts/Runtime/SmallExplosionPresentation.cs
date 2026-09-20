@@ -388,14 +388,13 @@ namespace TimeCli.UnityRuntime
                         rotation =
                             UnityEngine.Random.Range(
                                 0f,
-                                2f * Mathf.PI),
+                                360f),
                         angularVelocity =
                             UnityEngine.Random.Range(
                                -OriginalSmallExplosionPresentation
                                     .RandomAngularVelocity,
                                 OriginalSmallExplosionPresentation
-                                    .RandomAngularVelocity) *
-                            Mathf.Deg2Rad,
+                                    .RandomAngularVelocity),
                         startColor =
                             Color.white
                     };
