@@ -17,6 +17,7 @@ namespace TimeCli.UnityRuntime
             public int minWave;
             public bool hasBossWave;
             public int bossWave;
+            public PointEntry size;
 
             public PointEntry[] red = Array.Empty<PointEntry>();
             public PointEntry[] white = Array.Empty<PointEntry>();
