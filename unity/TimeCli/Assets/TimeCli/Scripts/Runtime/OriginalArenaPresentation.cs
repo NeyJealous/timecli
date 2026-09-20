@@ -27,6 +27,18 @@ namespace TimeCli.UnityRuntime
 
         // Original BoxEnemy prefab: unit transform scale + 1x1x1 BoxCollider.
         public const float BlockSpacing = 1f;
+
+        // Recovered initial world-space click-weapon fire spots from
+        // Assets/_CustomAssets/_Scenes/Arena.unity. Their runtime aim pivots
+        // rotate later; these are the exact scene-authored rest positions.
+        public static readonly Vector3 ClickPistolFireSpot =
+            new(0.600000024f, 0.301000000f, -7.30099994f);
+
+        public static readonly Vector3 ClickCannonFireSpot =
+            new(0.06999986f, 0.31599993f, -7.30079996f);
+
+        public static readonly Vector3 ClickLauncherFireSpot =
+            new(-0.59999985f, 0.20599997f, -7.49800003f);
     }
 
     /// <summary>
