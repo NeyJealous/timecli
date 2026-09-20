@@ -236,6 +236,7 @@ def main() -> None:
             "TimeCube",
             "WeaponCube",
             "Smoke Toon PRT TEX MOD",
+            "FireB",
         }:
             tex["path_id"] = path_id
             candidates.append(tex)
@@ -261,6 +262,11 @@ def main() -> None:
             t for t in candidates
             if t["name"] == "Smoke Toon PRT TEX MOD"
             and t["format"] == 4
+        ),
+        "TimeCliSmallExplosionTexture.png": next(
+            t for t in candidates
+            if t["name"] == "FireB"
+            and t["format"] == 3
         ),
     }
 
