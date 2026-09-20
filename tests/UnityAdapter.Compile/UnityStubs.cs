@@ -103,6 +103,9 @@ namespace UnityEngine
         public static Vector3 operator +(Vector3 a, Vector3 b) =>
             new(a.x + b.x, a.y + b.y, a.z + b.z);
 
+        public static Vector3 Scale(Vector3 a, Vector3 b) =>
+            new(a.x * b.x, a.y * b.y, a.z * b.z);
+
         public static Vector3 Lerp(Vector3 a, Vector3 b, float t) =>
             new(
                 a.x + (b.x - a.x) * t,
@@ -112,9 +115,13 @@ namespace UnityEngine
 
     public readonly struct Quaternion
     {
+        public Quaternion(float x, float y, float z, float w) { }
+
         public static Quaternion Euler(float x, float y, float z) => new();
         public static Quaternion LookRotation(Vector3 forward) => new();
         public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => new();
+
+        public static Vector3 operator *(Quaternion q, Vector3 v) => v;
     }
 
     public readonly struct Rect
@@ -144,6 +151,8 @@ namespace UnityEngine
         public float depth { get; set; }
         public CameraClearFlags clearFlags { get; set; }
         public Color backgroundColor { get; set; }
+
+        public Vector3 ViewportToWorldPoint(Vector3 position) => position;
     }
 
     public sealed class Light : Behaviour
@@ -269,6 +278,7 @@ namespace UnityEngine
 
     public static class Screen
     {
+        public static int width => 1170;
         public static int height => 1080;
     }
 
