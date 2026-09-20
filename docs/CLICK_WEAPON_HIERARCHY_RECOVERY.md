@@ -121,3 +121,33 @@ adapter preflight.
 The private extractor remains useful as an independent forensic verifier and
 for future original-derived nodes/assets, but runtime aiming no longer depends
 on the private hierarchy JSON.
+
+
+## Shoot Animator recovery
+
+The canonical AnimatorControllers are now decoded as well.
+
+Recovered model Animator bindings:
+
+- Pistol model `Pistol`, Animator path ID 1509, controller 439.
+  `ClickerPistolShoot` lasts **0.0833333358 s** at **120 Hz** and animates
+  only the child transform `top1` (binding hash `4168293638`).
+- Cannon model `s20`, Animator path ID 1511, controller 437.
+  `ClickCannonFire` lasts **0.0833333358 s** at **60 Hz** and animates the
+  model-root position while keeping its recovered quaternion constant.
+- Launcher model `launcher`, Animator path ID 1484, controller 451.
+  `RocketLauncher` lasts **0.1666666716 s** at **60 Hz** and animates the
+  model-root position plus all four quaternion components.
+
+The Pistol binding hash was resolved against the actual model hierarchy:
+`CRC32("top1") = 4168293638`, so the recoil is applied to the slide rather
+than moving the whole weapon.
+
+The compressed AnimationClip streams were decoded into exact Unity
+`AnimationCurve` keyframes/tangents in
+`OriginalClickWeaponShootAnimation.cs`. Runtime firing now starts those
+curves directly, avoiding any dependency on the old Unity 5.4
+AnimatorController.
+
+The original Appear/Disappear clips are identified and timed but are not yet
+promoted; model meshes/materials are also a separate reconstruction target.
