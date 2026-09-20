@@ -356,9 +356,11 @@ namespace UnityEngine
     {
         public string name { get; set; } = string.Empty;
         public Vector3[] vertices { get; set; } = Array.Empty<Vector3>();
+        public Vector3[] normals { get; set; } = Array.Empty<Vector3>();
         public int[] triangles { get; set; } = Array.Empty<int>();
         public Vector2[] uv { get; set; } = Array.Empty<Vector2>();
         public Color[] colors { get; set; } = Array.Empty<Color>();
+        public void RecalculateNormals() { }
         public void RecalculateBounds() { }
     }
 
