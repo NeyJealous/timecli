@@ -63,6 +63,8 @@ Implemented under `unity/TimeCli`:
 - canonical Manual Aim -> Auto Aim -> Disabled control modes, immediate Hide
   semantics, 0.05 s Show reactivation gate, and delayed/latching first unlock:
   Cannon 1.5 s, Launcher 1.0 s;
+- canonical click-weapon private meshes/MainTex/cubemaps and exact recovered
+  `Custom/Weapon Diffuse Color` GLES blend/reference math;
 - canonical click-weapon firing audio plus shared delayed PistolWield appear
   audio through the six-source Pickups one-shot queue;
 - canonical VirtualPS.Sparks presentation for pistol/projectile hits and block
@@ -229,9 +231,7 @@ a machine with that Editor installed.
 
 Code-side work can continue in parallel. The next reconstruction targets are:
 
-- exact Rocket / click-weapon `Custom/Weapon Diffuse Color`
-  cubemap/reflection math; canonical private cubemap extraction/rebuild is now
-  available, while exact shader math remains under verification;
-- remaining VirtualPS/combat presentation systems outside the recovered
-  Sparks, RocketTail and SmallExplosion paths;
+- remaining actively-called VirtualPS progression systems outside the
+  recovered Sparks, RocketTail and SmallExplosion paths: LevelUp, Upgrade,
+  ArtifactBuy/Sell, Promote, Training, SpecOps and DimensionShift;
 - remaining combat/UI audio fidelity and native Unity integration checks.
