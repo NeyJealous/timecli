@@ -31,6 +31,12 @@ namespace TimeCli.UnityRuntime
         [SerializeField]
         private Transform clickPistolFireSpot;
 
+        [SerializeField]
+        private Transform clickCannonFireSpot;
+
+        [SerializeField]
+        private Transform clickLauncherFireSpot;
+
         private readonly List<VoxelBlockView> _views = new();
         private readonly Dictionary<long, SpecialCubePickupView> _pickupViews = new();
 
@@ -58,6 +64,9 @@ namespace TimeCli.UnityRuntime
             double now = Time.timeAsDouble;
             bootstrap.Game.UpdateAbilities(now);
             bootstrap.Game.UpdateCubePickups(now);
+            bootstrap.Game.UpdateClickWeapons(
+                now,
+                Time.deltaTime);
             SyncPickupViews(now);
 
             BossTickResult bossTick = bootstrap.Arena.TickBoss(now);
@@ -116,6 +125,14 @@ namespace TimeCli.UnityRuntime
             double now = Time.timeAsDouble;
             Vector3 targetPosition =
                 _views[blockIndex].transform.position;
+
+            ClickWeaponFirePlan auxiliary =
+                bootstrap.Game.RegisterManualClickWeapons(
+                    now);
+
+            SpawnClickWeaponProjectiles(
+                auxiliary,
+                targetPosition);
 
             // Original Skills.GetIsCritical:
             // UnityEngine.Random.value < Skills.GetCriticalChance().
@@ -215,6 +232,143 @@ namespace TimeCli.UnityRuntime
             return clickPistolFireSpot != null
                 ? clickPistolFireSpot.position
                 : OriginalArenaPresentation.ClickPistolFireSpot;
+        }
+
+        public Vector3 GetClickCannonFireSpot()
+        {
+            return clickCannonFireSpot != null
+                ? clickCannonFireSpot.position
+                : OriginalArenaPresentation.ClickCannonFireSpot;
+        }
+
+        public Vector3 GetClickLauncherFireSpot()
+        {
+            return clickLauncherFireSpot != null
+                ? clickLauncherFireSpot.position
+                : OriginalArenaPresentation.ClickLauncherFireSpot;
+        }
+
+        public void ProcessClickWeaponProjectileImpact(
+            Vector3 impactPoint,
+            double damage,
+            WeaponType weaponType,
+            double nowSeconds)
+        {
+            if (bootstrap == null ||
+                bootstrap.Arena.CurrentEnemy == null)
+            {
+                return;
+            }
+
+            Collider[] hits =
+                Physics.OverlapSphere(
+                    impactPoint,
+                    OriginalProjectilePresentation.ImpactRadius,
+                    OriginalProjectilePresentation.HitboxMask);
+
+            var damagedBlocks = new HashSet<int>();
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                VoxelBlockView view =
+                    hits[i].GetComponent<VoxelBlockView>();
+
+                if (view == null ||
+                    view.State == null ||
+                    !view.State.IsAlive ||
+                    !damagedBlocks.Add(view.BlockIndex))
+                {
+                    continue;
+                }
+
+                if (bootstrap.Arena.CurrentEnemy == null)
+                    break;
+
+                ArenaBlockAttackResult result =
+                    bootstrap.Arena.ClickWeaponDamageBlock(
+                        view.BlockIndex,
+                        damage,
+                        nowSeconds);
+
+                view.Refresh();
+
+                if (result.ModelCleared)
+                {
+                    ClearViews();
+                    break;
+                }
+            }
+
+            SyncPickupViews(nowSeconds);
+
+            // weaponType is presentation-relevant even though BoxEnemy damage
+            // math is identical after the precomputed click damage reaches it.
+            if (weaponType == WeaponType.RocketLauncher)
+                SpawnRocketExplosion(impactPoint);
+        }
+
+        private void SpawnClickWeaponProjectiles(
+            ClickWeaponFirePlan plan,
+            Vector3 targetPosition)
+        {
+            if (plan.Cannon is not null)
+            {
+                for (int i = 0;
+                     i < plan.Cannon.ProjectileCount;
+                     i++)
+                {
+                    ClickWeaponProjectileView.SpawnFlak(
+                        this,
+                        GetClickCannonFireSpot(),
+                        targetPosition,
+                        plan.Cannon.DamagePerProjectile,
+                        plan.Cannon.FireConeNormalized);
+                }
+            }
+
+            if (plan.Launcher is not null)
+            {
+                for (int i = 0;
+                     i < plan.Launcher.RocketCount;
+                     i++)
+                {
+                    ClickWeaponProjectileView.SpawnRocket(
+                        this,
+                        GetClickLauncherFireSpot(),
+                        targetPosition,
+                        plan.Launcher.DamagePerRocket,
+                        plan.Launcher.RocketSpeedMultiplier,
+                        i,
+                        plan.Launcher.RocketCount);
+                }
+            }
+        }
+
+        private void SpawnRocketExplosion(
+            Vector3 position)
+        {
+            GameObject explosion =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Sphere);
+
+            explosion.name =
+                "RocketExplosion";
+            explosion.transform.position =
+                position;
+            explosion.transform.localScale =
+                Vector3.one * 0.55f;
+
+            Collider collider =
+                explosion.GetComponent<Collider>();
+
+            if (collider != null)
+                Destroy(collider);
+
+            var lifetime =
+                explosion.AddComponent<TimedVisualDestroy>();
+
+            lifetime.Lifetime =
+                OriginalProjectilePresentation.RocketExplosionLifetime;
         }
 
         public Vector3 GetPickupCollectionPoint(
@@ -319,6 +473,10 @@ namespace TimeCli.UnityRuntime
                 GameObject instance = CreateBlockObject();
 
                 instance.name = $"Voxel_{i}_{state.EnemyType}";
+                // Original ProjectileDamager uses hitboxMask 2560, which
+                // includes layer 9. Keep reconstructed enemy colliders inside
+                // that mask without requiring project-specific named layers.
+                instance.layer = 9;
                 instance.transform.SetParent(blockRoot, false);
 
                 VoxelPoint position = spawned.IsVeryFirstEnemy
