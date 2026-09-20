@@ -1,6 +1,7 @@
 param(
     [string]$UnityPath = "C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.24f1\\Editor\\Unity.exe",
     [string]$PrivateVoxelJson = "",
+    [string]$OriginalDataSource = "",
     [switch]$OpenAfterSetup
 )
 
@@ -17,7 +18,7 @@ if (-not (Test-Path $UnityPath)) {
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
-Write-Host "1/3 Building PortCore for Unity..."
+Write-Host "1/4 Building PortCore for Unity..."
 & (Join-Path $PSScriptRoot "sync-portcore.ps1")
 
 if ($LASTEXITCODE -ne 0) {
@@ -32,7 +33,7 @@ if ($PrivateVoxelJson) {
     $OutputCatalog = Join-Path $ProjectPath "Assets/TimeCli/PrivateGenerated/Resources/TimeCliVoxelCatalog.bytes"
     $Converter = Join-Path $PSScriptRoot "build-private-voxel-catalog.py"
 
-    Write-Host "2/3 Building private canonical voxel catalog..."
+    Write-Host "2/4 Building private canonical voxel catalog..."
     python $Converter $PrivateVoxelJson $OutputCatalog
 
     if ($LASTEXITCODE -ne 0) {
@@ -40,10 +41,29 @@ if ($PrivateVoxelJson) {
     }
 }
 else {
-    Write-Host "2/3 No private voxel JSON supplied; Unity will use the development catalog."
+    Write-Host "2/4 No private voxel JSON supplied; Unity will use the development catalog."
 }
 
-Write-Host "3/3 Running Unity batch compile + Arena scene generation..."
+if ($OriginalDataSource) {
+    if (-not (Test-Path $OriginalDataSource)) {
+        throw "Original Data/sharedassets source not found: $OriginalDataSource"
+    }
+
+    $PrivateResources = Join-Path $ProjectPath "Assets/TimeCli/PrivateGenerated/Resources"
+    $TextureExtractor = Join-Path $PSScriptRoot "extract-private-special-textures.py"
+
+    Write-Host "3/4 Extracting private TimeCube/WeaponCube textures..."
+    python $TextureExtractor $OriginalDataSource $PrivateResources
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Special-cube texture extraction failed."
+    }
+}
+else {
+    Write-Host "3/4 No original Data source supplied; special cubes use procedural fallback visuals."
+}
+
+Write-Host "4/4 Running Unity batch compile + Arena scene generation..."
 $UnityArgs = @(
     "-batchmode",
     "-nographics",
