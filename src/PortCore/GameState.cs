@@ -19,6 +19,7 @@ public sealed class GameState
         WeaponCubes = new WeaponCubeBankState();
         ArenaRewards = new ArenaRewardHistory();
         CubePickups = new SpecialCubePickupQueue();
+        ClickWeapons = new ClickWeaponRuntime();
 
         Heroes = CanonicalHeroes.All.Select(h => new HeroRuntime(h)).ToArray();
         ClickPistol = new SkillRuntime(CanonicalSkills.ClickPistol);
@@ -37,6 +38,7 @@ public sealed class GameState
     public WeaponCubeBankState WeaponCubes { get; }
     public ArenaRewardHistory ArenaRewards { get; }
     public SpecialCubePickupQueue CubePickups { get; }
+    public ClickWeaponRuntime ClickWeapons { get; }
 
     public HeroRuntime[] Heroes { get; }
     public SkillRuntime ClickPistol { get; }
@@ -77,6 +79,7 @@ public sealed class GameState
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
+        ClickWeapons.TimeWarp();
 
         return earnedTimeCubes;
     }
@@ -154,6 +157,7 @@ public sealed class GameState
         ArenaRewards.TimeWarp();
         Gold.TimeWarp(effects.StartingGold);
         WeaponCubes.TimeWarp();
+        ClickWeapons.TimeWarp();
         RecalculateAbilities(0);
 
         return pendingAdded;
@@ -323,6 +327,36 @@ public sealed class GameState
         ApplyBlockReward(block, result, nowSeconds);
         return result;
     }
+
+    public BlockDamageResult ApplyPrecomputedClickDamageToBlock(
+        EnemyBlockState block,
+        double clickDamage,
+        double nowSeconds = 0)
+    {
+        var result = block.ApplyClickDamage(
+            clickDamage,
+            ArtifactEffects,
+            GetHeroesGoldFindMultiplier(),
+            IsAbilityActive(AbilityType.GoldRush));
+
+        ApplyBlockReward(block, result, nowSeconds);
+        return result;
+    }
+
+    public ClickWeaponFirePlan RegisterManualClickWeapons(
+        double nowSeconds) =>
+        ClickWeapons.RegisterManualClick(
+            this,
+            nowSeconds);
+
+    public void UpdateClickWeapons(
+        double nowSeconds,
+        double deltaSeconds) =>
+        ClickWeapons.Update(
+            this,
+            nowSeconds,
+            deltaSeconds);
+
 
     public bool TryCollectCubePickup(long pickupId, double nowSeconds) =>
         CubePickups.TryCollect(pickupId, nowSeconds);
