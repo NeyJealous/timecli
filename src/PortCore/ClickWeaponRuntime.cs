@@ -64,6 +64,16 @@ public sealed class ClickWeaponRuntime
     private float _cannonChargeProgress;
     private float _cannonStartDechargingTime;
 
+    private ClickWeaponMode _pistolMode = ClickWeaponMode.ManualAim;
+    private ClickWeaponMode _cannonMode = ClickWeaponMode.ManualAim;
+    private ClickWeaponMode _launcherMode = ClickWeaponMode.ManualAim;
+
+    // Returning from Disabled calls ClickerWeapon.Show(). The original
+    // Appear coroutine leaves weaponIsActive false for 0.05 seconds.
+    private float _pistolReactivateTime = float.NegativeInfinity;
+    private float _cannonReactivateTime = float.NegativeInfinity;
+    private float _launcherReactivateTime = float.NegativeInfinity;
+
     // -1 means the equivalent of ClickerWeapon.Start has not yet been
     // observed by this portable runtime.
     private long _pistolAutoFireLevel = -1;
@@ -73,6 +83,89 @@ public sealed class ClickWeaponRuntime
     public double CannonChargeProgress => _cannonChargeProgress;
     public double CannonStartDechargingTime => _cannonStartDechargingTime;
     public int LauncherClicksProgress { get; private set; }
+
+    public ClickWeaponMode GetMode(ClickWeaponSlot slot) =>
+        slot switch
+        {
+            ClickWeaponSlot.Pistol => _pistolMode,
+            ClickWeaponSlot.Cannon => _cannonMode,
+            ClickWeaponSlot.Launcher => _launcherMode,
+            _ => throw new ArgumentOutOfRangeException(nameof(slot))
+        };
+
+    public bool IsIdle(ClickWeaponSlot slot) =>
+        GetMode(slot) == ClickWeaponMode.AutoAim;
+
+    public bool IsWeaponActive(
+        ClickWeaponSlot slot,
+        double nowSeconds)
+    {
+        ClickWeaponMode mode = GetMode(slot);
+        if (mode == ClickWeaponMode.Disabled)
+            return false;
+
+        float now = (float)nowSeconds;
+        float ready = slot switch
+        {
+            ClickWeaponSlot.Pistol => _pistolReactivateTime,
+            ClickWeaponSlot.Cannon => _cannonReactivateTime,
+            ClickWeaponSlot.Launcher => _launcherReactivateTime,
+            _ => throw new ArgumentOutOfRangeException(nameof(slot))
+        };
+
+        return float.IsNegativeInfinity(ready) || now >= ready;
+    }
+
+    public ClickWeaponMode SetMode(
+        ClickWeaponSlot slot,
+        ClickWeaponMode mode,
+        double nowSeconds)
+    {
+        ClickWeaponMode previous = GetMode(slot);
+        if (previous == mode)
+            return mode;
+
+        float reactivation =
+            previous == ClickWeaponMode.Disabled &&
+            mode != ClickWeaponMode.Disabled
+                ? (float)nowSeconds + 0.05f
+                : float.NegativeInfinity;
+
+        switch (slot)
+        {
+            case ClickWeaponSlot.Pistol:
+                _pistolMode = mode;
+                _pistolReactivateTime = reactivation;
+                break;
+            case ClickWeaponSlot.Cannon:
+                _cannonMode = mode;
+                _cannonReactivateTime = reactivation;
+                break;
+            case ClickWeaponSlot.Launcher:
+                _launcherMode = mode;
+                _launcherReactivateTime = reactivation;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(slot));
+        }
+
+        return mode;
+    }
+
+    public ClickWeaponMode CycleMode(
+        ClickWeaponSlot slot,
+        double nowSeconds)
+    {
+        ClickWeaponMode next =
+            GetMode(slot) switch
+            {
+                ClickWeaponMode.ManualAim => ClickWeaponMode.AutoAim,
+                ClickWeaponMode.AutoAim => ClickWeaponMode.Disabled,
+                _ => ClickWeaponMode.ManualAim
+            };
+
+        return SetMode(slot, next, nowSeconds);
+    }
 
     public double GetCannonMaximumCharge(GameState game)
     {
@@ -106,25 +199,32 @@ public sealed class ClickWeaponRuntime
         // 2. augment auto-fire
         // 3. subclass-specific Update work (Cannon decharge below).
 
-        if (ShouldRapidFire(
-            game,
-            ref _pistolNextRapidFireTime,
-            nowSeconds))
+        // ClickerPistol.Update always reaches the base auto-fire timers even
+        // while hidden; Shoot itself rejects the shot when inactive.
+        bool pistolRapidAttempt =
+            ShouldRapidFire(
+                game,
+                ref _pistolNextRapidFireTime,
+                nowSeconds);
+
+        bool pistolAugmentAttempt =
+            ShouldAugmentAutoFire(
+                game,
+                WeaponAugmentType.ClickPistolAutoFire,
+                ref _pistolAutoFireLevel,
+                ref _pistolNextAugmentFireTime,
+                nowSeconds);
+
+        if (IsWeaponActive(ClickWeaponSlot.Pistol, nowSeconds))
         {
-            pistolShots++;
+            if (pistolRapidAttempt)
+                pistolShots++;
+            if (pistolAugmentAttempt)
+                pistolShots++;
         }
 
-        if (ShouldAugmentAutoFire(
-            game,
-            WeaponAugmentType.ClickPistolAutoFire,
-            ref _pistolAutoFireLevel,
-            ref _pistolNextAugmentFireTime,
-            nowSeconds))
-        {
-            pistolShots++;
-        }
-
-        if (game.WeaponAugmentEffects.ClickCannonUnlocked)
+        if (game.WeaponAugmentEffects.ClickCannonUnlocked &&
+            IsWeaponActive(ClickWeaponSlot.Cannon, nowSeconds))
         {
             if (ShouldRapidFire(
                 game,
@@ -156,7 +256,8 @@ public sealed class ClickWeaponRuntime
                 nowSeconds);
         }
 
-        if (game.WeaponAugmentEffects.ClickLauncherUnlocked)
+        if (game.WeaponAugmentEffects.ClickLauncherUnlocked &&
+            IsWeaponActive(ClickWeaponSlot.Launcher, nowSeconds))
         {
             if (ShouldRapidFire(
                 game,
@@ -245,11 +346,17 @@ public sealed class ClickWeaponRuntime
         ClickCannonFirePlan? cannon = null;
         ClickLauncherFirePlan? launcher = null;
 
-        if (game.WeaponAugmentEffects.ClickCannonUnlocked)
+        if (game.WeaponAugmentEffects.ClickCannonUnlocked &&
+            IsWeaponActive(ClickWeaponSlot.Cannon, nowSeconds))
+        {
             cannon = ShootCannon(game, nowSeconds);
+        }
 
-        if (game.WeaponAugmentEffects.ClickLauncherUnlocked)
+        if (game.WeaponAugmentEffects.ClickLauncherUnlocked &&
+            IsWeaponActive(ClickWeaponSlot.Launcher, nowSeconds))
+        {
             launcher = ShootLauncher(game);
+        }
 
         return cannon is null && launcher is null
             ? ClickWeaponFirePlan.None
