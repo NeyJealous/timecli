@@ -60,16 +60,108 @@ namespace TimeCli.UnityRuntime
 
         private static readonly Vector2[] Uv = BuildUv();
 
+        private static readonly int OutlineColor =
+            Shader.PropertyToID("_OutlineColor");
+
         private Mesh _mesh;
         private MeshRenderer _renderer;
+        private MaterialPropertyBlock _materialProperties;
         private Vector3[] _vertices;
         private Color[] _colors;
+
+        private Color _outlineEndColor =
+            OriginalHeroPresentation.DefaultOutlineColor;
+        private Color _flashStartColor;
+        private float _flashStartTime;
+        private float _flashEndTime;
+        private float _nextAllowedFlashTime;
+        private bool _flashActive;
 
         public void Initialize(EnemyBlockState state)
         {
             EnsureMesh();
             ApplyEnemyType(state.EnemyType);
+            SetOutlineMaterialColor(_outlineEndColor);
             RefreshHealth(state);
+        }
+
+        private void Update()
+        {
+            if (!_flashActive)
+                return;
+
+            float now = Time.time;
+            if (now >= _flashEndTime)
+            {
+                _flashActive = false;
+                SetOutlineMaterialColor(_outlineEndColor);
+                return;
+            }
+
+            SetOutlineMaterialColor(
+                OriginalHeroPresentation.EvaluateFlashColor(
+                    _flashStartColor,
+                    _outlineEndColor,
+                    now - _flashStartTime));
+        }
+
+        public void ApplyHeroImpact(
+            WeaponType weaponType,
+            bool isSplash,
+            double nowSeconds)
+        {
+            Color weaponColor =
+                OriginalHeroPresentation.GetWeaponColor(
+                    weaponType);
+
+            HeroImpactStyle style =
+                OriginalHeroPresentation.GetImpactStyle(
+                    weaponType,
+                    isSplash);
+
+            if (style == HeroImpactStyle.Flash)
+            {
+                FlashOutline(
+                    weaponColor,
+                    (float)nowSeconds);
+                return;
+            }
+
+            Outline(weaponColor);
+        }
+
+        private void Outline(Color color)
+        {
+            // BoxEnemy.Outline sets TweenColor.startColor=endColor=color,
+            // duration=0 and then Play(), replacing any running tween.
+            _outlineEndColor = color;
+            _flashActive = false;
+            SetOutlineMaterialColor(color);
+        }
+
+        private void FlashOutline(
+            Color color,
+            float nowSeconds)
+        {
+            // Exact BoxEnemy FlashOutline throttle.
+            if (_nextAllowedFlashTime > nowSeconds)
+                return;
+
+            _nextAllowedFlashTime =
+                nowSeconds +
+                OriginalHeroPresentation.FlashCooldown;
+
+            // Original FlashOutline only changes startColor + duration.
+            // TweenColor.endColor remains whatever the last Outline (or the
+            // serialized black default) established.
+            _flashStartColor = color;
+            _flashStartTime = nowSeconds;
+            _flashEndTime =
+                nowSeconds +
+                OriginalHeroPresentation.FlashDuration;
+            _flashActive = true;
+
+            SetOutlineMaterialColor(color);
         }
 
         public void RefreshHealth(EnemyBlockState state)
@@ -124,6 +216,7 @@ namespace TimeCli.UnityRuntime
             if (_renderer == null)
                 _renderer = gameObject.AddComponent<MeshRenderer>();
             _renderer.sharedMaterial = GetMaterial(EnemyType.Red);
+            _materialProperties = new MaterialPropertyBlock();
 
             var collider = GetComponent<BoxCollider>();
             if (collider == null)
@@ -150,6 +243,26 @@ namespace TimeCli.UnityRuntime
 
             if (_renderer != null)
                 _renderer.sharedMaterial = GetMaterial(type);
+        }
+
+        private void SetOutlineMaterialColor(
+            Color color)
+        {
+            if (_renderer == null)
+                return;
+
+            _materialProperties ??=
+                new MaterialPropertyBlock();
+
+            _renderer.GetPropertyBlock(
+                _materialProperties);
+
+            _materialProperties.SetColor(
+                OutlineColor,
+                color);
+
+            _renderer.SetPropertyBlock(
+                _materialProperties);
         }
 
         private static Material GetMaterial(EnemyType type)
