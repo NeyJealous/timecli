@@ -106,7 +106,11 @@ while (game.Arena.Wave <= 100)
 }
 
 AssertEqual(101, game.Arena.Wave, "Reached wave 101");
-AssertEqual(10, game.TimeCubes.PendingTimelineReward, "Pending Time Cubes at wave 101");
+AssertEqual(0, game.TimeCubes.PendingTimelineReward, "Time Cube reward waits for pickup collection");
+AssertEqual(10, game.CubePickups.Count, "Wave 100 spawned ten Time Cube pickup objects");
+
+game.UpdateCubePickups(spawnedModels + 6.0);
+AssertEqual(10, game.TimeCubes.PendingTimelineReward, "Pending Time Cubes after auto-collection");
 
 ulong earned = game.TimeWarp();
 AssertEqual(10, earned, "Time Warp earned Time Cubes");
