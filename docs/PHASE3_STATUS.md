@@ -122,8 +122,11 @@ Recovered and implemented:
 - 4-point Pistol Tracer;
 - normal/critical tracer width, colors and fade timing;
 - original Pistol/Cannon/Launcher rest fire-spot positions;
-- private exact transform-hierarchy Resource loader with verified fire-spot
-  transform binding;
+- exact Pistol/Cannon/Launcher transform hierarchy promoted from canonical
+  1.4.5 serialized data;
+- exact shared Pivot and per-weapon Vertical/model/Firespot transforms;
+- ClickerWeapon IL-compatible aim: Pivot.LookAt(screen ray at distance 100);
+- exact two-key vertical AnimationCurves for Pistol and Cannon/Launcher;
 - Cannon charge + 1-second grace + 10 charge/s decay;
 - Cannon damage-per-projectile and fire cone;
 - Launcher click threshold, rocket count and rocket-speed augment;
@@ -189,8 +192,6 @@ Code-side work can continue in parallel. The next reconstruction targets are:
 
 - exact original Rocket tail particle/material fidelity (the recovered
   0.025-second emission cadence is now implemented);
-- exact click-weapon hierarchy/pivot animation (extractor, world-transform
-  matching, validator, private Resource loader and batch integration are ready;
-  the canonical report still needs to be generated/reviewed before pivot
-  animation values can be promoted);
+- remaining click-weapon model/Animator recoil presentation beyond the now
+  recovered transform aim/vertical positioning;
 - original Hero projectile presentation.
