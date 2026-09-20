@@ -125,9 +125,9 @@ AssertClose(
     0.000001f,
     "Pistol shoot duration");
 
-Vector3 pistolRecoilStart =
+UnityEngine.Vector3 pistolRecoilStart =
     OriginalClickWeaponShootAnimation.EvaluatePistolSlide(0f);
-Vector3 pistolRecoilEnd =
+UnityEngine.Vector3 pistolRecoilEnd =
     OriginalClickWeaponShootAnimation.EvaluatePistolSlide(
         OriginalClickWeaponShootAnimation.PistolDuration);
 
@@ -158,9 +158,9 @@ AssertClose(
     0.000001f,
     "Cannon shoot duration");
 
-Vector3 cannonRecoilStart =
+UnityEngine.Vector3 cannonRecoilStart =
     OriginalClickWeaponShootAnimation.EvaluateCannon(0f);
-Vector3 cannonRecoilEnd =
+UnityEngine.Vector3 cannonRecoilEnd =
     OriginalClickWeaponShootAnimation.EvaluateCannon(
         OriginalClickWeaponShootAnimation.CannonDuration);
 
@@ -181,9 +181,9 @@ AssertClose(
     0.000001f,
     "Launcher shoot duration");
 
-Vector3 launcherRecoilStart =
+UnityEngine.Vector3 launcherRecoilStart =
     OriginalClickWeaponShootAnimation.EvaluateLauncherPosition(0f);
-Vector3 launcherRecoilEnd =
+UnityEngine.Vector3 launcherRecoilEnd =
     OriginalClickWeaponShootAnimation.EvaluateLauncherPosition(
         OriginalClickWeaponShootAnimation.LauncherDuration);
 
