@@ -393,7 +393,7 @@ namespace TimeCli.UnityRuntime
             ClickPistolFirePlan plan =
                 ClickPistolFireMath.Build(
                     bootstrap.Game,
-                    plan.IsCritical);
+                    critical);
 
             Ray baseRay =
                 camera.ScreenPointToRay(
@@ -477,7 +477,7 @@ namespace TimeCli.UnityRuntime
             ClickTracerView.Spawn(
                 GetClickPistolFireSpot(),
                 tracerEnd,
-                critical);
+                plan.IsCritical);
         }
 
         private void ProcessClickPistolHit(
