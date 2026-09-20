@@ -269,6 +269,14 @@ namespace TimeCli.UnityRuntime
                         application.IsSplash,
                         nowSeconds);
 
+                    BlockDamageResult damageResult =
+                        execution.DamageResults[i];
+
+                    PlayBlockDeathPresentation(
+                        _views[viewIndex],
+                        weaponType,
+                        damageResult);
+
                     _views[viewIndex].Refresh();
                     break;
                 }
@@ -355,11 +363,24 @@ namespace TimeCli.UnityRuntime
                 if (bootstrap.Arena.CurrentEnemy == null)
                     break;
 
+                // ProjectileDamager.ApplyDamage emits a small spark burst at
+                // each struck collider before applying damage.
+                SparksParticleView.Emit(
+                    view.transform.position,
+                    weaponType,
+                    SparksKind.Small,
+                    0f);
+
                 ArenaBlockAttackResult result =
                     bootstrap.Arena.ClickWeaponDamageBlock(
                         view.BlockIndex,
                         damage,
                         nowSeconds);
+
+                PlayBlockDeathPresentation(
+                    view,
+                    weaponType,
+                    result.Block);
 
                 view.Refresh();
 
@@ -376,6 +397,14 @@ namespace TimeCli.UnityRuntime
             // math is identical after the precomputed click damage reaches it.
             if (weaponType == WeaponType.RocketLauncher)
                 SpawnRocketExplosion(impactPoint);
+
+            // ProjectileDamager emits one additional small spark burst at the
+            // projectile root after processing the overlap and Rocket impact.
+            SparksParticleView.Emit(
+                impactPoint,
+                weaponType,
+                SparksKind.Small,
+                0f);
         }
 
         private void ProcessAutomaticClickWeapons(
@@ -561,11 +590,24 @@ namespace TimeCli.UnityRuntime
                 return;
             }
 
+            // ClickerPistol.ProcessHit emits small Sparks at the raycast hit
+            // point before BoxEnemy.ApplyClickDamage.
+            SparksParticleView.Emit(
+                hit.point,
+                WeaponType.Pistol,
+                SparksKind.Small,
+                0f);
+
             ArenaBlockAttackResult result =
                 bootstrap.Arena.ClickWeaponDamageBlock(
                     view.BlockIndex,
                     clickDamage,
                     nowSeconds);
+
+            PlayBlockDeathPresentation(
+                view,
+                WeaponType.Pistol,
+                result.Block);
 
             bootstrap.Game.TrySpawnClickPistolHitGold(
                 view.State,
@@ -576,6 +618,33 @@ namespace TimeCli.UnityRuntime
 
             if (result.ModelCleared)
                 ClearViews();
+        }
+
+        private static void PlayBlockDeathPresentation(
+            VoxelBlockView view,
+            WeaponType weaponType,
+            BlockDamageResult damageResult)
+        {
+            if (view == null ||
+                !damageResult.Killed)
+            {
+                return;
+            }
+
+            Vector3 position =
+                view.transform.position;
+
+            // BoxEnemy.ApplyDamage on death:
+            //   VirtualPS.SmallExplosion(transform.position)
+            //   VirtualPS.Sparks(... large, overpowered)
+            SmallExplosionParticleView.Emit(
+                position);
+
+            SparksParticleView.Emit(
+                position,
+                weaponType,
+                SparksKind.Large,
+                damageResult.OverkillNormalized);
         }
 
         private void SpawnClickWeaponProjectiles(
