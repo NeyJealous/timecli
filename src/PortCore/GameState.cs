@@ -19,6 +19,7 @@ public sealed class GameState
         WeaponCubes = new WeaponCubeBankState();
         ArenaRewards = new ArenaRewardHistory();
         CubePickups = new SpecialCubePickupQueue();
+        GoldPickups = new GoldPickupQueue();
         ClickWeapons = new ClickWeaponRuntime();
 
         Heroes = CanonicalHeroes.All.Select(h => new HeroRuntime(h)).ToArray();
@@ -38,6 +39,7 @@ public sealed class GameState
     public WeaponCubeBankState WeaponCubes { get; }
     public ArenaRewardHistory ArenaRewards { get; }
     public SpecialCubePickupQueue CubePickups { get; }
+    public GoldPickupQueue GoldPickups { get; }
     public ClickWeaponRuntime ClickWeapons { get; }
 
     public HeroRuntime[] Heroes { get; }
@@ -362,6 +364,63 @@ public sealed class GameState
     public IReadOnlyList<SpecialCubeCollection> UpdateCubePickups(double nowSeconds) =>
         CubePickups.Tick(nowSeconds, TimeCubes, WeaponCubes);
 
+    public bool TryCollectGoldPickup(long pickupId, double nowSeconds) =>
+        GoldPickups.TryCollect(pickupId, nowSeconds);
+
+    public IReadOnlyList<GoldCollection> UpdateGoldPickups(double nowSeconds) =>
+        GoldPickups.Tick(nowSeconds, Gold);
+
+    /// <summary>
+    /// Reconstructs ClickerPistol.ProcessHit's hit-gold branch. It only runs
+    /// for TimeCube / WeaponCube blocks and only when the chance augment owns
+    /// at least one level. Randomness is supplied explicitly by the adapter.
+    /// </summary>
+    public GoldPickupState? TrySpawnClickPistolHitGold(
+        EnemyBlockState block,
+        float random01,
+        double nowSeconds)
+    {
+        if (block.EnemyType is not
+            (EnemyType.TimeCube or EnemyType.WeaponCube))
+        {
+            return null;
+        }
+
+        if (WeaponAugments.GetLevel(
+                WeaponAugmentType.ClickPistolGoldSpawnChance) == 0)
+        {
+            return null;
+        }
+
+        double chance =
+            WeaponAugments.GetModValue(
+                WeaponAugmentType.ClickPistolGoldSpawnChance) *
+            0.01;
+
+        if (random01 >= chance)
+            return null;
+
+        double multiplier =
+            WeaponAugments.GetModValue(
+                WeaponAugmentType.ClickPistolGoldSpawnValue) *
+            0.01;
+
+        double goldValue =
+            GoldRewardMath.GetHitGold(
+                block.MaxHealth,
+                multiplier,
+                block.EnemyType,
+                GetHeroesGoldFindMultiplier(),
+                ArtifactEffects,
+                IsAbilityActive(
+                    AbilityType.GoldRush));
+
+        return GoldPickups.SpawnHitGold(
+            block,
+            goldValue,
+            nowSeconds);
+    }
+
     public OfflineProgressionResult ApplyOfflineEarnings(double secondsSinceSave)
     {
         var result = OfflineProgression.Calculate(
@@ -387,7 +446,12 @@ public sealed class GameState
             return;
 
         if (result.Reward.Gold > 0.0)
-            Gold.Add(result.Reward.Gold);
+        {
+            GoldPickups.SpawnKillReward(
+                block,
+                result.Reward.Gold,
+                nowSeconds);
+        }
 
         if (result.Reward.TimeCubes > 0)
         {
