@@ -23,18 +23,26 @@ namespace TimeCli.UnityRuntime
             Game = new GameState();
             Random = new UnityRandomSource();
 
-            IVoxelModelCatalog catalog = voxelCatalog != null
-                ? new UnityVoxelCatalog(voxelCatalog)
-                : DebugVoxelCatalog.Create();
+            IVoxelModelCatalog catalog;
 
-            Arena = new HeadlessArenaEngine(Game, catalog);
-
-            if (voxelCatalog == null)
+            if (voxelCatalog != null)
             {
+                catalog = new UnityVoxelCatalog(voxelCatalog);
+            }
+            else if (BinaryVoxelCatalog.TryLoadFromResources(out var privateCatalog))
+            {
+                catalog = privateCatalog;
+                Debug.Log("TimeCli: loaded private canonical voxel catalog.");
+            }
+            else
+            {
+                catalog = DebugVoxelCatalog.Create();
                 Debug.LogWarning(
-                    "TimeCli: no canonical voxel catalog assigned. " +
+                    "TimeCli: no canonical voxel catalog found. " +
                     "Using generated development geometry.");
             }
+
+            Arena = new HeadlessArenaEngine(Game, catalog);
         }
     }
 }
