@@ -12,6 +12,7 @@ on:
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
       - "tools/unity/**"
+      - "tests/tooling/**"
       - ".github/workflows/portcore-smoke.yml"
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - "tests/UnityAdapter.Compile/**"
       - "unity/TimeCli/**"
       - "tools/unity/**"
+      - "tests/tooling/**"
 
 jobs:
   smoke:
@@ -89,3 +91,5 @@ jobs:
           python-version: "3.12"
       - name: Compile public Unity tooling
         run: python -m py_compile tools/unity/*.py
+      - name: Run hierarchy tooling regression tests
+        run: python -m unittest discover -s tests/tooling -p "test_*.py"
