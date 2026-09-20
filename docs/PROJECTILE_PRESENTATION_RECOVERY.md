@@ -237,18 +237,64 @@ the same PortCore BoxEnemy click-damage/reward path.
 
 ## Rocket tail presentation
 
-Recovered scheduling value:
+The canonical 1.4.5 Rocket tail is **not** a per-rocket particle prefab.
+`RocketTailParticles` calls `VirtualPS.RocketTail` every **0.025 s**.
+`VirtualPS` moves one shared `Toon Rocket 02 PS` ParticleSystem to the
+rocket's current position/rotation and performs:
 
 ```text
-tail emission interval = 0.025 s
+rocketTailPS.Emit((int)rocketTailPS.emissionRate)
 ```
 
-The Unity reconstruction now preserves that cadence independently of frame
-rate, including multiple emissions when a frame spans more than one interval.
-The emitted public-project particles are intentionally a clean procedural
-fallback. Exact original particle mesh/material/serialized visual parameters
-have not yet been promoted into the public reconstruction and are not claimed
-as recovered here.
+The serialized emission rate is **10**, so each 25 ms invocation emits exactly
+**10 particles** while continuous emission itself is disabled.
+
+Recovered ParticleSystem values:
+
+| Property | Original value |
+|---|---:|
+| simulation | world space |
+| duration | 5 s |
+| looping | true |
+| lifetime | random 0.5–1.0 s |
+| start speed | random 2.5–5.0 |
+| start size | random 0.10–0.25 |
+| start rotation | random 0–62.83185196 rad |
+| max particles | 500 |
+| cone radius | 0.01 |
+| cone angle | 2.83° |
+| cone length | 5 |
+| cone arc | 360° |
+| random direction | enabled |
+| force over lifetime | random -2.5..+2.5 on X/Y/Z |
+| force space | world |
+| force randomize per frame | true |
+| renderer | billboard / OldestInFront |
+| max particle screen size | 0.5 |
+| renderer length scale | 2 |
+
+The exact 12-key Size-over-Lifetime curve and both randomized
+Color-over-Lifetime gradients are promoted in
+`OriginalRocketTailPresentation` and regression-tested.
+
+Recovered material chain:
+
+```text
+Toon Rocket 02 PS
+  -> Circle PRT MAT Alpha
+  -> Mobile-Particle-Alpha
+  -> Smoke Toon PRT TEX MOD (128x128 RGBA32, 8 mips)
+```
+
+The old shader uses transparent alpha blending with `ZWrite Off`,
+`Cull Off`, and `Blend SrcAlpha OneMinusSrcAlpha`. The public project
+contains a clean equivalent shader (`TimeCli/ParticleAlpha`).
+
+The original `Smoke Toon PRT TEX MOD` texture remains private original-derived
+data. The normal private-data extraction path exports it as
+`TimeCliRocketTailTexture.png`; the runtime loads that Resource when present
+and otherwise uses a clean procedural radial texture. All other Rocket-tail
+ParticleSystem behavior is now reconstructed from confirmed canonical values.
 
 ## Rocket orbital presentation
 
