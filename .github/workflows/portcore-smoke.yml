@@ -8,6 +8,8 @@ on:
       - "tests/PortCore.Smoke/**"
       - "tests/PortCore.TimelineScenario/**"
       - "tests/PortCore.HeroCombatScenario/**"
+      - "tests/UnityAdapter.Compile/**"
+      - "unity/TimeCli/**"
       - ".github/workflows/portcore-smoke.yml"
   pull_request:
     paths:
@@ -15,6 +17,8 @@ on:
       - "tests/PortCore.Smoke/**"
       - "tests/PortCore.TimelineScenario/**"
       - "tests/PortCore.HeroCombatScenario/**"
+      - "tests/UnityAdapter.Compile/**"
+      - "unity/TimeCli/**"
 
 jobs:
   smoke:
@@ -52,3 +56,12 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - run: dotnet build src/PortCore/PortCore.csproj -f netstandard2.1 --configuration Release
+
+  unity-adapter-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet run --project tests/UnityAdapter.Compile/UnityAdapter.Compile.csproj --configuration Release
