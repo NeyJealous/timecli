@@ -10,6 +10,7 @@ from pathlib import Path
 import UnityPy
 
 CLIPS = {
+    391: ("PistolWield", "TimeCliClickWeaponAppear.wav"),
     397: ("pistol1", "TimeCliClickPistolFire.wav"),
     396: ("MechWeapons_Shock_Fire_02", "TimeCliClickCannonFire.wav"),
     400: ("MechWeapons_Grenade_Fire_01", "TimeCliClickLauncherFire.wav"),
