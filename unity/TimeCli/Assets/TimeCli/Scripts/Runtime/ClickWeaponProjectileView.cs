@@ -272,6 +272,7 @@ namespace TimeCli.UnityRuntime
 
                 _arena.ProcessClickWeaponProjectileImpact(
                     hit.point,
+                    current,
                     _damage,
                     _weaponType,
                     Time.timeAsDouble);
