@@ -131,9 +131,20 @@ namespace UnityEngine
         public static Vector3 operator *(Quaternion q, Vector3 v) => v;
     }
 
-    public readonly struct Rect
+    public struct Rect
     {
-        public Rect(float x, float y, float width, float height) { }
+        public Rect(float x, float y, float width, float height)
+        {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+
+        public float x { get; set; }
+        public float y { get; set; }
+        public float width { get; set; }
+        public float height { get; set; }
     }
 
     public readonly struct Color
@@ -239,7 +250,12 @@ namespace UnityEngine
     }
 
     public class Texture : Object { }
-    public sealed class Texture2D : Texture { }
+    public sealed class Texture2D : Texture
+    {
+        public Texture2D(int width, int height) { }
+        public void SetPixel(int x, int y, Color color) { }
+        public void Apply() { }
+    }
 
     public sealed class Material : Object
     {
@@ -267,6 +283,12 @@ namespace UnityEngine
 
         public static float Lerp(float a, float b, float t) =>
             a + (b - a) * t;
+
+        public static float Min(float a, float b) =>
+            a < b ? a : b;
+
+        public static int Max(int a, int b) =>
+            a > b ? a : b;
     }
 
     public static class Random
@@ -292,11 +314,32 @@ namespace UnityEngine
         public static void LogError(object message) { }
     }
 
+    public enum TextAnchor
+    {
+        UpperLeft,
+        UpperCenter,
+        UpperRight,
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+        LowerLeft,
+        LowerCenter,
+        LowerRight
+    }
+
+    public sealed class GUIStyleState
+    {
+        public Color textColor { get; set; }
+    }
+
     public sealed class GUIStyle
     {
         public GUIStyle() { }
         public GUIStyle(GUIStyle other) { }
         public bool richText { get; set; }
+        public int fontSize { get; set; }
+        public TextAnchor alignment { get; set; }
+        public GUIStyleState normal { get; } = new();
     }
 
     public sealed class GUISkin
@@ -308,7 +351,17 @@ namespace UnityEngine
     public static class GUI
     {
         public static bool enabled { get; set; } = true;
+        public static Color color { get; set; } = Color.white;
         public static GUISkin skin { get; } = new();
+
+        public static void Label(
+            Rect position,
+            string text,
+            GUIStyle style) { }
+
+        public static void DrawTexture(
+            Rect position,
+            Texture image) { }
     }
 
     public static class GUILayout
