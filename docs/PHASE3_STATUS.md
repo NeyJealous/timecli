@@ -6,26 +6,24 @@ Status: **in progress**
 
 The modern Unity project is pinned to Unity **6000.3.24f1**.
 
-PortCore Phase 2 is frozen at adapter API **1.0.0** and builds for
-`netstandard2.1`.
+PortCore Phase 2 remains gate-complete. During Phase 3, newly recovered original
+behavior has produced additive compatibility corrections; the current adapter
+API is **1.2.0** and still targets `netstandard2.1`.
 
-## Unity adapter gate
+## Validation gates
 
-A dedicated `UnityAdapter.Compile` preflight now compiles all current Runtime
-and Editor C# scripts against a minimal Unity API surface. This already caught
-and fixed real adapter errors before the first Unity Editor launch.
-
-Current CI gates are green:
+GitHub Actions now validates:
 
 - PortCore smoke;
 - deterministic timeline;
 - Hero combat;
+- ClickCannon / ClickLauncher state;
 - `netstandard2.1` Unity compatibility;
 - Unity Runtime/Editor adapter compile preflight.
 
-This is not a replacement for a real Unity Editor import: serialization,
-shader import, scene import and native Editor behavior still need the actual
-Unity executable.
+The latest completed preflight baseline is green. A real Unity Editor import is
+still a separate gate because serialization, ShaderLab import and native Editor
+behavior cannot be validated by the .NET stub compile.
 
 ## Current runtime
 
@@ -39,8 +37,15 @@ Implemented under `unity/TimeCli`:
 - synthetic development voxel catalog;
 - private canonical voxel-catalog import path;
 - one-click Editor Arena scene generator;
-- click damage and all Hero auto-fire through the tested
-  `HeadlessArenaEngine`.
+- reconstructed BoxEnemy geometry/health;
+- Click Pistol critical roll + original tracer presentation;
+- ClickCannon transient charge/fire state;
+- ClickLauncher click-progress/fire state;
+- Cannon/Launcher projectile movement and collision reporting;
+- Time/Weapon Cube deferred pickups and collection presentation;
+- clean replacements for original special-enemy shaders.
+
+Gameplay damage/rewards/wave state remain PortCore-owned.
 
 ## Private canonical voxel import
 
@@ -64,36 +69,72 @@ At runtime `TimeCliBootstrap` loads catalogs in this order:
 The converter was locally round-trip validated against all **141 models / 8262
 occupied voxels / 43 boss-key models**.
 
+## Private original special-cube textures
+
+A public extraction tool can pull the required original-derived textures from
+`sharedassets1.assets` or the APK Data split parts into the ignored private
+Resources directory:
+
+```bash
+python tools/unity/extract-private-special-textures.py \
+  /path/to/Data-or-sharedassets1.assets \
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources
+```
+
+Recovered targets:
+
+- `TimeCliTimeCubePickupTexture.png`
+- `TimeCliWeaponCubePickupTexture.png`
+- `TimeCliWeaponCubeTexture.png`
+
+The public project falls back to procedural clean visuals when those private
+files are absent.
+
 ## Original Arena presentation recovered
 
-The placeholder presentation has now been replaced with a procedural
-reconstruction of the original Arena block geometry.
+Implemented:
+
+- Arena root transform:
+  `(0, -3.3399999, 5.3499999)`, Y rotation about `-60°`;
+- perspective gameplay camera:
+  `(0, 1, -10)`, X rotation about `-6.469°`, FOV 60;
+- exact Qubicle centering/inverted-Z transform;
+- unit voxel spacing;
+- BoxEnemy unit collider;
+- reconstructed 24-vertex / 32-triangle Body mesh;
+- exact health-fill deformation;
+- original serialized enemy palette;
+- Rainbow / TimeCube modern shader replacements;
+- active WidgetGold TimeCube/WeaponCube collection anchors.
+
+See:
+
+- `docs/ARENA_PRESENTATION_RECOVERY.md`
+- `docs/SPECIAL_CUBE_RECOVERY.md`
+
+## Click weapon / projectile recovery
 
 Recovered and implemented:
 
-- original `Arena` root transform:
-  `(0, -3.3399999, 5.3499999)`, Y rotation about `-60°`;
-- original perspective gameplay camera:
-  position `(0, 1, -10)`, X rotation about `-6.469°`, FOV 60,
-  near 0.3, far 1000, depth -2;
-- exact Qubicle model centering and inverted-Z transform;
-- unit voxel spacing;
-- original BoxEnemy unit `BoxCollider`;
-- reconstructed `Body` mesh: 24 vertices / 32 triangles;
-- exact health-fill vertex deformation;
-- original serialized enemy palette;
-- clean modern vertex-color shader for the reconstructed mesh.
+- exact ClickPistol critical roll;
+- 4-point Pistol Tracer;
+- normal/critical tracer width, colors and fade timing;
+- original Pistol/Cannon/Launcher rest fire-spot positions;
+- Cannon charge + 1-second grace + 10 charge/s decay;
+- Cannon damage-per-projectile and fire cone;
+- Launcher click threshold, rocket count and rocket-speed augment;
+- Projectile moveDir capture;
+- Flak velocity 40 / lifetime 1.5 s;
+- Rocket velocity 40 / lifetime 3 s;
+- projectile collision sampling at ~30 Hz;
+- overlap impact radius 1;
+- original hitbox mask 2560;
+- additional-rocket orbital pivot behavior;
+- rocket explosion visual lifetime 0.5 s.
 
-Details are recorded in
-`docs/ARENA_PRESENTATION_RECOVERY.md`.
-
-The old Unity 5 compiled `Custom/SimpleEnemy`, Rainbow and TimeCube shader
-binaries are not copied into the modern project. Their visual behavior is being
-reconstructed cleanly.
+See `docs/PROJECTILE_PRESENTATION_RECOVERY.md`.
 
 ## Batch first-run workflow
-
-The first real Unity compile + scene generation is now automated.
 
 Windows:
 
@@ -101,11 +142,12 @@ Windows:
 .\tools\unity\create-arena-prototype.ps1
 ```
 
-Optional private canonical voxels:
+With private canonical voxels and special-cube textures:
 
 ```powershell
 .\tools\unity\create-arena-prototype.ps1 \
-  -PrivateVoxelJson "C:\path\voxel_layouts_private.json"
+  -PrivateVoxelJson "C:\path\voxel_layouts_private.json" \
+  -OriginalDataSource "C:\path\to\apk\assets\bin\Data"
 ```
 
 macOS/Linux:
@@ -113,44 +155,33 @@ macOS/Linux:
 ```bash
 UNITY_PATH="/path/to/Unity" \
 PRIVATE_VOXEL_JSON="/path/to/voxel_layouts_private.json" \
+ORIGINAL_DATA_SOURCE="/path/to/apk/assets/bin/Data" \
 bash tools/unity/create-arena-prototype.sh
 ```
 
-The batch process:
-
-1. builds/syncs PortCore;
-2. optionally builds the private voxel binary;
-3. launches Unity in batch mode;
-4. imports/compiles the project;
-5. invokes the Editor scene generator;
-6. writes `ArenaPrototype.unity`;
-7. stores the Unity log under `out/unity/`.
+The batch process builds PortCore, prepares optional private reconstruction
+data, launches Unity in batch mode and invokes the Arena scene generator.
 
 ## Current prototype path
 
 ```text
-Unity input/frame
-    -> TimeCliBootstrap
-    -> GameState
-    -> HeadlessArenaEngine
-    -> tested combat/progression result
-    -> ArenaRuntimeController
-    -> reconstructed BoxEnemy mesh
+Unity input
+    -> GameState / click-weapon state
+    -> PortCore click damage plans
+    -> Unity trajectory / collision contact
+    -> HeadlessArenaEngine authoritative damage
+    -> reconstructed BoxEnemy / pickup presentation
 ```
-
-The development HUD exposes wave/farm navigation, Gold, Team DPS, Click
-damage, Hero and Click Pistol purchasing, cube balances and Time Warp.
 
 ## Next gate
 
-The remaining immediate Phase 3 gate is an **actual Unity 6000.3.24f1 batch
-import/run** on a machine with that Editor installed.
+The immediate gate remains an **actual Unity 6000.3.24f1 batch import/run** on
+a machine with that Editor installed.
 
-After that succeeds:
+Code-side work can continue in parallel. The next reconstruction targets are:
 
-- run the prototype against the private 141-model catalog;
-- validate framing/scale against the original Arena;
-- reconstruct Rainbow / TimeCube / WeaponCube presentation;
-- reconstruct visual projectile motion without moving gameplay authority out
-  of PortCore;
-- begin original HUD/UI scene reconstruction.
+- Automatic Fire / augment-driven ClickerWeapon firing schedules;
+- exact Rocket tail particle presentation;
+- original WidgetGold/HUD instead of the development HUD;
+- exact click-weapon hierarchy/pivot animation;
+- original Hero projectile presentation.
