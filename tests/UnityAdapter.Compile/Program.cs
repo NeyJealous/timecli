@@ -905,6 +905,42 @@ if (OriginalClickWeaponAudioPresentation.Priority != 128 ||
         "Click-weapon firing audio resource contract changed.");
 }
 
+AssertClose(
+    OriginalClickWeaponAudioPresentation.AppearVolume,
+    1f,
+    0.000001f,
+    "Click-weapon appear volume");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.AppearDelay,
+    0.05f,
+    0.000001f,
+    "Click-weapon appear delay");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.OneShotQueueCooldown,
+    0.1f,
+    0.000001f,
+    "Click-weapon pickup queue cooldown");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.OneShotMinDistance,
+    15f,
+    0.000001f,
+    "Click-weapon pickup min distance");
+AssertClose(
+    OriginalClickWeaponAudioPresentation.OneShotMaxDistance,
+    100f,
+    0.000001f,
+    "Click-weapon pickup max distance");
+
+if (OriginalClickWeaponAudioPresentation.AppearResource !=
+        "TimeCliClickWeaponAppear" ||
+    OriginalClickWeaponAudioPresentation.AppearClipName !=
+        "PistolWield" ||
+    OriginalClickWeaponAudioPresentation.OneShotSourcesPerQueue != 6)
+{
+    throw new Exception(
+        "Click-weapon appear audio resource contract changed.");
+}
+
 Console.WriteLine("Unity adapter compile/preflight passed.");
 
 static void AssertColor(
