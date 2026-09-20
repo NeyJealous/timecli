@@ -183,6 +183,8 @@ namespace UnityEngine
     public enum TextureWrapMode { Repeat, Clamp, Mirror, MirrorOnce }
     public enum ParticleSystemSimulationSpace { Local, World, Custom }
     public enum ParticleSystemScalingMode { Hierarchy, Local, Shape }
+    public enum ParticleSystemEmitterVelocityMode { Transform, Rigidbody, Custom }
+    public enum ParticleSystemInheritVelocityMode { Initial, Current }
     public enum ParticleSystemShapeType { Cone = 4 }
     public enum ParticleSystemRenderMode { Billboard = 0 }
     public enum ParticleSystemSortMode
@@ -564,6 +566,7 @@ namespace UnityEngine
             public bool playOnAwake { get; set; }
             public ParticleSystemSimulationSpace simulationSpace { get; set; }
             public ParticleSystemScalingMode scalingMode { get; set; }
+            public ParticleSystemEmitterVelocityMode emitterVelocityMode { get; set; }
             public MinMaxCurve startLifetime { get; set; }
             public MinMaxCurve startSpeed { get; set; }
             public MinMaxCurve startSize { get; set; }
@@ -613,12 +616,20 @@ namespace UnityEngine
             public MinMaxCurve z { get; set; }
         }
 
+        public struct InheritVelocityModule
+        {
+            public bool enabled { get; set; }
+            public ParticleSystemInheritVelocityMode mode { get; set; }
+            public MinMaxCurve curve { get; set; }
+        }
+
         public MainModule main => new();
         public ShapeModule shape => new();
         public EmissionModule emission => new();
         public SizeOverLifetimeModule sizeOverLifetime => new();
         public ColorOverLifetimeModule colorOverLifetime => new();
         public ForceOverLifetimeModule forceOverLifetime => new();
+        public InheritVelocityModule inheritVelocity => new();
 
         public void Emit(int count) { }
         public void Emit(EmitParams emitParams, int count) { }
