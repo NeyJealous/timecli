@@ -40,7 +40,8 @@ namespace TimeCli.UnityRuntime
                 Red: Array.Empty<VoxelPoint>(),
                 White: new[] { new VoxelPoint(0, 0, 0) },
                 Yellow: new[] { new VoxelPoint(1, 0, 0) },
-                Blue: BuildLine(blueCount, 2)));
+                Blue: BuildLine(blueCount, 2),
+                Size: new VoxelPoint(count, 1, 1)));
         }
 
         private static VoxelPoint[] BuildLine(int count, int startX)
