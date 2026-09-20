@@ -9,6 +9,9 @@ namespace TimeCli.UnityRuntime
     /// </summary>
     internal sealed class OriginalClickWeaponPresentationView
     {
+        private readonly Transform _pistolRoot;
+        private readonly Transform _cannonRoot;
+        private readonly Transform _launcherRoot;
         private readonly Transform _pistolPivot;
         private readonly Transform _pistolVertical;
         private readonly Transform _cannonPivot;
@@ -41,7 +44,14 @@ namespace TimeCli.UnityRuntime
         private float _cannonVisibilityDuration;
         private float _launcherVisibilityDuration;
 
+        private float _pistolAppearAudioTime = float.NegativeInfinity;
+        private float _cannonAppearAudioTime = float.NegativeInfinity;
+        private float _launcherAppearAudioTime = float.NegativeInfinity;
+
         private OriginalClickWeaponPresentationView(
+            Transform pistolRoot,
+            Transform cannonRoot,
+            Transform launcherRoot,
             Transform pistolPivot,
             Transform pistolVertical,
             Transform cannonPivot,
@@ -56,6 +66,9 @@ namespace TimeCli.UnityRuntime
             AudioSource cannonAudio,
             AudioSource launcherAudio)
         {
+            _pistolRoot = pistolRoot;
+            _cannonRoot = cannonRoot;
+            _launcherRoot = launcherRoot;
             _pistolPivot = pistolPivot;
             _pistolVertical = pistolVertical;
             _cannonPivot = cannonPivot;
@@ -158,6 +171,9 @@ namespace TimeCli.UnityRuntime
                 launcher.FireSpot);
 
             return new OriginalClickWeaponPresentationView(
+                pistol.Root,
+                cannon.Root,
+                launcher.Root,
                 pistol.Pivot,
                 pistol.Vertical,
                 cannon.Pivot,
@@ -238,30 +254,45 @@ namespace TimeCli.UnityRuntime
             ClickWeaponAudioFactory.Play(_launcherAudio);
         }
 
-        public void PlayPistolAppear() =>
+        public void PlayPistolAppear()
+        {
             StartPistolVisibility(
                 OriginalClickWeaponVisibilityAnimation.PistolAppear,
                 OriginalClickWeaponVisibilityAnimation.PistolAppearDuration);
+            _pistolAppearAudioTime =
+                Time.time +
+                OriginalClickWeaponAudioPresentation.AppearDelay;
+        }
 
         public void PlayPistolDisappear() =>
             StartPistolVisibility(
                 OriginalClickWeaponVisibilityAnimation.PistolDisappear,
                 OriginalClickWeaponVisibilityAnimation.PistolDisappearDuration);
 
-        public void PlayCannonAppear() =>
+        public void PlayCannonAppear()
+        {
             StartCannonVisibility(
                 OriginalClickWeaponVisibilityAnimation.CannonAppear,
                 OriginalClickWeaponVisibilityAnimation.CannonAppearDuration);
+            _cannonAppearAudioTime =
+                Time.time +
+                OriginalClickWeaponAudioPresentation.AppearDelay;
+        }
 
         public void PlayCannonDisappear() =>
             StartCannonVisibility(
                 OriginalClickWeaponVisibilityAnimation.CannonDisappear,
                 OriginalClickWeaponVisibilityAnimation.CannonDisappearDuration);
 
-        public void PlayLauncherAppear() =>
+        public void PlayLauncherAppear()
+        {
             StartLauncherVisibility(
                 OriginalClickWeaponVisibilityAnimation.LauncherAppear,
                 OriginalClickWeaponVisibilityAnimation.LauncherAppearDuration);
+            _launcherAppearAudioTime =
+                Time.time +
+                OriginalClickWeaponAudioPresentation.AppearDelay;
+        }
 
         public void PlayLauncherDisappear() =>
             StartLauncherVisibility(
@@ -272,6 +303,34 @@ namespace TimeCli.UnityRuntime
         {
             UpdateShootAnimations(now);
             UpdateVisibilityAnimations(now);
+            UpdateAppearAudio(now);
+        }
+
+        private void UpdateAppearAudio(float now)
+        {
+            if (!float.IsNegativeInfinity(_pistolAppearAudioTime) &&
+                now >= _pistolAppearAudioTime)
+            {
+                ClickWeaponAppearAudioView.Play(
+                    _pistolRoot.position);
+                _pistolAppearAudioTime = float.NegativeInfinity;
+            }
+
+            if (!float.IsNegativeInfinity(_cannonAppearAudioTime) &&
+                now >= _cannonAppearAudioTime)
+            {
+                ClickWeaponAppearAudioView.Play(
+                    _cannonRoot.position);
+                _cannonAppearAudioTime = float.NegativeInfinity;
+            }
+
+            if (!float.IsNegativeInfinity(_launcherAppearAudioTime) &&
+                now >= _launcherAppearAudioTime)
+            {
+                ClickWeaponAppearAudioView.Play(
+                    _launcherRoot.position);
+                _launcherAppearAudioTime = float.NegativeInfinity;
+            }
         }
 
         private void UpdateShootAnimations(float now)
