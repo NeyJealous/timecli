@@ -27,7 +27,7 @@ file or the original APK `assets/bin/Data` directory:
 ```bash
 python tools/unity/extract-private-weapon-hierarchy.py \
   /path/to/apk/assets/bin/Data \
-  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json
 ```
 
 The tool scans all `levelN` scenes, including split `levelN.split0..N`
@@ -50,12 +50,26 @@ Validate it with:
 
 ```bash
 python tools/unity/validate-private-weapon-hierarchy.py \
-  unity/TimeCli/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json
+  unity/TimeCli/Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json
 ```
 
+The extractor reconstructs world transforms from the serialized
+local-position / quaternion / scale chain and matches descendants against the
+already recovered original world-space fire spots:
+
+- Pistol: `(0.600000024, 0.301000000, -7.30099994)`
+- Cannon: `(0.06999986, 0.31599993, -7.30079996)`
+- Launcher: `(-0.59999985, 0.20599997, -7.49800003)`
+
 The validator rejects malformed vectors/quaternions, missing parent nodes,
-transform cycles and reports that do not contain Pistol, Cannon and Launcher.
+transform cycles, reports without all three weapons, and any nearest fire-spot
+transform farther than **0.05 Unity units** from the recovered coordinate.
 It also prints likely fire/muzzle/barrel descendants for manual review.
+
+When the private report is present as the `TimeCliWeaponHierarchy` Resource,
+the Unity runtime reconstructs the transform-only hierarchy and binds the three
+verified transform IDs to `ArenaRuntimeController`. Original meshes,
+materials, scripts and binary components are not loaded.
 
 ## Batch integration
 
