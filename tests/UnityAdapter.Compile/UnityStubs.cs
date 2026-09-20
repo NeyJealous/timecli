@@ -245,6 +245,8 @@ namespace UnityEngine
         public bool playOnAwake { get; set; }
         public float pitch { get; set; } = 1f;
         public float volume { get; set; } = 1f;
+        public int priority { get; set; } = 128;
+        public float dopplerLevel { get; set; } = 1f;
         public float minDistance { get; set; } = 1f;
         public float maxDistance { get; set; } = 500f;
         public float spatialBlend { get; set; }
