@@ -61,7 +61,7 @@ else
 fi
 
 if [[ -n "$ORIGINAL_DATA_SOURCE" ]]; then
-  HIERARCHY_OUTPUT="$PROJECT_PATH/Assets/TimeCli/PrivateGenerated/weapon_hierarchy.json"
+  HIERARCHY_OUTPUT="$PROJECT_PATH/Assets/TimeCli/PrivateGenerated/Resources/TimeCliWeaponHierarchy.json"
 
   if python3 -c "import UnityPy" >/dev/null 2>&1; then
     echo "4/5 Extracting and validating private click-weapon hierarchy..."
