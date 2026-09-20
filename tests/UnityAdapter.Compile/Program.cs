@@ -118,6 +118,87 @@ AssertColor(
     1f,
     "Flak midpoint flash fade");
 
+// Canonical "Toon Rocket 02 PS": VirtualPS emits 10 particles for
+// each recovered 25 ms tail invocation.
+if (OriginalRocketTailPresentation.ParticlesPerEmission != 10)
+    throw new Exception("Rocket tail must emit 10 particles per invocation.");
+
+AssertClose(
+    OriginalRocketTailPresentation.LifetimeMin,
+    0.5f,
+    0.000001f,
+    "Rocket tail lifetime min");
+
+AssertClose(
+    OriginalRocketTailPresentation.LifetimeMax,
+    1f,
+    0.000001f,
+    "Rocket tail lifetime max");
+
+AssertClose(
+    OriginalRocketTailPresentation.SpeedMin,
+    2.5f,
+    0.000001f,
+    "Rocket tail speed min");
+
+AssertClose(
+    OriginalRocketTailPresentation.SpeedMax,
+    5f,
+    0.000001f,
+    "Rocket tail speed max");
+
+AssertClose(
+    OriginalRocketTailPresentation.SizeMin,
+    0.1f,
+    0.000001f,
+    "Rocket tail size min");
+
+AssertClose(
+    OriginalRocketTailPresentation.SizeMax,
+    0.25f,
+    0.000001f,
+    "Rocket tail size max");
+
+var rocketTailSizeCurve =
+    OriginalRocketTailPresentation.BuildSizeOverLifetimeCurve();
+
+if (rocketTailSizeCurve.keys.Length != 12)
+    throw new Exception("Rocket tail size curve must contain 12 recovered keys.");
+
+AssertClose(
+    rocketTailSizeCurve.keys[0].value,
+    0.0114631057f,
+    0.000001f,
+    "Rocket tail size curve first value");
+
+AssertClose(
+    rocketTailSizeCurve.keys[^1].value,
+    0.0114631057f,
+    0.000001f,
+    "Rocket tail size curve final value");
+
+var rocketTailMaxGradient =
+    OriginalRocketTailPresentation.BuildMaxColorOverLifetime();
+
+if (rocketTailMaxGradient.colorKeys.Length != 2 ||
+    rocketTailMaxGradient.alphaKeys.Length != 3)
+{
+    throw new Exception(
+        "Rocket tail max gradient key counts do not match 1.4.5.");
+}
+
+AssertClose(
+    rocketTailMaxGradient.colorKeys[0].time,
+    23708f / 65535f,
+    0.000001f,
+    "Rocket tail max gradient first color time");
+
+AssertClose(
+    rocketTailMaxGradient.alphaKeys[1].time,
+    32768f / 65535f,
+    0.000001f,
+    "Rocket tail gradient midpoint alpha time");
+
 // Recovered Rocket tail cadence: no emission before 25 ms, then one
 // emission at 25 ms and three emissions across a 75 ms frame.
 float rocketTailAccumulator = 0f;
